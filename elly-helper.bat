@@ -1,25 +1,14 @@
 @echo off
 chcp 65001 > nul
 title 엘리 마크 도우미
-set "SELF=%~f0"
-set "APPTITLE=엘리 마크 도우미"
 
-rem Launcher. Downloads the helper window from GitHub and runs it hidden.
-rem Keep this file CRLF with no BOM, or cmd mis-reads the lines.
+rem This file only fetches the helper window and runs it. Everything else
+rem (icon, desktop shortcut, updating this file) is handled there, so this
+rem file should never need to change again.
+rem Keep it CRLF with no BOM, or cmd mis-reads the lines.
 
-set "BASE=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main"
-set "SRC=%BASE%/gui-elly.ps1"
+set "SRC=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/gui-elly.ps1"
 set "GUIFILE=%TEMP%\elly-helper-gui.ps1"
-set "SIDE=elly"
-set "HOMEDIR=%APPDATA%\elly-helper"
-set "ICO=%HOMEDIR%\icon.ico"
-
-rem A .bat cannot carry its own icon, so make a shortcut that can.
-rem The desktop is not always %USERPROFILE%\Desktop (OneDrive moves it),
-rem so ask Windows where it actually is.
-if not exist "%HOMEDIR%" mkdir "%HOMEDIR%" >nul 2>&1
-if not exist "%ICO%" curl.exe -L -f -s -o "%ICO%" "%BASE%/elly-icon.ico"
-if exist "%ICO%" powershell -NoProfile -Command "$d=[Environment]::GetFolderPath('Desktop'); if ($d) { $p=Join-Path $d ($env:APPTITLE + '.lnk'); if (-not (Test-Path $p)) { $s=(New-Object -ComObject WScript.Shell).CreateShortcut($p); $s.TargetPath=$env:SELF; $s.WorkingDirectory=(Split-Path $env:SELF); $s.IconLocation=$env:ICO; $s.Description=$env:APPTITLE; $s.Save() } }" >nul 2>&1
 
 curl.exe -L -f -s -o "%GUIFILE%" "%SRC%"
 if not errorlevel 1 goto run
@@ -34,5 +23,5 @@ pause
 exit /b 1
 
 :run
-start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%GUIFILE%" -Server %SIDE%
+start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%GUIFILE%" -Server elly -Launcher "%~f0"
 exit /b 0

@@ -9,7 +9,8 @@
 # 실행할 때 -Server 로 어느 쪽인지 받아 버튼 구성을 바꾼다.
 param(
   [ValidateSet("elly", "jannu")]
-  [string]$Server = "jannu"
+  [string]$Server = "jannu",
+  [string]$Launcher = ""
 )
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
@@ -25,6 +26,9 @@ $ColorBad  = [System.Drawing.Color]::FromArgb(255, 150, 140)   # 갱신 필요
 $ColorDim  = [System.Drawing.Color]::FromArgb(210, 210, 205)   # 확인 실패
 
 $BASE      = "https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main"
+$AppHome      = "jannu-helper"
+$IconFile     = "jannu-icon.ico"
+$LauncherFile = "jannu-helper.bat"
 $PatchUrl  = "$BASE/Elly-Korean-Patch.zip"
 $PatchName = "Elly-Korean-Patch.zip"
 # 설치 위치는 한글패치·모드가 같은 폴더다. 따로 기억했더니 한쪽만 아는 상태가 생겼다.
@@ -982,6 +986,56 @@ function Restore-Options {
     Say "$($pick.LastWriteTime.ToString('MM월 dd일 HH:mm')) 시점으로 되돌렸습니다. 마인크래프트를 켜서 확인해 주세요."
   } catch { Say "되돌리지 못했습니다 — $($_.Exception.Message)" }
 }
+
+# ── 실행 파일 돌보기 ──────────────────────────────────
+# .bat 은 아이콘을 가질 수 없어서, 아이콘 붙은 바로가기를 대신 만들어 둔다.
+# 그리고 .bat 자체가 낡았으면 새것으로 갈아끼운다. 그래야 친구들이 파일을
+# 다시 받으러 다니지 않아도 된다. (.bat 은 이미 제 할 일을 끝내고 닫혔다)
+function Tend-Launcher {
+  if (-not $Launcher) { return }
+  if (-not (Test-Path -LiteralPath $Launcher)) { return }
+  try {
+    $home2 = Join-Path $env:APPDATA $AppHome
+    if (-not (Test-Path $home2)) { [void][IO.Directory]::CreateDirectory($home2) }
+
+    # 1) 아이콘
+    $ico = Join-Path $home2 "icon.ico"
+    if (-not (Test-Path -LiteralPath $ico)) {
+      try { Get-Web "$BASE/$IconFile" $ico; Log "아이콘 받음" } catch { Log "아이콘 받기 실패: $($_.Exception.Message)" }
+    }
+
+    # 2) 바탕화면 바로가기 — 바탕화면 위치는 윈도우에 물어본다(원드라이브를 쓰면 다르다)
+    $desk = [Environment]::GetFolderPath("Desktop")
+    if ($desk -and (Test-Path -LiteralPath $ico)) {
+      $lnk = Join-Path $desk ($AppName + ".lnk")
+      if (-not (Test-Path -LiteralPath $lnk)) {
+        $sh = New-Object -ComObject WScript.Shell
+        $sc = $sh.CreateShortcut($lnk)
+        $sc.TargetPath = $Launcher
+        $sc.WorkingDirectory = (Split-Path $Launcher -Parent)
+        $sc.IconLocation = $ico
+        $sc.Description = $AppName
+        $sc.Save()
+        Log "바탕화면 바로가기 만듦"
+      }
+    }
+
+    # 3) 실행 파일이 낡았으면 갈아끼운다
+    $latest = Join-Path $home2 "latest.bat"
+    try {
+      Get-Web "$BASE/$LauncherFile" $latest
+      $a = [IO.File]::ReadAllBytes($Launcher)
+      $b = [IO.File]::ReadAllBytes($latest)
+      $same = ($a.Length -eq $b.Length)
+      if ($same) { for ($i = 0; $i -lt $a.Length; $i++) { if ($a[$i] -ne $b[$i]) { $same = $false; break } } }
+      if (-not $same) {
+        [IO.File]::Copy($Launcher, "$Launcher.bak", $true)
+        [IO.File]::Copy($latest, $Launcher, $true)
+        Log "실행 파일을 새것으로 바꿈"
+      }
+    } catch { Log "실행 파일 확인 실패: $($_.Exception.Message)" }
+  } catch { Log "실행 파일 돌보기 실패: $($_.Exception.Message)" }
+}
 # ── 버튼 연결 ─────────────────────────────────────────
 $btnRun.Add_Click({ Start-Minecraft })
 $btnMods.Add_Click({ Install-Mods })
@@ -1047,5 +1101,5 @@ $btnChange.Add_Click({
   Refresh-Stamps $true
 })
 
-$form.Add_Shown({ Refresh-Stamps $false })
+$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false })
 [void]$form.ShowDialog()
