@@ -17,8 +17,16 @@ Write-Host "  ──────────────────────
 Write-Host ""
 
 # 마크가 켜져 있으면 설정 파일을 덮어써버려서, 꺼놓고 실행해야 한다
-$mcRunning = Get-Process javaw, java -ErrorAction SilentlyContinue
-if ($mcRunning) {
+# 자바를 쓰는 프로그램은 많다(런처, 다른 게임, 개발도구). java 프로세스가 있다고
+# 마크로 단정하면 런처만 켜둔 사람이 막힌다. 실행 명령줄에 마크 고유의 흔적이
+# 있는지 확인한다. 명령줄을 못 읽으면 막지 않는다 — 괜히 못 하게 하는 편이 더 나쁘다.
+$mcRunning = @(Get-Process javaw, java -ErrorAction SilentlyContinue | Where-Object {
+  try {
+    $c = (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)" -ErrorAction SilentlyContinue).CommandLine
+    $c -and ($c -match 'net\.minecraft\.client\.main\.Main|net\.fabricmc\.loader|--gameDir|\.minecraft')
+  } catch { $false }
+})
+if ($mcRunning.Count -gt 0) {
   Write-Host "  마인크래프트가 켜져 있어. 끄고 다시 실행해줘." -ForegroundColor Yellow
   Write-Host "  (켜둔 채로 하면 설정이 되돌아가 버려)"
   Write-Host ""
