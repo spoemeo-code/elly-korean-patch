@@ -998,13 +998,20 @@ if ($btnJoin) {
 
 if ($btnNews) {
   $btnNews.Add_Click({
+    # 디스코드 앱이 깔려 있으면 앱으로 연다. 없을 때만 브라우저로 간다.
+    # discord:// 를 윈도우가 알고 있는지 먼저 확인한다.
+    $hasApp = $false
+    try { $hasApp = Test-Path "Registry::HKEY_CLASSES_ROOT\discord" } catch { }
+    if (-not $hasApp) { try { $hasApp = Test-Path "Registry::HKEY_CURRENT_USER\Software\Classes\discord" } catch { } }
+    $first  = if ($hasApp) { $NewsWeb } else { $NewsUrl }
+    $second = if ($hasApp) { $NewsUrl } else { $NewsWeb }
     try {
-      Start-Process $NewsUrl
-      Say "디스코드에서 업데이트 내역을 열었습니다."
+      Start-Process $first
+      Say "업데이트 내역을 열었습니다."
     } catch {
       try {
-        Start-Process $NewsWeb
-        Say "브라우저에서 업데이트 내역을 열었습니다."
+        Start-Process $second
+        Say "업데이트 내역을 열었습니다."
       } catch { Say "열지 못했습니다. 디스코드의 서버-업데이트 채널을 확인해 주세요." }
     }
   })

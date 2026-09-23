@@ -1,26 +1,29 @@
-﻿@echo off
+@echo off
 chcp 65001 > nul
 title 엘리 마크 도우미
+set "SELF=%~f0"
+set "APPTITLE=엘리 마크 도우미"
 
 rem Launcher. Downloads the helper window from GitHub and runs it hidden.
-rem Comments stay in English: Korean comments broke parsing before chcp ran.
+rem Keep this file CRLF with no BOM, or cmd mis-reads the lines.
 
 set "BASE=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main"
 set "SRC=%BASE%/gui-elly.ps1"
-set "TMP=%TEMP%\elly-helper-gui.ps1"
+set "GUIFILE=%TEMP%\elly-helper-gui.ps1"
 set "SIDE=elly"
-set "HOME_DIR=%APPDATA%\elly-helper"
-set "ICO=%HOME_DIR%\icon.ico"
-set "LNK=%USERPROFILE%\Desktop\엘리 마크 도우미.lnk"
+set "HOMEDIR=%APPDATA%\elly-helper"
+set "ICO=%HOMEDIR%\icon.ico"
 
-rem A .bat cannot carry its own icon, so make a shortcut that can. Once only.
-if not exist "%HOME_DIR%" mkdir "%HOME_DIR%" > nul 2>&1
+rem A .bat cannot carry its own icon, so make a shortcut that can.
+rem The desktop is not always %USERPROFILE%\Desktop (OneDrive moves it),
+rem so ask Windows where it actually is.
+if not exist "%HOMEDIR%" mkdir "%HOMEDIR%" >nul 2>&1
 if not exist "%ICO%" curl.exe -L -f -s -o "%ICO%" "%BASE%/elly-icon.ico"
-if not exist "%LNK%" if exist "%ICO%" powershell -NoProfile -Command "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%LNK%'); $s.TargetPath='%~f0'; $s.WorkingDirectory='%~dp0'; $s.IconLocation='%ICO%'; $s.Description='엘리 마크 도우미'; $s.Save()" > nul 2>&1
+if exist "%ICO%" powershell -NoProfile -Command "$d=[Environment]::GetFolderPath('Desktop'); if ($d) { $p=Join-Path $d ($env:APPTITLE + '.lnk'); if (-not (Test-Path $p)) { $s=(New-Object -ComObject WScript.Shell).CreateShortcut($p); $s.TargetPath=$env:SELF; $s.WorkingDirectory=(Split-Path $env:SELF); $s.IconLocation=$env:ICO; $s.Description=$env:APPTITLE; $s.Save() } }" >nul 2>&1
 
-curl.exe -L -f -s -o "%TMP%" "%SRC%"
+curl.exe -L -f -s -o "%GUIFILE%" "%SRC%"
 if not errorlevel 1 goto run
-powershell -NoProfile -Command "try { Invoke-WebRequest -UseBasicParsing '%SRC%' -OutFile '%TMP%' } catch { exit 1 }"
+powershell -NoProfile -Command "try { Invoke-WebRequest -UseBasicParsing $env:SRC -OutFile $env:GUIFILE } catch { exit 1 }"
 if not errorlevel 1 goto run
 
 echo.
@@ -31,5 +34,5 @@ pause
 exit /b 1
 
 :run
-start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%TMP%" -Server %SIDE%
+start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%GUIFILE%" -Server %SIDE%
 exit /b 0
