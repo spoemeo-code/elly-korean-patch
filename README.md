@@ -8,25 +8,34 @@
 이미 `resource-pack=` 줄이 있으면 그 줄만 바꾸면 됩니다.
 
 ```properties
-resource-pack=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/elly-korean-patch.zip
-resource-pack-sha1=
+resource-pack=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/Elly-Korean-Patch.zip
+resource-pack-sha1=<아래 주소에 적힌 값>
 ```
 
-`resource-pack-sha1` 은 **비워두세요.** 여기에 해시를 적으면 번역이 갱신될 때마다
-서버장이 그 값을 다시 고쳐야 합니다. 비워두면 접속할 때마다 최신 파일을 받아오므로
-서버 설정을 두 번 다시 건드릴 필요가 없습니다. 파일은 1MB 남짓이라 부담이 없습니다.
+해시는 이 주소에서 항상 최신 값을 받을 수 있습니다:
+`https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/Elly-Korean-Patch.zip.sha1`
+
+**해시를 비워두면 안 됩니다.** 비워두면 클라이언트가 주소만 보고 "예전에 받은 것 그대로
+쓰자"고 판단해서, 번역을 갱신해도 플레이어에게 새 파일이 가지 않습니다.
+마인크래프트 서버가 직접 이렇게 경고합니다:
+
+> You specified a resource pack without providing a sha1 hash.
+> Pack will be updated on the client only if you change the name of the pack.
+
+번역이 갱신되면 해시도 바뀌므로, 서버장이 매번 손으로 고치지 않으려면 서버가 켜질 때
+위 `.sha1` 주소를 읽어 `server.properties` 에 채워 넣게 해 두는 것이 좋습니다.
+(엘리 서버는 `mc-patch-sha.service` 가 부팅 때 이 일을 합니다.)
 
 플레이어는 아무것도 설치하지 않아도 됩니다. 접속하면 리소스팩을 받겠냐는 창이 한 번
-뜨고, 받으면 끝입니다.
+뜨고, 받으면 끝입니다. 받기 싫으면 "아니요"를 눌러도 됩니다.
 
 ## 갱신
 
-번역이 바뀌면 이 저장소의 `elly-korean-patch.zip` 만 교체됩니다.
-주소는 바뀌지 않으므로 서버 설정은 그대로 두면 됩니다.
-플레이어는 다음 접속부터 새 번역을 보게 됩니다.
+번역이 바뀌면 이 저장소의 `Elly-Korean-Patch.zip` 과 `Elly-Korean-Patch.zip.sha1` 이
+함께 교체됩니다. 주소와 파일 이름은 바뀌지 않습니다.
 
 ## 파일
 
 | | |
 |---|---|
-| `elly-korean-patch.zip` | 배포용 리소스팩 (서버가 이 파일을 내려줍니다) |
+| `Elly-Korean-Patch.zip` | 배포용 리소스팩 (서버가 이 파일을 내려줍니다) |
