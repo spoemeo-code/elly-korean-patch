@@ -906,14 +906,8 @@ function Find-Launcher($target) {
     $e = "$env:USERPROFILE\Documents\MultiMC\MultiMC.exe"
     if (Test-Path $e) { return @{ Kind = "prism"; Exe = $e; Name = "멀티MC" } }
   }
-  if ($t -like "*modrinth*") {
-    $e = "$env:LOCALAPPDATA\Programs\Modrinth App\Modrinth App.exe"
-    if (Test-Path $e) { return @{ Kind = "app"; Exe = $e; Name = "모드린스" } }
-  }
-  if ($t -like "*curseforge*") {
-    $e = "$env:LOCALAPPDATA\Programs\CurseForge Windows\CurseForge.exe"
-    if (Test-Path $e) { return @{ Kind = "app"; Exe = $e; Name = "CurseForge" } }
-  }
+  # 엘리서버는 프리즘으로 들어온다. 다른 런처로 물러나지 않는다 —
+  # 커스포지로 켜면 인스턴스를 또 찾아 들어가야 해서 버튼을 둔 뜻이 없다.
   return $null
 }
 
