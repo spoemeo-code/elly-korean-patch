@@ -463,16 +463,25 @@ function Install-Patch {
     $opt = Join-Path $target "options.txt"
     if (Test-Path $opt) {
       try {
-        $lines = Get-Content $opt -Encoding UTF8
-        $idx = ($lines | Select-String -Pattern '^resourcePacks:' | Select-Object -First 1)
+        # 마크는 이 파일을 줄바꿈 \n 으로 읽는다. 윈도 방식(\r\n)으로 저장하면 값 끝에
+        # 보이지 않는 \r 이 붙어서 lang(언어) 과 soundCategory(소리) 가 초기화돼 버린다.
+        # 그래서 줄 단위 명령을 쓰지 않고 글자 그대로 읽고 쓴다.
+        $raw  = [IO.File]::ReadAllText($opt, [Text.Encoding]::UTF8)
+        $rows = $raw -split "`r?`n"
         $entry = '"file/' + $PatchName + '"'
-        if ($idx -and $idx.Line -notlike "*$PatchName*") {
-          Copy-Item $opt "$opt.bak" -Force
-          $cur = $idx.Line -replace '^resourcePacks:', ''
-          if ($cur.Trim() -eq "[]") { $new = 'resourcePacks:[' + $entry + ']' }
-          else { $new = 'resourcePacks:' + ($cur -replace '\]\s*$', (',' + $entry + ']')) }
-          $lines[$idx.LineNumber - 1] = $new
-          Set-Content $opt $lines -Encoding UTF8
+        for ($k = 0; $k -lt $rows.Count; $k++) {
+          if ($rows[$k] -like 'resourcePacks:*' -and $rows[$k] -notlike "*$PatchName*") {
+            $cur = $rows[$k] -replace '^resourcePacks:', ''
+            if ($cur.Trim() -eq "[]") { $rows[$k] = 'resourcePacks:[' + $entry + ']' }
+            else { $rows[$k] = 'resourcePacks:' + ($cur -replace '\]\s*$', (',' + $entry + ']')) }
+            break
+          }
+        }
+        # 줄바꿈이 이미 윈도 방식으로 바뀌어 있던 파일도 여기서 되돌려 놓는다.
+        $out = $rows -join "`n"
+        if ($out -ne $raw) {
+          [IO.File]::Copy($opt, "$opt.bak", $true)
+          [IO.File]::WriteAllText($opt, $out, (New-Object Text.UTF8Encoding($false)))
         }
       } catch { }
     }
