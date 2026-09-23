@@ -30,9 +30,15 @@ $AppHome      = "elly-helper"
 $IconFile     = "elly-icon.ico"
 $LauncherFile = "elly-helper.bat"
 $GuiFileName  = "gui-elly.ps1"
-# 엘리 전용 기능은 표식 파일이 있을 때만 나타난다. 친구들 PC 에는 없다.
+# 관리자 기능은 암호를 한 번 넣어 열어둔 PC 에서만 나타난다.
+# 암호 자체가 아니라 지문만 넣어 두므로, 이 파일을 봐도 암호는 알 수 없다.
 $AdminMark    = Join-Path (Join-Path $env:APPDATA "elly-helper") "admin.txt"
+$AdminHash    = "35d7c71e808dcd78cb92bcebee80c139501b3cc2e5cee9c2aad2f91324991f96"
 $IsAdmin      = Test-Path -LiteralPath $AdminMark
+function Get-Fingerprint($text) {
+  $h = [Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($text))
+  return ([BitConverter]::ToString($h)).Replace("-", "").ToLower()
+}
 $PatchUrl  = "$BASE/Elly-Korean-Patch.zip"
 $PatchName = "Elly-Korean-Patch.zip"
 # 설치 위치는 한글패치·모드가 같은 폴더다. 따로 기억했더니 한쪽만 아는 상태가 생겼다.
@@ -231,11 +237,17 @@ $btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
 $btnRestore = New-SmallButton "설정 되돌리기" 24 ($toolY + 32) 140
 # 새 인스턴스를 깔면 단축키가 처음 상태로 돌아간다. 쓰던 곳에서 그것만 옮겨온다.
 $btnKeys   = New-SmallButton "단축키 가져오기" 398 $toolY 124
+$adminLabel = if ($IsAdmin) { "관리자 모드 끄기" } else { "관리자 모드 열기" }
+$btnAdmin  = New-SmallButton $adminLabel 168 ($toolY + 32) 140
+$btnCost   = $null
+if ($IsAdmin) { $btnCost = New-SmallButton "서버 비용 보기" 312 ($toolY + 32) 140 }
 $form.Controls.Add($btnOpen)
 $form.Controls.Add($btnChange)
 $form.Controls.Add($btnLog)
 $form.Controls.Add($btnRestore)
 $form.Controls.Add($btnKeys)
+$form.Controls.Add($btnAdmin)
+if ($btnCost) { $form.Controls.Add($btnCost) }
 
 $logY = 446 + $shift
 
@@ -278,7 +290,7 @@ function SetStep($text, $pct) {
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnMods, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore)) {
+  foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnMods, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore, $btnAdmin, $btnCost)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -1188,9 +1200,11 @@ function Get-BotEndpoint {
   return "http://34.123.58.169:8787"
 }
 
-function Ask-Key {
+function Ask-Key { return (Ask-Secret "서버 켜기 암호" "서버 켜기 암호를 입력해 주세요." "엘리에게 받으신 암호입니다. 한 번만 입력하시면 됩니다.") }
+
+function Ask-Secret($winTitle, $line1, $line2) {
   $d = New-Object System.Windows.Forms.Form
-  $d.Text = "서버 켜기 암호"
+  $d.Text = $winTitle
   $d.Size = New-Object System.Drawing.Size(460, 210)
   $d.StartPosition = "CenterParent"; $d.FormBorderStyle = "FixedDialog"
   $d.MaximizeBox = $false; $d.MinimizeBox = $false
@@ -1199,14 +1213,14 @@ function Ask-Key {
   $d.Icon = $form.Icon
 
   $l1 = New-Object System.Windows.Forms.Label
-  $l1.Text = "서버 켜기 암호를 입력해 주세요."
+  $l1.Text = $line1
   $l1.Location = New-Object System.Drawing.Point(18, 18)
   $l1.Size = New-Object System.Drawing.Size(410, 20)
   $l1.Font = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
   $d.Controls.Add($l1)
 
   $l2 = New-Object System.Windows.Forms.Label
-  $l2.Text = "엘리에게 받으신 암호입니다. 한 번만 입력하시면 됩니다."
+  $l2.Text = $line2
   $l2.Location = New-Object System.Drawing.Point(18, 40)
   $l2.Size = New-Object System.Drawing.Size(410, 20)
   $l2.ForeColor = [System.Drawing.Color]::FromArgb(120, 124, 115)
@@ -1360,6 +1374,58 @@ function Tend-Launcher {
   } catch { Log "실행 파일 돌보기 실패: $($_.Exception.Message)" }
 }
 # ── 버튼 연결 ─────────────────────────────────────────
+if ($btnCost) {
+  $btnCost.Add_Click({
+    # 봇이 가동 기록을 요약해 준다. 창 안에서 바로 읽는다.
+    Set-Busy $true
+    try {
+      $key = $null
+      if (Test-Path $KeyFile) { $key = (Get-Content $KeyFile -Encoding UTF8 | Select-Object -First 1) }
+      if (-not $key) { $key = Ask-Key; if (-not $key) { SetStep "취소되었습니다." 0; return } }
+      SetStep "서버 비용을 불러오는 중입니다..." 0
+      $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
+      $txt = Get-WebText ((Get-BotEndpoint) + "/cost?t=" + [uri]::EscapeDataString($key))
+      $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+      try { $key | Set-Content $KeyFile -Encoding UTF8 } catch { }
+      Show-TextWindow "서버 비용" $txt
+      SetStep "버튼을 눌러주세요" 0
+    } catch {
+      $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+      SetStep "비용을 불러오지 못했습니다 — $($_.Exception.Message)" 0
+    } finally { Set-Busy $false }
+  })
+}
+
+$btnAdmin.Add_Click({
+  # 열려 있으면 닫고, 닫혀 있으면 암호를 물어 연다. 어느 쪽이든 창을 새로 띄워
+  # 버튼 구성을 다시 그린다.
+  if ($IsAdmin) {
+    try { [IO.File]::Delete($AdminMark) } catch { }
+    Say "관리자 모드를 닫았습니다. 창을 다시 띄웁니다."
+    Restart-Helper
+    return
+  }
+  $k = Ask-Secret "관리자 모드" "관리자 암호를 입력해 주세요." "엘리만 쓰는 기능이 나타납니다."
+  if (-not $k) { Say "취소되었습니다."; return }
+  if ((Get-Fingerprint $k) -ne $AdminHash) { Say "암호가 맞지 않습니다."; Log "관리자 암호 틀림"; return }
+  try {
+    [void][IO.Directory]::CreateDirectory((Split-Path $AdminMark -Parent))
+    [IO.File]::WriteAllText($AdminMark, "elly", (New-Object Text.UTF8Encoding($false)))
+  } catch { Say "열지 못했습니다 — $($_.Exception.Message)"; return }
+  Say "관리자 모드를 열었습니다. 창을 다시 띄웁니다."
+  Restart-Helper
+})
+
+function Restart-Helper {
+  try {
+    $me = $MyInvocation.MyCommand.Path
+    if (-not $me) { $me = $PSCommandPath }
+    Start-Process powershell -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-WindowStyle","Hidden","-File","`"$me`"","-Launcher","`"$Launcher`"") -WindowStyle Hidden
+    Start-Sleep -Milliseconds 400
+    $form.Close()
+  } catch { Say "창을 다시 띄우지 못했습니다. 직접 닫았다 켜주세요." }
+}
+
 $btnWake.Add_Click({ Wake-Server })
 if ($btnMods) { $btnMods.Add_Click({ Install-Mods }) }
 $btnRun.Add_Click({ Start-Minecraft })
@@ -1373,6 +1439,36 @@ if ($btnJoin) {
       Say "주소를 복사했습니다. 마인크래프트 → 멀티플레이 → 서버 추가 에 붙여넣어 주세요."
     } catch { Say "복사하지 못했습니다. 직접 입력해 주세요: $ServerAddr" }
   })
+}
+
+# 긴 글을 창 하나로 보여준다. 비용표처럼 줄이 많은 것에 쓴다.
+function Show-TextWindow($winTitle, $text) {
+  $w = New-Object System.Windows.Forms.Form
+  $w.Text = $winTitle
+  $w.Size = New-Object System.Drawing.Size(620, 520)
+  $w.StartPosition = "CenterParent"
+  $w.BackColor = [System.Drawing.Color]::FromArgb(246, 245, 241)
+  $w.Icon = $form.Icon
+  $w.MinimizeBox = $false
+  $box = New-Object System.Windows.Forms.TextBox
+  $box.Multiline = $true; $box.ReadOnly = $true; $box.ScrollBars = "Vertical"
+  $box.Location = New-Object System.Drawing.Point(18, 18)
+  $box.Size = New-Object System.Drawing.Size(568, 410)
+  $box.BackColor = [System.Drawing.Color]::White
+  $box.BorderStyle = "FixedSingle"
+  # 표가 어긋나지 않게 폭이 일정한 글꼴로
+  $box.Font = New-Object System.Drawing.Font("D2Coding", 10)
+  if ($box.Font.Name -ne "D2Coding") { $box.Font = New-Object System.Drawing.Font("Consolas", 10) }
+  $box.Text = $text
+  $box.Select(0, 0)
+  $w.Controls.Add($box)
+  $c = New-Object System.Windows.Forms.Button
+  $c.Text = "닫기"; $c.Location = New-Object System.Drawing.Point(486, 440)
+  $c.Size = New-Object System.Drawing.Size(100, 32); $c.FlatStyle = "Flat"
+  $c.Add_Click({ $w.Close() })
+  $w.Controls.Add($c); $w.CancelButton = $c
+  [void]$w.ShowDialog($form)
+  $w.Dispose()
 }
 
 function Show-Updates {

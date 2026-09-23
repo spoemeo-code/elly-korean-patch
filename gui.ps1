@@ -597,7 +597,59 @@ function Get-PackWanted($refresh) {
   }
 }
 
+# 잔누 서버는 누누님이 만든 update.bat 으로 모드를 맞춘다. 그쪽이 버전이 올라간
+# 옛 모드를 치워주고 비교 화면도 보여줘서, 우리가 따로 받는 것보다 안전하다.
+# 인스턴스 폴더에 없으면 저장소에서 받아 넣어준다.
 function Install-Mods {
+  Set-Busy $true
+  try {
+    if (Test-MinecraftRunning) {
+      SetStep "마인크래프트가 켜져 있습니다. 종료한 뒤 다시 눌러주세요." 0
+      return
+    }
+    SetStep "설치할 곳을 확인하고 있습니다..." 5
+    $target = Get-Target "$PackLabel 모드를 어느 마인크래프트에 맞출까요?" (Test-ShiftHeld)
+    if (-not $target) { SetStep "취소되었습니다." 0; return }
+
+    # 커스포지 인스턴스가 맞는지 — update.bat 이 그 표시를 보고 움직인다
+    if (-not (Test-Path -LiteralPath (Join-Path $target "minecraftinstance.json"))) {
+      SetStep "커스포지 인스턴스 폴더가 아닙니다. 설치 위치 바꾸기로 다시 골라주세요." 0
+      Log "update.bat 못 씀 — minecraftinstance.json 없음: $target"
+      return
+    }
+
+    $bat = Join-Path $target "update.bat"
+    if (-not (Test-Path -LiteralPath $bat)) {
+      SetStep "업데이트 도구를 받는 중입니다..." 20
+      try {
+        Get-Web "https://raw.githubusercontent.com/$PackRepo/refs/heads/main/update.bat" $bat
+        Log "update.bat 내려받아 넣음"
+      } catch {
+        SetStep "업데이트 도구를 받지 못했습니다 — $($_.Exception.Message)" 0
+        return
+      }
+    }
+
+    SetStep "업데이트 도구를 실행했습니다. 열린 창에서 이어서 해주세요." 50
+    $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
+    $proc = Start-Process cmd.exe -ArgumentList @("/c", "`"$bat`"") -WorkingDirectory $target -PassThru
+    while (-not $proc.HasExited) {
+      Start-Sleep -Milliseconds 400
+      [System.Windows.Forms.Application]::DoEvents()
+    }
+    $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+    SetStep "$PackLabel 모드 업데이트가 완료되었습니다." 100
+    Log "update.bat 끝남 (코드 $($proc.ExitCode))"
+  } catch {
+    $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+    SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0
+  } finally {
+    Set-Busy $false
+    Refresh-Stamps $true
+  }
+}
+
+function Install-Mods-Old {
   $force = Test-ShiftHeld
   Set-Busy $true
   try {
@@ -824,7 +876,7 @@ function Refresh-Stamps($keepMessage) {
           $stampMods.ForeColor = $ColorBad
         }
       } else {
-        $stampMods.Text = "서버 파일 $cnt 개`r`n아직 확인하지 않았습니다"
+        $stampMods.Text = "서버 파일 $cnt 개`r`n설치 위치를 정하면 확인됩니다"
         $stampMods.ForeColor = $ColorDim
       }
     }
