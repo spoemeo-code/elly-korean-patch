@@ -471,7 +471,20 @@ function Install-Patch {
 
     # options.txt 는 마크가 종료할 때 다시 쓴다. 켜져 있을 때 고치면 되돌아가므로 건드리지 않는다.
     if ($mcOn) {
-      SetStep "한글패치를 넣었습니다. 마인크래프트에서 F3 + T 를 누르면 바로 적용됩니다. (번역 $langCount 개)" 100
+      # 이미 켜 둔 적이 있으면 F3+T 로 끝나지만, 처음이면 리소스팩 목록에 없어서
+      # 게임을 껐다 켜야 한다. 그 차이를 분명히 알려준다.
+      $already = $false
+      try {
+        $optNow = Join-Path $target "options.txt"
+        if (Test-Path $optNow) {
+          $already = (([IO.File]::ReadAllText($optNow, [Text.Encoding]::UTF8)) -match [regex]::Escape($PatchName))
+        }
+      } catch { }
+      if ($already) {
+        SetStep "한글패치를 넣었습니다. 마인크래프트에서 F3 + T 를 누르시면 바로 적용됩니다. (번역 $langCount 개)" 100
+      } else {
+        SetStep "한글패치를 넣었습니다. 아직 켜지지 않았으니 마인크래프트를 종료하고 한 번 더 눌러주세요." 100
+      }
       return
     }
 
@@ -486,6 +499,10 @@ function Install-Patch {
         $raw  = [IO.File]::ReadAllText($opt, [Text.Encoding]::UTF8)
         $rows = $raw -split "`r?`n"
         $entry = '"file/' + $PatchName + '"'
+        # resourcePacks 줄이 아예 없는 파일도 있다. 없으면 만들어 준다.
+        if (-not ($rows | Where-Object { $_ -like 'resourcePacks:*' })) {
+          $rows = @($rows) + @('resourcePacks:[]')
+        }
         for ($k = 0; $k -lt $rows.Count; $k++) {
           if ($rows[$k] -like 'resourcePacks:*' -and $rows[$k] -notlike "*$PatchName*") {
             $cur = $rows[$k] -replace '^resourcePacks:', ''
