@@ -58,7 +58,7 @@ if ($Server -eq "elly") {
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = $AppName
-$form.Size            = New-Object System.Drawing.Size(556, 528)
+$form.Size            = New-Object System.Drawing.Size(556, 548)
 $form.StartPosition   = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox     = $false
@@ -207,8 +207,10 @@ $form.Controls.Add($pathLbl)
 $toolY     = 372
 $btnOpen   = New-SmallButton "설치된 폴더 열기" 24 $toolY 130
 $btnChange = New-SmallButton "설치 위치 바꾸기" 160 $toolY 130
+$btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
 $form.Controls.Add($btnOpen)
 $form.Controls.Add($btnChange)
+$form.Controls.Add($btnLog)
 
 $logY = 410
 
@@ -216,13 +218,13 @@ $logY = 410
 $statusLbl           = New-Object System.Windows.Forms.Label
 $statusLbl.Text      = "버튼을 눌러주세요"
 $statusLbl.Location  = New-Object System.Drawing.Point(24, $logY)
-$statusLbl.Size      = New-Object System.Drawing.Size(492, 20)
+$statusLbl.Size      = New-Object System.Drawing.Size(492, 36)
 $statusLbl.ForeColor = [System.Drawing.Color]::FromArgb(60, 64, 58)
 $statusLbl.Font      = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
 $form.Controls.Add($statusLbl)
 
 $bar          = New-Object System.Windows.Forms.ProgressBar
-$bar.Location = New-Object System.Drawing.Point(24, ($logY + 22))
+$bar.Location = New-Object System.Drawing.Point(24, ($logY + 38))
 $bar.Size     = New-Object System.Drawing.Size(492, 18)
 $bar.Style    = "Continuous"
 $bar.Minimum  = 0; $bar.Maximum = 100; $bar.Value = 0
@@ -231,19 +233,27 @@ $form.Controls.Add($bar)
 $hint           = New-Object System.Windows.Forms.Label
 $hint.Text      = "다른 폴더에 설치 하시려면 Shift 버튼을 누른채 위의 버튼을 눌러주세요"
 $hint.ForeColor = [System.Drawing.Color]::FromArgb(150, 153, 145)
-$hint.Location  = New-Object System.Drawing.Point(25, ($logY + 48))
+$hint.Location  = New-Object System.Drawing.Point(25, ($logY + 64))
 $hint.Size      = New-Object System.Drawing.Size(496, 18)
 $form.Controls.Add($hint)
 
+# 무슨 일이 있었는지 파일로 남긴다. 실패했을 때 "왜" 를 볼 수 있어야 한다.
+$script:LogPath = Join-Path $env:TEMP "elly-helper-log.txt"
+function Log($t) {
+  try { ((Get-Date -Format "HH:mm:ss") + "  " + $t) | Out-File $script:LogPath -Encoding UTF8 -Append } catch { }
+}
+Log "----- 도우미 시작 ($Server) -----"
+
 function SetStep($text, $pct) {
   $statusLbl.Text = $text
+  Log $text
   if ($pct -ge 0) { $bar.Value = [Math]::Min(100, [Math]::Max(0, [int]$pct)) }
   [System.Windows.Forms.Application]::DoEvents()
 }
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnMods, $btnPatch, $btnJoin, $btnNews, $btnOpen, $btnChange)) {
+  foreach ($b in @($btnMods, $btnPatch, $btnJoin, $btnNews, $btnRun, $btnOpen, $btnChange, $btnLog)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -444,7 +454,7 @@ function Install-Patch {
       if ($mcOn) {
         SetStep "마인크래프트가 한글패치를 쓰는 중이라 바꿀 수 없습니다. 게임을 끄고 다시 눌러주세요." 0
       } else {
-        SetStep "리소스팩 폴더에 넣지 못했습니다." 0
+        SetStep "리소스팩 폴더에 넣지 못했습니다 — $($_.Exception.Message)" 0
       }
       return
     }
@@ -477,7 +487,7 @@ function Install-Patch {
 
     SetStep "한글패치 업데이트가 완료되었습니다. (번역 $langCount 개)" 100
   } catch {
-    SetStep "문제가 생겼습니다: $($_.Exception.Message)" 0
+    SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0; Log "  [오류] $($_.ScriptStackTrace)"
   } finally {
     Set-Busy $false
     Refresh-Stamps $true
@@ -590,7 +600,7 @@ function Install-Mods {
       return
     }
 
-    $ok = 0; $fail = 0; $failNames = @()
+    $ok = 0; $fail = 0; $failNames = @(); $firstWhy = ""
     for ($i = 0; $i -lt $missing.Count; $i++) {
       $m = $missing[$i]
       SetStep ("모드를 받고 있습니다 — " + ($i + 1) + " / " + $missing.Count) (20 + ($i / $missing.Count) * 78)
@@ -615,19 +625,28 @@ function Install-Mods {
       } catch {
         if (Test-Path -LiteralPath $part) { [IO.File]::Delete($part) }
         $fail++
+        $why = $_.Exception.Message
+        # 흔한 이유는 사람 말로 바꿔준다
+        if ($why -match "404|NotFound") { $why = "서버에서 파일을 찾을 수 없습니다" }
+        elseif ($why -match "timed out|시간") { $why = "시간이 초과되었습니다" }
+        elseif ($why -match "403|Forbidden") { $why = "받을 권한이 없다고 합니다" }
+        elseif ($why -match "너무 작") { $why = "파일이 제대로 받아지지 않았습니다" }
+        elseif ($why -match "remote name|연결할 수 없|Unable to connect") { $why = "인터넷 연결이 끊겼습니다" }
+        if ($fail -eq 1) { $firstWhy = $why }
         $failNames += $m.File
+        Log "  [실패] $($m.File) — $($_.Exception.Message)"
       }
     }
 
     Save-ModMap $mapFile $want
     $cleanNote = if ($cleaned -gt 0) { " · 옛 버전 $cleaned 개 정리" } else { "" }
     if ($fail -gt 0) {
-      SetStep "$PackLabel 모드 $ok 개 완료 · $fail 개 실패 ($($failNames[0])) — 다시 누르시면 못 받은 것만 받습니다." 100
+      SetStep "$PackLabel 모드 $ok 개 완료 · $fail 개 실패 — $firstWhy`r`n($($failNames[0])) 다시 누르시면 못 받은 것만 받습니다." 100
     } else {
       SetStep "$PackLabel 모드 업데이트가 완료되었습니다. ($ok 개$cleanNote)" 100
     }
   } catch {
-    SetStep "문제가 생겼습니다: $($_.Exception.Message)" 0
+    SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0; Log "  [오류] $($_.ScriptStackTrace)"
   } finally {
     Set-Busy $false
     Refresh-Stamps $true
@@ -657,6 +676,7 @@ function Refresh-Stamps($keepMessage) {
   # 뭔가 하고 있다는 걸 알 수 있게. 조용히 멈춰 있으면 고장난 줄 안다.
   $stampPatch.Text = "확인 중..."
   $stampMods.Text  = "확인 중..."
+  Log "상태 확인 시작"
   if (-not $keepMessage) {
     $statusLbl.Text = "불러오는 중입니다..."
     $bar.Style = "Marquee"
@@ -707,7 +727,8 @@ function Refresh-Stamps($keepMessage) {
       $stampPatch.Text = "최근 업데이트 $srvVer`r`n최신 버전이 아닙니다"
       $stampPatch.ForeColor = $ColorBad
     }
-  } catch { $stampPatch.Text = "확인 실패"; $stampPatch.ForeColor = $ColorDim }
+  } catch { $stampPatch.Text = "확인 실패"; $stampPatch.ForeColor = $ColorDim; Log "  [한글패치 확인 실패] $($_.Exception.Message)" }
+  Log "  한글패치: $($stampPatch.Text -replace [char]13, ' / ' -replace [char]10, '')"
 
   # 서버 모드.
   #
@@ -764,7 +785,9 @@ function Refresh-Stamps($keepMessage) {
         $stampMods.ForeColor = $ColorDim
       }
     }
-  } catch { $stampMods.Text = "확인 실패"; $stampMods.ForeColor = $ColorDim }
+  } catch { $stampMods.Text = "확인 실패"; $stampMods.ForeColor = $ColorDim; Log "  [모드 확인 실패] $($_.Exception.Message)" }
+  Log "  모드: $($stampMods.Text -replace [char]13, ' / ' -replace [char]10, '')"
+  Log "  설치 위치: $tp"
 
   # 서버가 켜져 있는지
   try {
@@ -888,6 +911,18 @@ if ($btnNews) {
     }
   })
 }
+
+$btnLog.Add_Click({
+  # 뭐가 어디서 어긋났는지 직접 볼 수 있게. 물어보실 때 이 파일만 보내주시면 된다.
+  if (-not (Test-Path $script:LogPath)) { Say "아직 기록이 없습니다."; return }
+  try {
+    Start-Process -FilePath "notepad.exe" -ArgumentList "`"$($script:LogPath)`""
+    Say "기록을 열었습니다."
+  } catch {
+    try { Invoke-Item $script:LogPath; Say "기록을 열었습니다." }
+    catch { Say "열지 못했습니다. 이 파일을 열어주세요: $($script:LogPath)" }
+  }
+})
 
 $btnOpen.Add_Click({
   $p = Get-SavedTarget
