@@ -62,7 +62,7 @@ if ($Server -eq "elly") {
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = $AppName
-$form.Size            = New-Object System.Drawing.Size(556, 584)
+$form.Size            = New-Object System.Drawing.Size(556, 646)
 $form.StartPosition   = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox     = $false
@@ -163,7 +163,15 @@ $stampNews.Add_Click({ $btnNews.PerformClick() })
 $stampNews.Cursor = "Hand"
 
 # 맨 아래는 실행. 업데이트 → 실행 순서로 읽히게 둔다.
-$btnRun = New-BigButton "마인크래프트 실행" 274 ([System.Drawing.Color]::FromArgb(58, 96, 92))
+# 디스코드를 켜지 않아도 서버를 켤 수 있게 한다. 암호는 처음 한 번만 묻는다.
+$btnWake = New-BigButton "서버 켜기" 274 ([System.Drawing.Color]::FromArgb(140, 98, 52))
+$form.Controls.Add($btnWake)
+$stampWake = New-Stamp
+$btnWake.Controls.Add($stampWake)
+$stampWake.Add_Click({ $btnWake.PerformClick() })
+$stampWake.Cursor = "Hand"
+
+$btnRun = New-BigButton "마인크래프트 실행" 336 ([System.Drawing.Color]::FromArgb(58, 96, 92))
 $form.Controls.Add($btnRun)
 $stampRun = New-Stamp
 $btnRun.Controls.Add($stampRun)
@@ -188,13 +196,13 @@ function New-SmallButton($text, $x, $y, $w) {
 }
 # 어디에 설치되는지 늘 보이게 한다. 안 보이면 "어디에 받는다는 거야?"가 된다.
 $pathLbl           = New-Object System.Windows.Forms.Label
-$pathLbl.Location  = New-Object System.Drawing.Point(25, 342)
+$pathLbl.Location  = New-Object System.Drawing.Point(25, 404)
 $pathLbl.Size      = New-Object System.Drawing.Size(492, 22)
 $pathLbl.ForeColor = [System.Drawing.Color]::FromArgb(90, 94, 86)
 $pathLbl.Font      = New-Object System.Drawing.Font("맑은 고딕", 8)
 $form.Controls.Add($pathLbl)
 
-$toolY     = 372
+$toolY     = 434
 $btnOpen   = New-SmallButton "설치된 폴더 열기" 24 $toolY 130
 $btnChange = New-SmallButton "설치 위치 바꾸기" 160 $toolY 130
 $btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
@@ -207,7 +215,7 @@ $form.Controls.Add($btnLog)
 $form.Controls.Add($btnRestore)
 $form.Controls.Add($btnKeys)
 
-$logY = 446
+$logY = 508
 
 # 지금 뭘 하는 중인지 한 줄 + 얼마나 됐는지 막대. 글자가 쏟아지는 것보다 읽기 쉽다.
 $statusLbl           = New-Object System.Windows.Forms.Label
@@ -248,7 +256,7 @@ function SetStep($text, $pct) {
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnMods, $btnPatch, $btnNews, $btnRun, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore)) {
+  foreach ($b in @($btnMods, $btnPatch, $btnNews, $btnRun, $btnWake, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -689,9 +697,11 @@ function Update-ServerState {
     if ($up) {
       $srvLbl.Text = "서버상태 : ON"
       $srvLbl.ForeColor = [System.Drawing.Color]::FromArgb(62, 140, 62)
+      if ($btnWake) { $stampWake.Text = "이미 켜져 있습니다"; $stampWake.ForeColor = $ColorGood }
     } else {
       $srvLbl.Text = "서버상태 : OFF"
       $srvLbl.ForeColor = [System.Drawing.Color]::FromArgb(186, 86, 76)
+      if ($btnWake) { $stampWake.Text = "눌러서 서버를 켜실 수 있습니다`r`n보통 1~3분 걸립니다"; $stampWake.ForeColor = $ColorDim }
     }
   } catch { $srvLbl.Text = "" }
 }
@@ -919,13 +929,18 @@ function Start-Minecraft {
     try { Start-Process "https://prismlauncher.org/download/windows/" } catch { }
     return
   }
+  # 들어갈 서버를 목록에 미리 넣어둔다. 주소를 손으로 적을 일이 없게.
+  $added = Add-ServerEntry $target "엘리서버" $ServerAddr
+  Log "서버 목록: $added"
+
   try {
     if ($lc.Kind -eq "prism") {
       # 인스턴스 폴더 이름이 곧 인스턴스 이름이다(.minecraft 안쪽이면 한 칸 위)
       $inst = Split-Path $target -Leaf
       if ($inst -eq "minecraft" -or $inst -eq ".minecraft") { $inst = Split-Path (Split-Path $target -Parent) -Leaf }
       Start-Process $lc.Exe -ArgumentList @("--launch", $inst)
-      Say "마인크래프트를 실행합니다. 잠시만 기다려 주세요."
+      $tail = if ($added -eq "넣음") { " 멀티플레이 목록에 엘리서버를 넣어두었습니다." } else { "" }
+      Say "마인크래프트를 실행합니다. 잠시만 기다려 주세요.$tail"
     } else {
       Start-Process $lc.Exe
       Say "$($lc.Name) 를 열었습니다. 인스턴스에서 [플레이] 를 눌러주세요."
@@ -1010,7 +1025,238 @@ function Restore-Options {
     Say "$($pick.LastWriteTime.ToString('MM월 dd일 HH:mm')) 시점으로 되돌렸습니다. 마인크래프트를 켜서 확인해 주세요."
   } catch { Say "되돌리지 못했습니다 — $($_.Exception.Message)" }
 }
+# ── 멀티플레이 서버 목록 ──────────────────────────────
+# 마크는 서버 목록을 servers.dat 에 NBT 라는 형식으로 담는다. 압축이 없어서
+# 직접 읽고 쓸 수 있다. 실행 버튼을 누르면 엘리서버가 목록에 없을 때 넣어준다.
+$script:nbtPos = 0
+function Nbt-U8($b)  { $v = $b[$script:nbtPos]; $script:nbtPos += 1; return [int]$v }
+function Nbt-U16($b) { $v = ([int]$b[$script:nbtPos] -shl 8) -bor [int]$b[$script:nbtPos+1]; $script:nbtPos += 2; return $v }
+function Nbt-I32($b) {
+  $v = ([int]$b[$script:nbtPos] -shl 24) -bor ([int]$b[$script:nbtPos+1] -shl 16) -bor ([int]$b[$script:nbtPos+2] -shl 8) -bor [int]$b[$script:nbtPos+3]
+  $script:nbtPos += 4; return $v
+}
+function Nbt-Str($b) {
+  $n = Nbt-U16 $b
+  $s = [Text.Encoding]::UTF8.GetString($b, $script:nbtPos, $n)
+  $script:nbtPos += $n; return $s
+}
+function Nbt-Raw($b, $n) { $r = New-Object byte[] $n; [Array]::Copy($b, $script:nbtPos, $r, 0, $n); $script:nbtPos += $n; return $r }
+
+function Nbt-ReadValue($b, $t) {
+  switch ($t) {
+    1  { return Nbt-Raw $b 1 }
+    2  { return Nbt-Raw $b 2 }
+    3  { return Nbt-Raw $b 4 }
+    4  { return Nbt-Raw $b 8 }
+    5  { return Nbt-Raw $b 4 }
+    6  { return Nbt-Raw $b 8 }
+    7  { $n = Nbt-I32 $b; return @{ len = $n; data = (Nbt-Raw $b $n) } }
+    8  { return Nbt-Str $b }
+    9  {
+         $et = Nbt-U8 $b; $n = Nbt-I32 $b; $items = @()
+         for ($i = 0; $i -lt $n; $i++) { $items += ,(Nbt-ReadValue $b $et) }
+         return @{ elem = $et; items = $items }
+       }
+    10 {
+         $o = New-Object System.Collections.Specialized.OrderedDictionary
+         while ($true) {
+           $ct = Nbt-U8 $b
+           if ($ct -eq 0) { break }
+           $cn = Nbt-Str $b
+           $o[$cn] = @{ t = $ct; v = (Nbt-ReadValue $b $ct) }
+         }
+         return $o
+       }
+    11 { $n = Nbt-I32 $b; return @{ len = $n; data = (Nbt-Raw $b ($n * 4)) } }
+    12 { $n = Nbt-I32 $b; return @{ len = $n; data = (Nbt-Raw $b ($n * 8)) } }
+  }
+  throw "모르는 NBT 종류: $t"
+}
+
+function Nbt-PutU16($w, $v) { $w.Add([byte](($v -shr 8) -band 0xFF)); $w.Add([byte]($v -band 0xFF)) }
+function Nbt-PutI32($w, $v) {
+  $w.Add([byte](($v -shr 24) -band 0xFF)); $w.Add([byte](($v -shr 16) -band 0xFF))
+  $w.Add([byte](($v -shr 8) -band 0xFF));  $w.Add([byte]($v -band 0xFF))
+}
+function Nbt-PutStr($w, $s) {
+  $bs = [Text.Encoding]::UTF8.GetBytes($s)
+  Nbt-PutU16 $w $bs.Length
+  foreach ($x in $bs) { $w.Add($x) }
+}
+function Nbt-WriteValue($w, $t, $v) {
+  switch ($t) {
+    { $_ -in 1,2,3,4,5,6 } { foreach ($x in $v) { $w.Add($x) }; return }
+    7  { Nbt-PutI32 $w $v.len; foreach ($x in $v.data) { $w.Add($x) }; return }
+    8  { Nbt-PutStr $w $v; return }
+    9  {
+         $w.Add([byte]$v.elem); Nbt-PutI32 $w $v.items.Count
+         foreach ($it in $v.items) { Nbt-WriteValue $w $v.elem $it }
+         return
+       }
+    10 {
+         foreach ($k in $v.Keys) {
+           $w.Add([byte]$v[$k].t); Nbt-PutStr $w $k; Nbt-WriteValue $w $v[$k].t $v[$k].v
+         }
+         $w.Add([byte]0); return
+       }
+    11 { Nbt-PutI32 $w $v.len; foreach ($x in $v.data) { $w.Add($x) }; return }
+    12 { Nbt-PutI32 $w $v.len; foreach ($x in $v.data) { $w.Add($x) }; return }
+  }
+  throw "모르는 NBT 종류: $t"
+}
+
+function Add-ServerEntry($gameDir, $name, $addr) {
+  $p = Join-Path $gameDir "servers.dat"
+  try {
+    $root = New-Object System.Collections.Specialized.OrderedDictionary
+    $rootName = ""
+    if (Test-Path -LiteralPath $p) {
+      $b = [IO.File]::ReadAllBytes($p)
+      # 압축된 파일이면 건드리지 않는다(1.21 기준으로는 압축이 없다)
+      if ($b.Length -ge 2 -and $b[0] -eq 0x1F -and $b[1] -eq 0x8B) { return "압축됨" }
+      $script:nbtPos = 0
+      $t = Nbt-U8 $b
+      if ($t -ne 10) { return "형식이 다름" }
+      $rootName = Nbt-Str $b
+      $root = Nbt-ReadValue $b 10
+    }
+    if (-not $root.Contains("servers")) {
+      $root["servers"] = @{ t = 9; v = @{ elem = 10; items = @() } }
+    }
+    $list = $root["servers"].v
+    if ($list.elem -ne 10) { $list.elem = 10 }
+    foreach ($it in $list.items) {
+      if ($it.Contains("ip") -and "$($it['ip'].v)" -eq $addr) { return "이미 있음" }
+    }
+    $entry = New-Object System.Collections.Specialized.OrderedDictionary
+    $entry["name"] = @{ t = 8; v = $name }
+    $entry["ip"]   = @{ t = 8; v = $addr }
+    $list.items = @($list.items) + ,$entry
+
+    $w = New-Object System.Collections.Generic.List[byte]
+    $w.Add([byte]10); Nbt-PutStr $w $rootName; Nbt-WriteValue $w 10 $root
+    if (Test-Path -LiteralPath $p) { [IO.File]::Copy($p, "$p.bak", $true) }
+    [IO.File]::WriteAllBytes($p, $w.ToArray())
+    return "넣음"
+  } catch { return "실패: $($_.Exception.Message)" }
+}
+# ── 서버 켜기 ─────────────────────────────────────────
+# 봇에 작은 창구가 열려 있다. 거기에 암호와 함께 "켜 주세요" 를 보내면 켜진다.
+# 암호를 공개 파일에 넣으면 아무나 켤 수 있으므로, 친구가 처음 한 번 입력해
+# 자기 PC 에 기억해 둔다.
+$KeyFile = Join-Path $env:APPDATA "elly-helper-key.txt"
+
+function Get-BotEndpoint {
+  # 봇 주소가 바뀌어도 친구들이 파일을 다시 받지 않아도 되게, 주소를 따로 읽어온다.
+  try {
+    $a = (Get-WebText "$BASE/bot-endpoint.txt").Trim()
+    if ($a) { return $a }
+  } catch { }
+  return "http://34.123.58.169:8787"
+}
+
+function Ask-Key {
+  $d = New-Object System.Windows.Forms.Form
+  $d.Text = "서버 켜기 암호"
+  $d.Size = New-Object System.Drawing.Size(460, 210)
+  $d.StartPosition = "CenterParent"; $d.FormBorderStyle = "FixedDialog"
+  $d.MaximizeBox = $false; $d.MinimizeBox = $false
+  $d.BackColor = [System.Drawing.Color]::FromArgb(246, 245, 241)
+  $d.Font = New-Object System.Drawing.Font("맑은 고딕", 9)
+  $d.Icon = $form.Icon
+
+  $l1 = New-Object System.Windows.Forms.Label
+  $l1.Text = "서버 켜기 암호를 입력해 주세요."
+  $l1.Location = New-Object System.Drawing.Point(18, 18)
+  $l1.Size = New-Object System.Drawing.Size(410, 20)
+  $l1.Font = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
+  $d.Controls.Add($l1)
+
+  $l2 = New-Object System.Windows.Forms.Label
+  $l2.Text = "엘리에게 받으신 암호입니다. 한 번만 입력하시면 다음부터는 묻지 않습니다."
+  $l2.Location = New-Object System.Drawing.Point(18, 40)
+  $l2.Size = New-Object System.Drawing.Size(410, 20)
+  $l2.ForeColor = [System.Drawing.Color]::FromArgb(120, 124, 115)
+  $d.Controls.Add($l2)
+
+  $tb = New-Object System.Windows.Forms.TextBox
+  $tb.Location = New-Object System.Drawing.Point(18, 70)
+  $tb.Size = New-Object System.Drawing.Size(410, 26)
+  $tb.UseSystemPasswordChar = $true
+  $d.Controls.Add($tb)
+
+  $script:keyIn = $null
+  $ok = New-Object System.Windows.Forms.Button
+  $ok.Text = "확인"; $ok.Location = New-Object System.Drawing.Point(238, 112)
+  $ok.Size = New-Object System.Drawing.Size(92, 30); $ok.FlatStyle = "Flat"
+  $ok.BackColor = [System.Drawing.Color]::FromArgb(140, 98, 52); $ok.ForeColor = [System.Drawing.Color]::White
+  $ok.Add_Click({ $script:keyIn = $tb.Text.Trim(); $d.Close() })
+  $d.Controls.Add($ok)
+  $no = New-Object System.Windows.Forms.Button
+  $no.Text = "취소"; $no.Location = New-Object System.Drawing.Point(336, 112)
+  $no.Size = New-Object System.Drawing.Size(92, 30); $no.FlatStyle = "Flat"
+  $no.Add_Click({ $script:keyIn = $null; $d.Close() })
+  $d.Controls.Add($no)
+  $d.AcceptButton = $ok; $d.CancelButton = $no
+  [void]$d.ShowDialog($form)
+  $d.Dispose()
+  return $script:keyIn
+}
+
+function Wake-Server {
+  Set-Busy $true
+  try {
+    $key = $null
+    if (Test-Path $KeyFile) { $key = (Get-Content $KeyFile -Encoding UTF8 | Select-Object -First 1) }
+    if (-not $key) {
+      $key = Ask-Key
+      if (-not $key) { SetStep "취소되었습니다." 0; return }
+    }
+    $ep = Get-BotEndpoint
+    SetStep "서버를 켜는 중입니다..." 5
+    $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
+
+    $r = $null
+    try { $r = (Get-WebText ($ep + "/start?t=" + [uri]::EscapeDataString($key))) | ConvertFrom-Json }
+    catch { SetStep "봇에 연결하지 못했습니다. 잠시 뒤 다시 눌러주세요." 0; Log "창구 연결 실패: $($_.Exception.Message)"; return }
+
+    if (-not $r.ok) {
+      if ("$($r.why)" -like "*암호*") { try { [IO.File]::Delete($KeyFile) } catch { } }
+      SetStep "$($r.why)" 0
+      return
+    }
+    if ($r.already) { SetStep "서버가 이미 켜져 있습니다. 바로 들어가시면 됩니다." 100; Update-ServerState; return }
+    # 암호가 맞았으니 기억해 둔다
+    try { $key | Set-Content $KeyFile -Encoding UTF8 } catch { }
+
+    # 켜지는 데 보통 1~3분 걸린다. 접속이 열릴 때까지 지켜본다.
+    $t0 = Get-Date
+    while (((Get-Date) - $t0).TotalMinutes -lt 8) {
+      Start-Sleep -Milliseconds 2500
+      [System.Windows.Forms.Application]::DoEvents()
+      $el = [int]((Get-Date) - $t0).TotalSeconds
+      SetStep "서버를 켜는 중입니다... ($el 초 지남)" -1
+      try {
+        $st = (Get-WebText ($ep + "/status?t=" + [uri]::EscapeDataString($key))) | ConvertFrom-Json
+        if ($st.ok -and $st.ready) {
+          $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+          SetStep "서버가 켜졌습니다. 들어가셔도 됩니다. ($el 초 걸림)" 100
+          Update-ServerState
+          return
+        }
+      } catch { }
+    }
+    SetStep "8분이 지나도 접속이 열리지 않습니다. 엘리에게 알려주세요." 0
+  } catch {
+    SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0
+  } finally {
+    $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+    Set-Busy $false
+  }
+}
+
 # ── 버튼 연결 ─────────────────────────────────────────
+$btnWake.Add_Click({ Wake-Server })
 $btnRun.Add_Click({ Start-Minecraft })
 $btnMods.Add_Click({ Install-Mods })
 $btnPatch.Add_Click({ Install-Patch })
