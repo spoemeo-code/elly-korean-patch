@@ -419,6 +419,7 @@ function Install-Patch {
   try {
     # 한글패치는 켜둔 채로도 넣을 수 있다. 넣고 나서 F3 + T 를 누르면 바로 적용된다.
     $mcOn = Test-MinecraftRunning
+    if ($mcOn) { SetStep "게임이 켜진 채로 받으시면 리소스팩을 직접 켜주셔야 할 수 있습니다." -1 }
     SetStep "설치할 곳을 확인하고 있습니다..." 5
     $target = Get-Target "한글패치를 어느 마인크래프트에 넣을까요?" $force
     if (-not $target) { SetStep "취소되었습니다." 0; return }
@@ -483,7 +484,10 @@ function Install-Patch {
       if ($already) {
         SetStep "한글패치를 넣었습니다. 마인크래프트에서 F3 + T 를 누르시면 바로 적용됩니다. (번역 $langCount 개)" 100
       } else {
-        SetStep "한글패치를 넣었습니다. 아직 켜지지 않았으니 마인크래프트를 종료하고 한 번 더 눌러주세요." 100
+        # 게임이 켜져 있으면 리소스팩 목록을 건드릴 수 없다. 직접 켜는 길과
+        # 자동으로 켜지는 길을 둘 다 알려드린다.
+        SetStep ("한글패치를 넣었습니다. 게임이 켜진 채로 받으셔서 아직 적용되지 않았습니다." + [char]13 + [char]10 +
+                 "설정 → 리소스팩 에서 [엘리 한글패치] 를 오른쪽으로 옮겨주세요. (게임을 끄고 다시 누르시면 자동으로 켜집니다)") 100
       }
       return
     }
