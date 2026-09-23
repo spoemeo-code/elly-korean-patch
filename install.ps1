@@ -77,14 +77,33 @@ if (-not $instances) {
   Read-Host "  엔터를 누르면 창이 닫혀"; exit 1
 }
 
-# 여러 개면 직접 고르게 한다(엉뚱한 데 깔리면 곤란하니까)
-if ($instances.Count -eq 1) {
+# 서버를 여러 개 하는 사람은 인스턴스도 여러 개라, 매번 고르게 하면 번거롭다.
+# 한 번 고른 곳을 기억해두고 다음부터는 묻지 않는다.
+# 다른 데 깔고 싶으면 Shift 를 누른 채 실행하면 다시 묻는다.
+$rememberFile = Join-Path $env:APPDATA "elly-korean-patch-target.txt"
+$shiftHeld = $false
+try {
+  Add-Type -AssemblyName System.Windows.Forms
+  $shiftHeld = [System.Windows.Forms.Control]::ModifierKeys -band [System.Windows.Forms.Keys]::Shift
+} catch { }
+
+if (-not $shiftHeld -and (Test-Path $rememberFile)) {
+  $saved = @(Get-Content $rememberFile -Encoding UTF8 | Where-Object { $_ -and (Test-Path $_) })
+  if ($saved.Count -gt 0) {
+    $targets = $saved | ForEach-Object { Get-Item $_ }
+    Write-Host "  지난번에 고른 곳에 넣을게:" -ForegroundColor Green
+    $targets | ForEach-Object { Write-Host "    · $($_.Name)" -ForegroundColor DarkGray }
+    Write-Host "  (다른 곳에 넣으려면 Shift 를 누른 채 실행해줘)" -ForegroundColor DarkGray
+  }
+}
+
+if (-not $targets -and $instances.Count -eq 1) {
   $target = $instances[0]
   Write-Host "  찾았어: $($target.Name)" -ForegroundColor Green
-} else {
+} elseif (-not $targets) {
   Write-Host ""
   Write-Host "  마크 폴더가 여러 개 있어. 어디에 넣을까?" -ForegroundColor Yellow
-  Write-Host "  (최근에 플레이한 순서야. 보통 1번이 맞아)" -ForegroundColor DarkGray
+  Write-Host "  (최근에 플레이한 순서야. 보통 1번이 맞아. 한 번 고르면 다음부턴 안 물어봐)" -ForegroundColor DarkGray
   Write-Host ""
   for ($i = 0; $i -lt $found.Count; $i++) {
     $f = $found[$i]
@@ -104,6 +123,11 @@ if ($instances.Count -eq 1) {
     }
     $targets = @($instances[$n - 1])
   }
+  # 고른 곳을 기억해둔다. 다음 실행 때는 묻지 않는다.
+  try {
+    $targets | ForEach-Object { $_.FullName } | Set-Content $rememberFile -Encoding UTF8
+    Write-Host "  기억해뒀어. 다음부터는 안 물어볼게." -ForegroundColor DarkGray
+  } catch { }
 }
 if (-not $targets) { $targets = @($target) }
 
