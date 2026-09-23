@@ -62,7 +62,7 @@ if ($Server -eq "elly") {
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = $AppName
-$form.Size            = New-Object System.Drawing.Size(556, 548)
+$form.Size            = New-Object System.Drawing.Size(556, 586)
 $form.StartPosition   = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox     = $false
@@ -213,12 +213,15 @@ $btnOpen   = New-SmallButton "설치된 폴더 열기" 24 $toolY 130
 $btnChange = New-SmallButton "설치 위치 바꾸기" 160 $toolY 130
 $btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
 $btnRestore = New-SmallButton "설정 되돌리기" 398 $toolY 124
+# 쓰던 마크가 따로 있으면 거기서 조작키만 가져올 수 있다.
+$btnKeys   = New-SmallButton "단축키 가져오기" 24 ($toolY + 32) 140
 $form.Controls.Add($btnOpen)
 $form.Controls.Add($btnChange)
 $form.Controls.Add($btnLog)
 $form.Controls.Add($btnRestore)
+$form.Controls.Add($btnKeys)
 
-$logY = 410
+$logY = 448
 
 # 지금 뭘 하는 중인지 한 줄 + 얼마나 됐는지 막대. 글자가 쏟아지는 것보다 읽기 쉽다.
 $statusLbl           = New-Object System.Windows.Forms.Label
@@ -259,7 +262,7 @@ function SetStep($text, $pct) {
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnMods, $btnPatch, $btnJoin, $btnNews, $btnRun, $btnOpen, $btnChange, $btnLog, $btnRestore)) {
+  foreach ($b in @($btnMods, $btnPatch, $btnJoin, $btnNews, $btnRun, $btnOpen, $btnChange, $btnLog, $btnRestore, $btnKeys)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -1009,6 +1012,50 @@ if ($btnNews) {
     }
   })
 }
+
+$btnKeys.Add_Click({
+  # 단축키는 options.txt 안에 key_ 로 시작하는 줄들이다. 그 줄만 옮겨 담는다.
+  # 화면·소리·언어 같은 나머지 설정은 건드리지 않는다.
+  if (Test-MinecraftRunning) { Say "마인크래프트가 켜져 있습니다. 종료한 뒤 다시 눌러주세요."; return }
+  $to = Get-SavedTarget
+  if (-not $to) { Say "설치 위치를 먼저 정해주세요."; return }
+  $from = Show-FolderPicker "단축키를 가져올 마인크래프트를 골라주세요"
+  if (-not $from) { Say "취소되었습니다."; return }
+  if ($from -eq $to) { Say "같은 폴더입니다. 다른 마인크래프트를 골라주세요."; return }
+
+  $src = Join-Path $from "options.txt"
+  $dst = Join-Path $to "options.txt"
+  if (-not (Test-Path $src)) { Say "고르신 폴더에 설정 파일이 없습니다."; return }
+  if (-not (Test-Path $dst)) { Say "지금 설치 위치에 설정 파일이 없습니다. 마인크래프트를 한 번 켰다 꺼주세요."; return }
+  try {
+    $sKeys = @{}
+    foreach ($ln in ((([IO.File]::ReadAllText($src, [Text.Encoding]::UTF8)) -split "`r?`n"))) {
+      if ($ln -like "key_*" -and $ln.Contains(":")) { $sKeys[($ln -split ':', 2)[0]] = ($ln -split ':', 2)[1] }
+    }
+    if ($sKeys.Count -eq 0) { Say "고르신 곳에 단축키 설정이 없습니다."; return }
+
+    $raw  = [IO.File]::ReadAllText($dst, [Text.Encoding]::UTF8)
+    $rows = $raw -split "`r?`n"
+    $n = 0
+    for ($k = 0; $k -lt $rows.Count; $k++) {
+      if ($rows[$k] -like "key_*" -and $rows[$k].Contains(":")) {
+        $nm = ($rows[$k] -split ':', 2)[0]
+        if ($sKeys.ContainsKey($nm) -and $rows[$k] -ne ($nm + ":" + $sKeys[$nm])) {
+          $rows[$k] = $nm + ":" + $sKeys[$nm]; $n++
+        }
+      }
+    }
+    # 저쪽에만 있는 단축키(그쪽에만 깔린 모드)는 굳이 넣지 않는다. 마크가 알아서 만든다.
+    [IO.File]::Copy($dst, "$dst.bak", $true)
+    [IO.File]::WriteAllText($dst, ($rows -join "`n"), (New-Object Text.UTF8Encoding($false)))
+    Log "단축키 가져오기: $from -> $to ($n 개 바뀜)"
+    if ($n -eq 0) { Say "이미 같은 단축키입니다. 바꿀 것이 없었습니다." }
+    else { Say "단축키 $n 개를 가져왔습니다. ($(Split-Path $from -Leaf) 에서)" }
+  } catch { Say "가져오지 못했습니다 — $($_.Exception.Message)" }
+})
+
+
+$btnRestore.Add_Click({ Restore-Options })
 
 $btnRestore.Add_Click({ Restore-Options })
 
