@@ -956,9 +956,13 @@ function Restore-Options {
   $t = Get-SavedTarget
   if (-not $t) { Say "설치 위치를 먼저 정해주세요."; return }
   $opt = Join-Path $t "options.txt"
-  $baks = @(Get-ChildItem $t -Filter "options.txt.*" -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.Length -gt 200 } | Sort-Object LastWriteTime -Descending)
-  if ($baks.Count -eq 0) { Say "되돌릴 백업 파일이 없습니다."; return }
+  $all = @(Get-ChildItem $t -Filter "options.txt*" -File -ErrorAction SilentlyContinue)
+  Log "되돌리기: $t 에서 찾은 파일 — " + (($all | ForEach-Object { $_.Name + "(" + $_.Length + "B)" }) -join ", ")
+  $baks = @($all | Where-Object { $_.Name -ne "options.txt" -and $_.Length -gt 200 } | Sort-Object LastWriteTime -Descending)
+  if ($baks.Count -eq 0) {
+    Say "되돌릴 백업이 없습니다. 기록 보기를 눌러 나오는 내용을 서버장에게 보내주세요."
+    return
+  }
 
   $dlg                 = New-Object System.Windows.Forms.Form
   $dlg.Text            = "설정 되돌리기"
@@ -1173,7 +1177,7 @@ function Ask-Key {
   $d.Controls.Add($l1)
 
   $l2 = New-Object System.Windows.Forms.Label
-  $l2.Text = "엘리에게 받으신 암호입니다. 한 번만 입력하시면 다음부터는 묻지 않습니다."
+  $l2.Text = "엘리에게 받으신 암호입니다. 한 번만 입력하시면 됩니다."
   $l2.Location = New-Object System.Drawing.Point(18, 40)
   $l2.Size = New-Object System.Drawing.Size(410, 20)
   $l2.ForeColor = [System.Drawing.Color]::FromArgb(120, 124, 115)
