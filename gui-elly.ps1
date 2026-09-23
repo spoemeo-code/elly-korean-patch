@@ -30,6 +30,9 @@ $AppHome      = "elly-helper"
 $IconFile     = "elly-icon.ico"
 $LauncherFile = "elly-helper.bat"
 $GuiFileName  = "gui-elly.ps1"
+# 엘리 전용 기능은 표식 파일이 있을 때만 나타난다. 친구들 PC 에는 없다.
+$AdminMark    = Join-Path (Join-Path $env:APPDATA "elly-helper") "admin.txt"
+$IsAdmin      = Test-Path -LiteralPath $AdminMark
 $PatchUrl  = "$BASE/Elly-Korean-Patch.zip"
 $PatchName = "Elly-Korean-Patch.zip"
 # 설치 위치는 한글패치·모드가 같은 폴더다. 따로 기억했더니 한쪽만 아는 상태가 생겼다.
@@ -91,7 +94,7 @@ $title.Size      = New-Object System.Drawing.Size(270, 30)
 $form.Controls.Add($title)
 
 $sub           = New-Object System.Windows.Forms.Label
-$sub.Text      = "모드는 프리즘 런처가 켜질 때 알아서 맞춰집니다."
+$sub.Text      = if ($IsAdmin) { "모드를 맞추기 전에 마인크래프트를 종료해 주세요." } else { "모드는 프리즘 런처가 켜질 때 알아서 맞춰집니다." }
 $sub.ForeColor = [System.Drawing.Color]::FromArgb(110, 114, 105)
 $sub.Location  = New-Object System.Drawing.Point(25, 50)
 $sub.Size      = New-Object System.Drawing.Size(500, 20)
@@ -175,11 +178,27 @@ $stampWake.Add_Click({ $btnWake.PerformClick() })
 $stampWake.Cursor = "Hand"
 
 $btnRun = New-BigButton "마인크래프트 실행" 274 ([System.Drawing.Color]::FromArgb(58, 96, 92))
+
+# 엘리 전용. 프리즘이 아닌 런처를 쓰면 팩이 자동으로 맞춰지지 않아 직접 맞춰야 한다.
+$btnMods = $null
+$stampMods = $null
+if ($IsAdmin) {
+  $btnMods = New-BigButton "서버 모드 맞추기" 336 ([System.Drawing.Color]::FromArgb(70, 96, 130))
+  $form.Controls.Add($btnMods)
+  $stampMods = New-Stamp
+  $btnMods.Controls.Add($stampMods)
+  $stampMods.Add_Click({ $btnMods.PerformClick() })
+  $stampMods.Cursor = "Hand"
+}
 $form.Controls.Add($btnRun)
 $stampRun = New-Stamp
 $btnRun.Controls.Add($stampRun)
 $stampRun.Add_Click({ $btnRun.PerformClick() })
 $stampRun.Cursor = "Hand"
+
+# 엘리 전용 버튼이 한 줄 더 있으면 아래 것들을 그만큼 내린다.
+$shift = if ($IsAdmin) { 62 } else { 0 }
+if ($IsAdmin) { $form.Size = New-Object System.Drawing.Size(556, (584 + $shift)) }
 
 # 어디에 깔렸는지 확인하고 바꿀 수 있게. 잘못 고른 사람이 스스로 고칠 길이 필요하다.
 function New-SmallButton($text, $x, $y, $w) {
@@ -199,13 +218,13 @@ function New-SmallButton($text, $x, $y, $w) {
 }
 # 어디에 설치되는지 늘 보이게 한다. 안 보이면 "어디에 받는다는 거야?"가 된다.
 $pathLbl           = New-Object System.Windows.Forms.Label
-$pathLbl.Location  = New-Object System.Drawing.Point(25, 342)
+$pathLbl.Location  = New-Object System.Drawing.Point(25, (342 + $shift))
 $pathLbl.Size      = New-Object System.Drawing.Size(492, 22)
 $pathLbl.ForeColor = [System.Drawing.Color]::FromArgb(90, 94, 86)
 $pathLbl.Font      = New-Object System.Drawing.Font("맑은 고딕", 8)
 $form.Controls.Add($pathLbl)
 
-$toolY     = 372
+$toolY     = 372 + $shift
 $btnOpen   = New-SmallButton "설치된 폴더 열기" 24 $toolY 130
 $btnChange = New-SmallButton "설치 위치 바꾸기" 160 $toolY 130
 $btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
@@ -218,7 +237,7 @@ $form.Controls.Add($btnLog)
 $form.Controls.Add($btnRestore)
 $form.Controls.Add($btnKeys)
 
-$logY = 446
+$logY = 446 + $shift
 
 # 지금 뭘 하는 중인지 한 줄 + 얼마나 됐는지 막대. 글자가 쏟아지는 것보다 읽기 쉽다.
 $statusLbl           = New-Object System.Windows.Forms.Label
@@ -259,7 +278,7 @@ function SetStep($text, $pct) {
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore)) {
+  foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnMods, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -787,6 +806,36 @@ function Refresh-Stamps($keepMessage) {
       $stampPatch.ForeColor = $ColorBad
     }
   } catch { $stampPatch.Text = "확인 실패"; $stampPatch.ForeColor = $ColorDim; Log "  [한글패치 확인 실패] $($_.Exception.Message)" }
+
+  # 엘리 전용 — 팩과 내 모드가 맞는지
+  if ($stampMods) {
+    try {
+      $want = $script:packWanted
+      if ($want) { $cnt = $want.Count }
+      else {
+        $idx = Get-WebText "https://raw.githubusercontent.com/$PackRepo/refs/heads/main/index.toml"
+        $cnt = ([regex]::Matches($idx, '(?m)^file\s*=\s*"mods/')).Count
+      }
+      if ($cnt -le 0) { throw "목록 없음" }
+      $t3 = Get-SavedTarget
+      if ($t3 -and (Test-Path (Join-Path $t3 "mods"))) {
+        $have = @{}
+        Get-ChildItem (Join-Path $t3 "mods") -Filter *.jar -File -ErrorAction SilentlyContinue | ForEach-Object { $have[$_.Name] = $true }
+        if ($want) { $miss = @($want | Where-Object { -not $have.ContainsKey($_.File) }).Count }
+        else { $miss = [Math]::Max(0, $cnt - $have.Count) }
+        if ($miss -eq 0) {
+          $stampMods.Text = "서버 파일 $cnt 개 모두 일치`r`n클라이언트 파일 $($have.Count) 개 · 최신 버전입니다"
+          $stampMods.ForeColor = $ColorGood
+        } else {
+          $stampMods.Text = "서버 파일 $cnt 개 중 $miss 개 없음`r`n클라이언트 파일 $($have.Count) 개 · 최신 버전이 아닙니다"
+          $stampMods.ForeColor = $ColorBad
+        }
+      } else {
+        $stampMods.Text = "서버 파일 $cnt 개`r`n아직 확인하지 않았습니다"
+        $stampMods.ForeColor = $ColorDim
+      }
+    } catch { $stampMods.Text = "확인 실패"; $stampMods.ForeColor = $ColorDim }
+  }
   Log "  한글패치: $($stampPatch.Text -replace [char]13, ' / ' -replace [char]10, '')"
 
   Log "  설치 위치: $tp"
@@ -885,8 +934,15 @@ function Find-Launcher($target) {
     $e = "$env:USERPROFILE\Documents\MultiMC\MultiMC.exe"
     if (Test-Path $e) { return @{ Kind = "prism"; Exe = $e; Name = "멀티MC" } }
   }
-  # 엘리서버는 프리즘으로 들어온다. 다른 런처로 물러나지 않는다 —
-  # 커스포지로 켜면 인스턴스를 또 찾아 들어가야 해서 버튼을 둔 뜻이 없다.
+  # 친구들에게는 프리즘만 권한다. 다만 엘리는 커스포지를 쓰므로 열어둔다.
+  if ($IsAdmin) {
+    if ($t -like "*modrinth*") {
+      $e = "$env:LOCALAPPDATA\Programs\Modrinth App\Modrinth App.exe"
+      if (Test-Path $e) { return @{ Kind = "app"; Exe = $e; Name = "모드린스" } }
+    }
+    $e = "$env:LOCALAPPDATA\Programs\CurseForge Windows\CurseForge.exe"
+    if (Test-Path $e) { return @{ Kind = "app"; Exe = $e; Name = "CurseForge" } }
+  }
   return $null
 }
 
@@ -1305,6 +1361,7 @@ function Tend-Launcher {
 }
 # ── 버튼 연결 ─────────────────────────────────────────
 $btnWake.Add_Click({ Wake-Server })
+if ($btnMods) { $btnMods.Add_Click({ Install-Mods }) }
 $btnRun.Add_Click({ Start-Minecraft })
 
 $btnPatch.Add_Click({ Install-Patch })
