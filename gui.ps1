@@ -29,14 +29,16 @@ $PatchUrl  = "$BASE/Elly-Korean-Patch.zip"
 $PatchName = "Elly-Korean-Patch.zip"
 # 설치 위치는 한글패치·모드가 같은 폴더다. 따로 기억했더니 한쪽만 아는 상태가 생겼다.
 $PatchRemember = "elly-korean-patch-target.txt"   # 예전 판에서 쓰던 파일 (읽기만)
-$MainRemember  = "elly-helper-target.txt"          # 지금 쓰는 설치 위치
-$ModMapName    = "elly-helper-modmap.json"        # 어떤 모드를 어떤 파일로 깔았는지
+# 설치 위치와 설치 기록은 배포본마다 따로 둔다. 같이 쓰면 서버를 둘 다 하시는 분이
+# 한쪽을 쓸 때마다 다른 쪽 설치 위치가 덮어써진다. (아래 $Server 에 따라 정해진다)
 
 if ($Server -eq "elly") {
   $AppName      = "엘리 마크 도우미"
   $PackRepo     = "spoemeo-code/elly-modpack-packwiz"
   $PackLabel    = "엘리서버"
-  $PackRemember = "elly-pack-target.txt"
+  $PackRemember  = "elly-pack-target.txt"
+  $MainRemember  = "elly-helper-target.txt"
+  $ModMapName    = "elly-helper-modmap.json"
   $ServerAddr   = "ellymc.duckdns.org"
   $PingHost     = "ellymc.duckdns.org"
   $PingPort     = 25565
@@ -46,7 +48,9 @@ if ($Server -eq "elly") {
   $AppName      = "잔누 마크 도우미"
   $PackRepo     = "JannuH2/Jannu-maku-dudutown"
   $PackLabel    = "잔누서버"
-  $PackRemember = "jannu-pack-target.txt"
+  $PackRemember  = "jannu-pack-target.txt"
+  $MainRemember  = "jannu-helper-target.txt"
+  $ModMapName    = "jannu-helper-modmap.json"
   $ServerAddr   = $null
   $PingHost     = "112.146.202.159"
   $PingPort     = 25565
@@ -208,9 +212,11 @@ $toolY     = 372
 $btnOpen   = New-SmallButton "설치된 폴더 열기" 24 $toolY 130
 $btnChange = New-SmallButton "설치 위치 바꾸기" 160 $toolY 130
 $btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
+$btnRestore = New-SmallButton "설정 되돌리기" 398 $toolY 124
 $form.Controls.Add($btnOpen)
 $form.Controls.Add($btnChange)
 $form.Controls.Add($btnLog)
+$form.Controls.Add($btnRestore)
 
 $logY = 410
 
@@ -238,7 +244,7 @@ $hint.Size      = New-Object System.Drawing.Size(496, 18)
 $form.Controls.Add($hint)
 
 # 무슨 일이 있었는지 파일로 남긴다. 실패했을 때 "왜" 를 볼 수 있어야 한다.
-$script:LogPath = Join-Path $env:TEMP "elly-helper-log.txt"
+$script:LogPath = Join-Path $env:TEMP ($Server + "-helper-log.txt")
 function Log($t) {
   try { ((Get-Date -Format "HH:mm:ss") + "  " + $t) | Out-File $script:LogPath -Encoding UTF8 -Append } catch { }
 }
@@ -253,7 +259,7 @@ function SetStep($text, $pct) {
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnMods, $btnPatch, $btnJoin, $btnNews, $btnRun, $btnOpen, $btnChange, $btnLog)) {
+  foreach ($b in @($btnMods, $btnPatch, $btnJoin, $btnNews, $btnRun, $btnOpen, $btnChange, $btnLog, $btnRestore)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -488,7 +494,9 @@ function Install-Patch {
         # 줄바꿈이 이미 윈도 방식으로 바뀌어 있던 파일도 여기서 되돌려 놓는다.
         $out = $rows -join "`n"
         if ($out -ne $raw) {
-          [IO.File]::Copy($opt, "$opt.bak", $true)
+          # 맨 처음 백업은 손대지 않는다. 덮어쓰면 "고치기 전 설정"을 영영 잃는다.
+          if (-not (Test-Path "$opt.bak")) { [IO.File]::Copy($opt, "$opt.bak", $false) }
+          [IO.File]::Copy($opt, "$opt.bak-latest", $true)
           [IO.File]::WriteAllText($opt, $out, (New-Object Text.UTF8Encoding($false)))
         }
       } catch { }
@@ -893,6 +901,83 @@ function Start-Minecraft {
   } catch { Say "실행하지 못했습니다. 런처에서 직접 켜주세요." }
 }
 
+
+# 설정을 되돌린다. 한글패치가 설정을 건드리기 전 파일을 백업해 두므로,
+# 그것을 골라 되돌리면 언어·소리·조작키가 한꺼번에 돌아온다.
+function Restore-Options {
+  if (Test-MinecraftRunning) { Say "마인크래프트가 켜져 있습니다. 종료한 뒤 다시 눌러주세요."; return }
+  $t = Get-SavedTarget
+  if (-not $t) { Say "설치 위치를 먼저 정해주세요."; return }
+  $opt = Join-Path $t "options.txt"
+  $baks = @(Get-ChildItem $t -Filter "options.txt.*" -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Length -gt 200 } | Sort-Object LastWriteTime -Descending)
+  if ($baks.Count -eq 0) { Say "되돌릴 백업 파일이 없습니다."; return }
+
+  $dlg                 = New-Object System.Windows.Forms.Form
+  $dlg.Text            = "설정 되돌리기"
+  $dlg.Size            = New-Object System.Drawing.Size(560, 360)
+  $dlg.StartPosition   = "CenterParent"
+  $dlg.FormBorderStyle = "FixedDialog"
+  $dlg.MaximizeBox = $false; $dlg.MinimizeBox = $false
+  $dlg.BackColor       = [System.Drawing.Color]::FromArgb(246, 245, 241)
+  $dlg.Font            = New-Object System.Drawing.Font("맑은 고딕", 9)
+  $dlg.Icon            = $form.Icon
+
+  $lb = New-Object System.Windows.Forms.Label
+  $lb.Text = "어느 시점으로 되돌릴까요?"
+  $lb.Location = New-Object System.Drawing.Point(18, 16)
+  $lb.Size = New-Object System.Drawing.Size(500, 20)
+  $lb.Font = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
+  $dlg.Controls.Add($lb)
+
+  $lb2 = New-Object System.Windows.Forms.Label
+  $lb2.Text = "언어, 소리 크기, 조작키가 그 시점으로 한꺼번에 돌아갑니다."
+  $lb2.Location = New-Object System.Drawing.Point(18, 38)
+  $lb2.Size = New-Object System.Drawing.Size(500, 20)
+  $lb2.ForeColor = [System.Drawing.Color]::FromArgb(120, 124, 115)
+  $dlg.Controls.Add($lb2)
+
+  $list = New-Object System.Windows.Forms.ListBox
+  $list.Location = New-Object System.Drawing.Point(18, 64)
+  $list.Size = New-Object System.Drawing.Size(508, 190)
+  $list.IntegralHeight = $false
+  foreach ($b in $baks) {
+    $keys = 0
+    try { foreach ($ln in (([IO.File]::ReadAllText($b.FullName, [Text.Encoding]::UTF8)) -split "`r?`n")) { if ($ln -like "key_*" -and $ln -notlike "*unknown") { $keys++ } } } catch { }
+    [void]$list.Items.Add(("{0:yyyy-MM-dd HH:mm}   ·   조작키 {1}개   ·   {2}" -f $b.LastWriteTime, $keys, $b.Name))
+  }
+  $list.SelectedIndex = 0
+  $dlg.Controls.Add($list)
+
+  $script:restorePick = $null
+  $ok = New-Object System.Windows.Forms.Button
+  $ok.Text = "이걸로 되돌리기"; $ok.Location = New-Object System.Drawing.Point(300, 268)
+  $ok.Size = New-Object System.Drawing.Size(130, 32); $ok.FlatStyle = "Flat"
+  $ok.BackColor = [System.Drawing.Color]::FromArgb(70, 96, 130); $ok.ForeColor = [System.Drawing.Color]::White
+  $ok.Add_Click({ $script:restorePick = $list.SelectedIndex; $dlg.Close() })
+  $dlg.Controls.Add($ok)
+  $no = New-Object System.Windows.Forms.Button
+  $no.Text = "취소"; $no.Location = New-Object System.Drawing.Point(438, 268)
+  $no.Size = New-Object System.Drawing.Size(88, 32); $no.FlatStyle = "Flat"
+  $no.Add_Click({ $script:restorePick = $null; $dlg.Close() })
+  $dlg.Controls.Add($no)
+  $dlg.CancelButton = $no
+  [void]$dlg.ShowDialog($form)
+  $dlg.Dispose()
+
+  if ($script:restorePick -eq $null) { Say "되돌리지 않았습니다."; return }
+  $pick = $baks[$script:restorePick]
+  try {
+    # 지금 상태도 한 번 남겨둔다. 되돌린 게 마음에 안 들 수도 있다.
+    [IO.File]::Copy($opt, "$opt.bak-되돌리기전", $true)
+    $txt = [IO.File]::ReadAllText($pick.FullName, [Text.Encoding]::UTF8)
+    if ($txt.Length -gt 0 -and $txt[0] -eq [char]0xFEFF) { $txt = $txt.Substring(1) }
+    $txt = ($txt -split "`r?`n") -join "`n"
+    [IO.File]::WriteAllText($opt, $txt, (New-Object Text.UTF8Encoding($false)))
+    Log "설정 되돌림: $($pick.Name)"
+    Say "$($pick.LastWriteTime.ToString('MM월 dd일 HH:mm')) 시점으로 되돌렸습니다. 마인크래프트를 켜서 확인해 주세요."
+  } catch { Say "되돌리지 못했습니다 — $($_.Exception.Message)" }
+}
 # ── 버튼 연결 ─────────────────────────────────────────
 $btnRun.Add_Click({ Start-Minecraft })
 $btnMods.Add_Click({ Install-Mods })
@@ -920,6 +1005,8 @@ if ($btnNews) {
     }
   })
 }
+
+$btnRestore.Add_Click({ Restore-Options })
 
 $btnLog.Add_Click({
   # 뭐가 어디서 어긋났는지 직접 볼 수 있게. 물어보실 때 이 파일만 보내주시면 된다.
