@@ -381,15 +381,17 @@ function Test-ShiftHeld {
 }
 
 # 기억해둔 설치 위치. 예전 판에서 따로 적어둔 것도 읽어준다.
+# 엘리용은 엘리 것만 본다. 예전 판의 공용 파일까지 읽었더니 잔누 인스턴스를
+# 가리키는 일이 생겼다.
 function Get-SavedTarget {
-  foreach ($f in @($MainRemember, $PackRemember, $PatchRemember)) {
+  foreach ($f in @($MainRemember, $PackRemember)) {
     $c = Get-Content (Join-Path $env:APPDATA $f) -Encoding UTF8 -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($c -and (Test-Path $c)) { return $c }
   }
   return $null
 }
 function Save-Target($p) {
-  foreach ($f in @($MainRemember, $PackRemember, $PatchRemember)) {
+  foreach ($f in @($MainRemember, $PackRemember)) {
     try { $p | Set-Content (Join-Path $env:APPDATA $f) -Encoding UTF8 } catch { }
   }
 }
