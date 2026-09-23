@@ -5,7 +5,7 @@ title 엘리 마크 도우미
 rem Launcher. Downloads the helper window from GitHub and runs it hidden.
 rem Comments stay in English: Korean comments broke parsing before chcp ran.
 
-set "SRC=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/gui.ps1"
+set "SRC=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/gui-elly.ps1"
 set "TMP=%TEMP%\elly-helper-gui.ps1"
 set "SIDE=elly"
 
