@@ -29,6 +29,7 @@ $BASE      = "https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/m
 $AppHome      = "elly-helper"
 $IconFile     = "elly-icon.ico"
 $LauncherFile = "elly-helper.bat"
+$GuiFileName  = "gui-elly.ps1"
 $PatchUrl  = "$BASE/Elly-Korean-Patch.zip"
 $PatchName = "Elly-Korean-Patch.zip"
 # 설치 위치는 한글패치·모드가 같은 폴더다. 따로 기억했더니 한쪽만 아는 상태가 생겼다.
@@ -1285,7 +1286,28 @@ function Wake-Server {
 # .bat 은 아이콘을 가질 수 없어서, 아이콘 붙은 바로가기를 대신 만들어 둔다.
 # 그리고 .bat 자체가 낡았으면 새것으로 갈아끼운다. 그래야 친구들이 파일을
 # 다시 받으러 다니지 않아도 된다. (.bat 은 이미 제 할 일을 끝내고 닫혔다)
+# 예전 실행 파일은 자기 경로를 알려주지 않는다. 그럴 땐 흔히 두는 자리에서
+# 우리 실행 파일을 직접 찾아본다. 그래야 예전 것을 받아 둔 사람도 갱신된다.
+function Find-Launcher-File {
+  $spots = @(
+    [Environment]::GetFolderPath("Desktop"),
+    (Join-Path $env:USERPROFILE "Desktop"),
+    (Join-Path $env:USERPROFILE "Downloads"),
+    (Join-Path $env:APPDATA $AppHome)
+  ) | Where-Object { $_ -and (Test-Path $_) } | Sort-Object -Unique
+  foreach ($d in $spots) {
+    foreach ($b in @(Get-ChildItem $d -Filter "*.bat" -File -ErrorAction SilentlyContinue)) {
+      try {
+        $t = [IO.File]::ReadAllText($b.FullName, [Text.Encoding]::UTF8)
+        if ($t -match [regex]::Escape("elly-korean-patch/main/" + $GuiFileName)) { return $b.FullName }
+      } catch { }
+    }
+  }
+  return $null
+}
+
 function Tend-Launcher {
+  if (-not $Launcher) { $Launcher = Find-Launcher-File }
   if (-not $Launcher) { return }
   if (-not (Test-Path -LiteralPath $Launcher)) { return }
   try {
