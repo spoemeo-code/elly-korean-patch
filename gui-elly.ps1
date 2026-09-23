@@ -67,7 +67,7 @@ if ($Server -eq "elly") {
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = $AppName
-$form.Size            = New-Object System.Drawing.Size(556, 646)
+$form.Size            = New-Object System.Drawing.Size(556, 584)
 $form.StartPosition   = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox     = $false
@@ -91,7 +91,7 @@ $title.Size      = New-Object System.Drawing.Size(270, 30)
 $form.Controls.Add($title)
 
 $sub           = New-Object System.Windows.Forms.Label
-$sub.Text      = "서버 모드 업데이트 버튼을 누르기 전 마인크래프트가 종료되어있는지 확인해 주세요."
+$sub.Text      = "모드는 프리즘 런처가 켜질 때 알아서 맞춰집니다."
 $sub.ForeColor = [System.Drawing.Color]::FromArgb(110, 114, 105)
 $sub.Location  = New-Object System.Drawing.Point(25, 50)
 $sub.Size      = New-Object System.Drawing.Size(500, 20)
@@ -129,15 +129,16 @@ function New-BigButton($text, $y, $color) {
 }
 
 # 모드가 안 맞으면 아예 못 들어가니 서버 모드를 위에 둔다. 한글패치는 안 해도 들어가진다.
-$btnMods  = New-BigButton "$PackLabel 모드 업데이트" 88  ([System.Drawing.Color]::FromArgb(70, 96, 130))
-$btnPatch = New-BigButton "한글패치 업데이트"        150 ([System.Drawing.Color]::FromArgb(79, 122, 54))
-$form.Controls.Add($btnMods)
+# 엘리서버는 프리즘으로 들어온다. 프리즘은 켤 때 팩을 스스로 맞추므로
+# 모드 업데이트 버튼은 두지 않는다.
+$btnMods  = $null
+$btnPatch = New-BigButton "한글패치 업데이트" 88 ([System.Drawing.Color]::FromArgb(79, 122, 54))
 $form.Controls.Add($btnPatch)
 
 # 세 번째 칸은 서버마다 다르다. 엘리 서버는 접속 주소, 잔누 서버는 업데이트 내역.
 # 접속 주소는 처음 한 번만 쓰므로 아래 작은 버튼으로 내렸다.
 $btnJoin = $null
-$btnNews = New-BigButton "업데이트 내역 보기" 212 ([System.Drawing.Color]::FromArgb(88, 80, 120))
+$btnNews = New-BigButton "업데이트 내역 보기" 150 ([System.Drawing.Color]::FromArgb(88, 80, 120))
 $form.Controls.Add($btnNews)
 
 # 버튼 오른쪽에 버전과 최신 여부를 적는다. 색으로 먼저 알아채게 한다.
@@ -151,15 +152,12 @@ function New-Stamp {
   $l.Font      = New-Object System.Drawing.Font("맑은 고딕", 8)
   return $l
 }
-$stampMods  = New-Stamp
+$stampMods  = $null
 $stampPatch = New-Stamp
-$btnMods.Controls.Add($stampMods)
 $btnPatch.Controls.Add($stampPatch)
 # 글자가 버튼 위에 얹혀 있어서, 그냥 두면 글자를 누른 클릭을 버튼이 못 받는다.
 # "몇 번 눌러야 겨우 되던" 이유였다. 글자 쪽 클릭을 버튼으로 넘겨준다.
-$stampMods.Add_Click({ $btnMods.PerformClick() })
 $stampPatch.Add_Click({ $btnPatch.PerformClick() })
-$stampMods.Cursor  = "Hand"
 $stampPatch.Cursor = "Hand"
 $stampJoin = $null
 $stampNews = New-Stamp
@@ -169,14 +167,14 @@ $stampNews.Cursor = "Hand"
 
 # 맨 아래는 실행. 업데이트 → 실행 순서로 읽히게 둔다.
 # 디스코드를 켜지 않아도 서버를 켤 수 있게 한다. 암호는 처음 한 번만 묻는다.
-$btnWake = New-BigButton "서버 켜기" 274 ([System.Drawing.Color]::FromArgb(140, 98, 52))
+$btnWake = New-BigButton "서버 켜기" 212 ([System.Drawing.Color]::FromArgb(140, 98, 52))
 $form.Controls.Add($btnWake)
 $stampWake = New-Stamp
 $btnWake.Controls.Add($stampWake)
 $stampWake.Add_Click({ $btnWake.PerformClick() })
 $stampWake.Cursor = "Hand"
 
-$btnRun = New-BigButton "마인크래프트 실행" 336 ([System.Drawing.Color]::FromArgb(58, 96, 92))
+$btnRun = New-BigButton "마인크래프트 실행" 274 ([System.Drawing.Color]::FromArgb(58, 96, 92))
 $form.Controls.Add($btnRun)
 $stampRun = New-Stamp
 $btnRun.Controls.Add($stampRun)
@@ -201,13 +199,13 @@ function New-SmallButton($text, $x, $y, $w) {
 }
 # 어디에 설치되는지 늘 보이게 한다. 안 보이면 "어디에 받는다는 거야?"가 된다.
 $pathLbl           = New-Object System.Windows.Forms.Label
-$pathLbl.Location  = New-Object System.Drawing.Point(25, 404)
+$pathLbl.Location  = New-Object System.Drawing.Point(25, 342)
 $pathLbl.Size      = New-Object System.Drawing.Size(492, 22)
 $pathLbl.ForeColor = [System.Drawing.Color]::FromArgb(90, 94, 86)
 $pathLbl.Font      = New-Object System.Drawing.Font("맑은 고딕", 8)
 $form.Controls.Add($pathLbl)
 
-$toolY     = 434
+$toolY     = 372
 $btnOpen   = New-SmallButton "설치된 폴더 열기" 24 $toolY 130
 $btnChange = New-SmallButton "설치 위치 바꾸기" 160 $toolY 130
 $btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
@@ -220,7 +218,7 @@ $form.Controls.Add($btnLog)
 $form.Controls.Add($btnRestore)
 $form.Controls.Add($btnKeys)
 
-$logY = 508
+$logY = 446
 
 # 지금 뭘 하는 중인지 한 줄 + 얼마나 됐는지 막대. 글자가 쏟아지는 것보다 읽기 쉽다.
 $statusLbl           = New-Object System.Windows.Forms.Label
@@ -261,7 +259,7 @@ function SetStep($text, $pct) {
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnMods, $btnPatch, $btnNews, $btnRun, $btnWake, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore)) {
+  foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -737,7 +735,6 @@ function Update-ServerState {
 function Refresh-Stamps($keepMessage) {
   # 뭔가 하고 있다는 걸 알 수 있게. 조용히 멈춰 있으면 고장난 줄 안다.
   $stampPatch.Text = "확인 중..."
-  $stampMods.Text  = "확인 중..."
   Log "상태 확인 시작"
   if (-not $keepMessage) {
     $statusLbl.Text = "불러오는 중입니다..."
@@ -792,52 +789,6 @@ function Refresh-Stamps($keepMessage) {
   } catch { $stampPatch.Text = "확인 실패"; $stampPatch.ForeColor = $ColorDim; Log "  [한글패치 확인 실패] $($_.Exception.Message)" }
   Log "  한글패치: $($stampPatch.Text -replace [char]13, ' / ' -replace [char]10, '')"
 
-  # 서버 모드.
-  #
-  # 누누님이 저장소에 올렸다고 바로 받으면 안 된다. 호환이 안 맞아 일부러
-  # 안 올리고 두는 때가 있어서, 디스코드에서 /배포완료 를 치신 그 시점의 팩만 받는다.
-  # 봇이 그때의 커밋을 release.json 에 적어두고, 여기서는 그 커밋을 그대로 쓴다.
-  # release.json 은 잔누 팩 전용이다(누누가 /배포완료 를 쳤을 때 찍히는 도장).
-  # 엘리 팩은 내가 직접 관리하므로 늘 최신을 본다.
-  $script:packRef = "refs/heads/main"
-  $script:packLocked = $false
-
-  try {
-    if ($script:packLocked) {
-      $stampMods.Text = "아직 배포되지 않았습니다`r`n누누님이 배포를 완료하면 열립니다"
-      $stampMods.ForeColor = $ColorDim
-      $btnMods.Enabled = $false
-    } else {
-      $btnMods.Enabled = $true
-      $want = $script:packWanted
-      if ($want) { $cnt = $want.Count }
-      else {
-        $idx = Get-WebText "https://raw.githubusercontent.com/$PackRepo/$($script:packRef)/index.toml"
-        $cnt = ([regex]::Matches($idx, '(?m)^file\s*=\s*"mods/')).Count
-      }
-      if ($cnt -le 0) { throw "목록 없음" }
-      $t2 = Get-SavedTarget
-      if ($t2 -and (Test-Path (Join-Path $t2 "mods"))) {
-        $have = @{}
-        Get-ChildItem (Join-Path $t2 "mods") -Filter *.jar -File -ErrorAction SilentlyContinue | ForEach-Object { $have[$_.Name] = $true }
-        # 파일 이름을 알면 정확히 세고, 모르면 개수로만 본다.
-        if ($want) { $miss = @($want | Where-Object { -not $have.ContainsKey($_.File) }).Count }
-        else { $miss = [Math]::Max(0, $cnt - $have.Count) }
-        if ($miss -eq 0) {
-          # 직접 깔아두신 모드가 있어 클라이언트 쪽이 더 많을 수 있다. 그건 문제가 아니다.
-          $stampMods.Text = "서버 파일 $cnt 개 모두 일치`r`n클라이언트 파일 $($have.Count) 개 · 최신 버전입니다"
-          $stampMods.ForeColor = $ColorGood
-        } else {
-          $stampMods.Text = "서버 파일 $cnt 개 중 $miss 개 없음`r`n클라이언트 파일 $($have.Count) 개 · 최신 버전이 아닙니다"
-          $stampMods.ForeColor = $ColorBad
-        }
-      } else {
-        $stampMods.Text = "서버 파일 $cnt 개`r`n아직 확인하지 않았습니다"
-        $stampMods.ForeColor = $ColorDim
-      }
-    }
-  } catch { $stampMods.Text = "확인 실패"; $stampMods.ForeColor = $ColorDim; Log "  [모드 확인 실패] $($_.Exception.Message)" }
-  Log "  모드: $($stampMods.Text -replace [char]13, ' / ' -replace [char]10, '')"
   Log "  설치 위치: $tp"
 
   # 서버가 켜져 있는지
@@ -1355,7 +1306,7 @@ function Tend-Launcher {
 # ── 버튼 연결 ─────────────────────────────────────────
 $btnWake.Add_Click({ Wake-Server })
 $btnRun.Add_Click({ Start-Minecraft })
-$btnMods.Add_Click({ Install-Mods })
+
 $btnPatch.Add_Click({ Install-Patch })
 
 if ($btnJoin) {
