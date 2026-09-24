@@ -1451,15 +1451,18 @@ function Show-TextWindow($winTitle, $text) {
   $w.Icon = $form.Icon
   $w.MinimizeBox = $false
   $box = New-Object System.Windows.Forms.TextBox
-  $box.Multiline = $true; $box.ReadOnly = $true; $box.ScrollBars = "Vertical"
+  # 표가 줄바꿈 없이 이어 붙지 않도록 자동 줄바꿈을 끄고 가로 스크롤을 준다
+  $box.Multiline = $true; $box.ReadOnly = $true; $box.WordWrap = $false; $box.ScrollBars = "Both"
   $box.Location = New-Object System.Drawing.Point(18, 18)
   $box.Size = New-Object System.Drawing.Size(568, 410)
   $box.BackColor = [System.Drawing.Color]::White
   $box.BorderStyle = "FixedSingle"
   # 표가 어긋나지 않게 폭이 일정한 글꼴로
   $box.Font = New-Object System.Drawing.Font("D2Coding", 10)
-  if ($box.Font.Name -ne "D2Coding") { $box.Font = New-Object System.Drawing.Font("Consolas", 10) }
-  $box.Text = $text
+  # Consolas 는 한글 폭이 영문 두 칸이 아니라 표가 밀린다. 굴림체는 윈도우에 늘 있다
+  if ($box.Font.Name -ne "D2Coding") { $box.Font = New-Object System.Drawing.Font("GulimChe", 10) }
+  # 봇은 LF 로만 줄을 나눈다. TextBox 는 CRLF 가 아니면 줄을 바꾸지 않는다
+  $box.Text = ([string]$text) -replace "`r?`n", "`r`n"
   $box.Select(0, 0)
   $w.Controls.Add($box)
   $c = New-Object System.Windows.Forms.Button
