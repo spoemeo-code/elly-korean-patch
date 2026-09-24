@@ -10,7 +10,8 @@
 param(
   [ValidateSet("elly", "jannu")]
   [string]$Server = "jannu",
-  [string]$Launcher = ""
+  [string]$Launcher = "",
+  [string]$Notice = ""
 )
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
@@ -62,6 +63,76 @@ if ($Server -eq "elly") {
   # 디스코드 앱이 깔려 있으면 앱에서 바로 열리고, 아니면 브라우저로 넘어간다
   $NewsUrl      = "https://discord.com/channels/1534098593483456644/1540822932857823352"
   $NewsWeb      = "discord://discord.com/channels/1534098593483456644/1540822932857823352"
+}
+
+# ── 배포 서명 확인 (loader.ps1 · gui-elly.ps1 · gui.ps1 에 같은 내용) ──
+# elly PC 에만 있는 열쇠로 서명한 manifest.json 만 믿는다. 공개키는 밖에 내보내도 되는 쪽이다.
+$ReleasePubKey = '<RSAKeyValue><Modulus>uTUYzFZRiZNplu/l4TAOk/zWBNs8vsiHsA8RCicdwyHtezCk2++NsLi6TrfQL942dbTRmQiASXOEa3xqG8Gth6jMt024PlV9/mEGcyq079I8O+Uow9pPPsxe1OzidLex4ehen9G6eAAHpdqWFSjJ/CcbXqp3sLTMox5TqX/ALjyErO7xfeWASHmm9oA1PNP0O6mn06O/vpwvQkNKHPtbhqmoMl+YS6Kc9wL5XG0ob3NuQS2RylkPG0vdwmMB4cU+Pkw2Gus2ieC7nO6GcdxCmoltfUeYosOG+cJnU1OBIRuPLSN5c9PE7uxoQxJwDowNCh0JcxMIa0Mvr/1Sa0eT6/KyarWgguSzkp490od1p0UcP9qnpoRMokN359r7tQtrL4ABayCKq5jxbjA0RUoVpmIgWU0DIR3BoAQ3NE5wJc23OsTjRx8/L1R15eWDY/rjk7N3KUWVH9mHmU9rqlU6fbOJDB1GL/8few4bNy51trjsmzMThsiPdL5jSVqcshGF</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>'
+$RelHome = Join-Path $env:APPDATA $AppHome
+$RelDir  = Join-Path $RelHome "verified"
+function Rel-Fetch($url, $dest) {
+  $wc = New-Object System.Net.WebClient
+  $wc.Headers.Add("User-Agent", "elly-helper")
+  $wc.Headers.Add("Cache-Control", "no-cache")
+  try { $wc.DownloadFile($url, $dest) } finally { $wc.Dispose() }
+}
+function Rel-Sha256($path) { return (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower() }
+function Rel-Verify([byte[]]$bytes, [string]$sigB64) {
+  $csp = New-Object System.Security.Cryptography.CspParameters(24)
+  $rsa = New-Object System.Security.Cryptography.RSACryptoServiceProvider($csp)
+  try {
+    $rsa.PersistKeyInCsp = $false
+    $rsa.FromXmlString($ReleasePubKey)
+    return $rsa.VerifyData($bytes, "SHA256", [Convert]::FromBase64String($sigB64.Trim()))
+  } finally { $rsa.Dispose() }
+}
+# 받아서 서명과 버전을 확인한 manifest 를 돌려준다. 실패하면 "확인:" 또는 "연결:" 로 시작하는 오류를 던진다.
+function Get-ReleaseManifest {
+  $tag = [DateTime]::UtcNow.Ticks
+  $mj = Join-Path $env:TEMP ("elly-manifest-" + $tag + ".json")
+  $ms = "$mj.sig"
+  try {
+    try {
+      Rel-Fetch "$BASE/manifest.json?v=$tag" $mj
+      Rel-Fetch "$BASE/manifest.sig?v=$tag" $ms
+    } catch { throw "연결: $($_.Exception.Message)" }
+    $bytes = [IO.File]::ReadAllBytes($mj)
+    $ok = $false
+    try { $ok = Rel-Verify $bytes ([IO.File]::ReadAllText($ms)) } catch { $ok = $false }
+    if (-not $ok) { throw "확인: 서명이 맞지 않습니다" }
+    $m = [Text.Encoding]::UTF8.GetString($bytes).TrimStart([char]0xFEFF) | ConvertFrom-Json
+    # 옛 배포를 다시 내미는 것을 막는다. 한 번 본 번호보다 작으면 받지 않는다.
+    $tf = Join-Path $RelHome "trusted-version.txt"
+    $last = 0
+    if (Test-Path -LiteralPath $tf) { try { $last = [int]([IO.File]::ReadAllText($tf).Trim()) } catch { $last = 0 } }
+    if ([int]$m.version -lt $last) { throw "확인: 이전 배포($($m.version))입니다. 마지막으로 확인한 배포는 $last 입니다" }
+    [void][IO.Directory]::CreateDirectory($RelDir)
+    [IO.File]::WriteAllText($tf, [string][int]$m.version)
+    [IO.File]::Copy($mj, (Join-Path $RelDir "manifest.json"), $true)
+    [IO.File]::Copy($ms, (Join-Path $RelDir "manifest.sig"), $true)
+    return $m
+  } finally {
+    Remove-Item -LiteralPath $mj, $ms -ErrorAction SilentlyContinue
+  }
+}
+# manifest 에 적힌 파일을 받아 크기와 해시가 맞을 때만 dest 에 놓는다.
+function Get-ReleaseFile($m, [string]$name, [string]$url, [string]$dest) {
+  $e = $m.files.$name
+  if (-not $e) { throw "확인: $name 이(가) 배포 목록에 없습니다" }
+  $tmp = "$dest.part"
+  try { Rel-Fetch $url $tmp } catch { throw "연결: $($_.Exception.Message)" }
+  if ((Get-Item -LiteralPath $tmp).Length -ne [long]$e.size -or (Rel-Sha256 $tmp) -ne ([string]$e.sha256).ToLower()) {
+    Remove-Item -LiteralPath $tmp -ErrorAction SilentlyContinue
+    throw "확인: $name 이(가) 배포된 파일과 다릅니다"
+  }
+  Move-Item -LiteralPath $tmp -Destination $dest -Force
+}
+# ── 서명 확인 끝 ──
+# 한 번 확인한 목록은 창이 떠 있는 동안 다시 받지 않는다
+$script:RelM = $null
+function Get-Rel {
+  if (-not $script:RelM) { $script:RelM = Get-ReleaseManifest }
+  return $script:RelM
 }
 
 # ── 창 ────────────────────────────────────────────────
@@ -431,6 +502,16 @@ function Install-Patch {
     Remove-Item $tmp -ErrorAction SilentlyContinue
     Get-Web $PatchUrl $tmp
 
+    # 서명된 배포 목록의 해시와 같을 때만 넣는다
+    $pe = $null
+    try { $pe = (Get-Rel).files."Elly-Korean-Patch.zip" } catch { Log "  [배포 목록 확인 실패] $($_.Exception.Message)" }
+    if (-not $pe -or (Rel-Sha256 $tmp) -ne ([string]$pe.sha256).ToLower()) {
+      Remove-Item $tmp -ErrorAction SilentlyContinue
+      SetStep "배포되지 않은 한글패치라 받지 않았습니다." 0
+      Log "한글패치 해시가 배포 목록과 다름"
+      return
+    }
+
     # 받은 게 진짜 리소스팩인지 확인한다(깨진 파일을 넣으면 마크가 켜지다 만다)
     SetStep "받은 파일을 확인하고 있습니다..." 55
     $z = [System.IO.Compression.ZipFile]::OpenRead($tmp)
@@ -618,28 +699,36 @@ function Install-Mods {
       return
     }
 
-    $bat = Join-Path $target "update.bat"
-    if (-not (Test-Path -LiteralPath $bat)) {
-      SetStep "업데이트 도구를 받는 중입니다..." 20
-      try {
-        Get-Web "https://raw.githubusercontent.com/$PackRepo/refs/heads/main/update.bat" $bat
-        Log "update.bat 내려받아 넣음"
-      } catch {
-        SetStep "업데이트 도구를 받지 못했습니다 — $($_.Exception.Message)" 0
-        return
-      }
+    # 누누님 update.bat 은 실행될 때마다 main 의 mod-sync.ps1 을 새로 받아 실행해서
+    # 배포 시점에 고정할 수 없다. 그래서 elly 가 서명한 커밋의 mod-sync.ps1 을
+    # 해시로 확인한 뒤 같은 커밋의 pack.toml 로 직접 실행한다.
+    $j = $null
+    try { $j = (Get-Rel).jannu } catch { Log "  [배포 목록 확인 실패] $($_.Exception.Message)" }
+    if (-not $j -or -not $j.commit -or -not $j.files."mod-sync.ps1") {
+      SetStep "배포 확인에 실패해 모드를 맞추지 않았습니다. 잠시 뒤 다시 해 주세요." 0
+      return
     }
+    SetStep "업데이트 도구를 확인하는 중입니다..." 20
+    $sync = Join-Path $target "mod-sync.ps1"
+    $raw  = "https://raw.githubusercontent.com/$PackRepo/$($j.commit)"
+    try { Get-ReleaseFile $j "mod-sync.ps1" "$raw/mod-sync.ps1" $sync }
+    catch {
+      SetStep "배포되지 않은 업데이트 도구라 실행하지 않았습니다." 0
+      Log "mod-sync.ps1 확인 실패: $($_.Exception.Message)"
+      return
+    }
+    Log "mod-sync.ps1 확인됨 — 커밋 $($j.commit)"
 
-    SetStep "업데이트 도구를 실행했습니다. 열린 창에서 이어서 해주세요." 50
+    SetStep "비교 화면을 여는 중입니다. 열린 창에서 이어서 해주세요." 50
     $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
-    $proc = Start-Process cmd.exe -ArgumentList @("/c", "`"$bat`"") -WorkingDirectory $target -PassThru
+    $proc = Start-Process powershell -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$sync`"", "-PackUrl", "$raw/pack.toml") -WorkingDirectory $target -WindowStyle Hidden -PassThru
     while (-not $proc.HasExited) {
       Start-Sleep -Milliseconds 400
       [System.Windows.Forms.Application]::DoEvents()
     }
     $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
     SetStep "$PackLabel 모드 업데이트가 완료되었습니다." 100
-    Log "update.bat 끝남 (코드 $($proc.ExitCode))"
+    Log "mod-sync 끝남 (코드 $($proc.ExitCode))"
   } catch {
     $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
     SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0
@@ -833,17 +922,18 @@ function Refresh-Stamps($keepMessage) {
   $script:packRef = "refs/heads/main"
   $script:packLocked = $false
   $relNote = $null
+  # 이제는 elly 가 서명한 배포 목록(manifest)의 잔누 커밋만 쓴다. 확인이 안 되면 잠근다.
   try {
-    $rel = (Get-WebText "$BASE/release.json") | ConvertFrom-Json
-    if ($rel.commit) {
-      $script:packRef = $rel.commit
-      if ($rel.released_at) { $relNote = $rel.released_at }
+    $j = (Get-Rel).jannu
+    if ($j -and $j.commit) {
+      $script:packRef = $j.commit
+      if ($j.released_at) { $relNote = $j.released_at }
     } else {
       $script:packLocked = $true
     }
   } catch {
-    # release.json 이 아직 없으면 예전처럼 최신 상태를 본다
-    $script:packRef = "refs/heads/main"
+    Log "  [배포 목록 확인 실패] $($_.Exception.Message)"
+    $script:packLocked = $true
   }
 
   try {
@@ -1097,7 +1187,7 @@ function Tend-Launcher {
     # 1) 아이콘
     $ico = Join-Path $home2 "icon.ico"
     if (-not (Test-Path -LiteralPath $ico)) {
-      try { Get-Web "$BASE/$IconFile" $ico; Log "아이콘 받음" } catch { Log "아이콘 받기 실패: $($_.Exception.Message)" }
+      try { Get-ReleaseFile (Get-Rel) $IconFile "$BASE/$IconFile" $ico; Log "아이콘 받음" } catch { Log "아이콘 받기 실패: $($_.Exception.Message)" }
     }
 
     # 2) 바탕화면 바로가기 — 바탕화면 위치는 윈도우에 물어본다(원드라이브를 쓰면 다르다)
@@ -1116,21 +1206,19 @@ function Tend-Launcher {
       }
     }
 
-    # 3) 실행 파일이 낡았으면 갈아끼운다
-    $latest = Join-Path $home2 "latest.bat"
+    # 3) 확인 실행기(loader)와 실행 파일을 서명된 배포 목록과 맞춘다.
+    #    목록의 해시와 같은 것만 넣고, 확인이 안 되면 아무것도 바꾸지 않는다.
+    #    loader 를 먼저 넣어야 새 실행 파일이 그것을 찾을 수 있다.
     try {
-      Get-Web "$BASE/$LauncherFile" $latest
-      # cmd 는 LF 로만 된 .bat 을 잘못 읽고, 한 번 망가지면 창까지 못 와서 스스로 못 고친다.
-      # 받은 것이 .bat 이 아니면 건드리지 않고, 줄끝은 반드시 CRLF 로 맞춰서 넣는다
-      $lt = [IO.File]::ReadAllText($latest, [Text.Encoding]::UTF8)
-      if ($lt -notmatch "^@echo off") { throw "받은 실행 파일이 올바르지 않음" }
-      $lt = $lt -replace "`r?`n", "`r`n"
-      [IO.File]::WriteAllText($latest, $lt, (New-Object Text.UTF8Encoding($false)))
-      $a = [IO.File]::ReadAllBytes($Launcher)
-      $b = [IO.File]::ReadAllBytes($latest)
-      $same = ($a.Length -eq $b.Length)
-      if ($same) { for ($i = 0; $i -lt $a.Length; $i++) { if ($a[$i] -ne $b[$i]) { $same = $false; break } } }
-      if (-not $same) {
+      $m = Get-Rel
+      $ld = Join-Path $home2 "loader.ps1"
+      if (-not (Test-Path -LiteralPath $ld) -or (Rel-Sha256 $ld) -ne ([string]$m.files."loader.ps1".sha256).ToLower()) {
+        Get-ReleaseFile $m "loader.ps1" "$BASE/loader.ps1" $ld
+        Log "확인 실행기를 넣음"
+      }
+      if ((Rel-Sha256 $Launcher) -ne ([string]$m.files.$LauncherFile.sha256).ToLower()) {
+        $latest = Join-Path $home2 "latest.bat"
+        Get-ReleaseFile $m $LauncherFile "$BASE/$LauncherFile" $latest
         [IO.File]::Copy($Launcher, "$Launcher.bak", $true)
         [IO.File]::Copy($latest, $Launcher, $true)
         Log "실행 파일을 새것으로 바꿈"
@@ -1208,5 +1296,5 @@ $btnChange.Add_Click({
   Refresh-Stamps $true
 })
 
-$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false })
+$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; if ($Notice) { Say $Notice } })
 [void]$form.ShowDialog()

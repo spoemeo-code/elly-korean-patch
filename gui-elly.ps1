@@ -10,7 +10,8 @@
 param(
   [ValidateSet("elly", "jannu")]
   [string]$Server = "elly",
-  [string]$Launcher = ""
+  [string]$Launcher = "",
+  [string]$Notice = ""
 )
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
@@ -73,10 +74,82 @@ if ($Server -eq "elly") {
   $NewsWeb      = "discord://discord.com/channels/1534098593483456644/1540822932857823352"
 }
 
+# ── 배포 서명 확인 (loader.ps1 · gui-elly.ps1 · gui.ps1 에 같은 내용) ──
+# elly PC 에만 있는 열쇠로 서명한 manifest.json 만 믿는다. 공개키는 밖에 내보내도 되는 쪽이다.
+$ReleasePubKey = '<RSAKeyValue><Modulus>uTUYzFZRiZNplu/l4TAOk/zWBNs8vsiHsA8RCicdwyHtezCk2++NsLi6TrfQL942dbTRmQiASXOEa3xqG8Gth6jMt024PlV9/mEGcyq079I8O+Uow9pPPsxe1OzidLex4ehen9G6eAAHpdqWFSjJ/CcbXqp3sLTMox5TqX/ALjyErO7xfeWASHmm9oA1PNP0O6mn06O/vpwvQkNKHPtbhqmoMl+YS6Kc9wL5XG0ob3NuQS2RylkPG0vdwmMB4cU+Pkw2Gus2ieC7nO6GcdxCmoltfUeYosOG+cJnU1OBIRuPLSN5c9PE7uxoQxJwDowNCh0JcxMIa0Mvr/1Sa0eT6/KyarWgguSzkp490od1p0UcP9qnpoRMokN359r7tQtrL4ABayCKq5jxbjA0RUoVpmIgWU0DIR3BoAQ3NE5wJc23OsTjRx8/L1R15eWDY/rjk7N3KUWVH9mHmU9rqlU6fbOJDB1GL/8few4bNy51trjsmzMThsiPdL5jSVqcshGF</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>'
+$RelHome = Join-Path $env:APPDATA $AppHome
+$RelDir  = Join-Path $RelHome "verified"
+function Rel-Fetch($url, $dest) {
+  $wc = New-Object System.Net.WebClient
+  $wc.Headers.Add("User-Agent", "elly-helper")
+  $wc.Headers.Add("Cache-Control", "no-cache")
+  try { $wc.DownloadFile($url, $dest) } finally { $wc.Dispose() }
+}
+function Rel-Sha256($path) { return (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower() }
+function Rel-Verify([byte[]]$bytes, [string]$sigB64) {
+  $csp = New-Object System.Security.Cryptography.CspParameters(24)
+  $rsa = New-Object System.Security.Cryptography.RSACryptoServiceProvider($csp)
+  try {
+    $rsa.PersistKeyInCsp = $false
+    $rsa.FromXmlString($ReleasePubKey)
+    return $rsa.VerifyData($bytes, "SHA256", [Convert]::FromBase64String($sigB64.Trim()))
+  } finally { $rsa.Dispose() }
+}
+# 받아서 서명과 버전을 확인한 manifest 를 돌려준다. 실패하면 "확인:" 또는 "연결:" 로 시작하는 오류를 던진다.
+function Get-ReleaseManifest {
+  $tag = [DateTime]::UtcNow.Ticks
+  $mj = Join-Path $env:TEMP ("elly-manifest-" + $tag + ".json")
+  $ms = "$mj.sig"
+  try {
+    try {
+      Rel-Fetch "$BASE/manifest.json?v=$tag" $mj
+      Rel-Fetch "$BASE/manifest.sig?v=$tag" $ms
+    } catch { throw "연결: $($_.Exception.Message)" }
+    $bytes = [IO.File]::ReadAllBytes($mj)
+    $ok = $false
+    try { $ok = Rel-Verify $bytes ([IO.File]::ReadAllText($ms)) } catch { $ok = $false }
+    if (-not $ok) { throw "확인: 서명이 맞지 않습니다" }
+    $m = [Text.Encoding]::UTF8.GetString($bytes).TrimStart([char]0xFEFF) | ConvertFrom-Json
+    # 옛 배포를 다시 내미는 것을 막는다. 한 번 본 번호보다 작으면 받지 않는다.
+    $tf = Join-Path $RelHome "trusted-version.txt"
+    $last = 0
+    if (Test-Path -LiteralPath $tf) { try { $last = [int]([IO.File]::ReadAllText($tf).Trim()) } catch { $last = 0 } }
+    if ([int]$m.version -lt $last) { throw "확인: 이전 배포($($m.version))입니다. 마지막으로 확인한 배포는 $last 입니다" }
+    [void][IO.Directory]::CreateDirectory($RelDir)
+    [IO.File]::WriteAllText($tf, [string][int]$m.version)
+    [IO.File]::Copy($mj, (Join-Path $RelDir "manifest.json"), $true)
+    [IO.File]::Copy($ms, (Join-Path $RelDir "manifest.sig"), $true)
+    return $m
+  } finally {
+    Remove-Item -LiteralPath $mj, $ms -ErrorAction SilentlyContinue
+  }
+}
+# manifest 에 적힌 파일을 받아 크기와 해시가 맞을 때만 dest 에 놓는다.
+function Get-ReleaseFile($m, [string]$name, [string]$url, [string]$dest) {
+  $e = $m.files.$name
+  if (-not $e) { throw "확인: $name 이(가) 배포 목록에 없습니다" }
+  $tmp = "$dest.part"
+  try { Rel-Fetch $url $tmp } catch { throw "연결: $($_.Exception.Message)" }
+  if ((Get-Item -LiteralPath $tmp).Length -ne [long]$e.size -or (Rel-Sha256 $tmp) -ne ([string]$e.sha256).ToLower()) {
+    Remove-Item -LiteralPath $tmp -ErrorAction SilentlyContinue
+    throw "확인: $name 이(가) 배포된 파일과 다릅니다"
+  }
+  Move-Item -LiteralPath $tmp -Destination $dest -Force
+}
+# ── 서명 확인 끝 ──
+# 한 번 확인한 목록은 창이 떠 있는 동안 다시 받지 않는다
+$script:RelM = $null
+function Get-Rel {
+  if (-not $script:RelM) { $script:RelM = Get-ReleaseManifest }
+  return $script:RelM
+}
+
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = $AppName
-$form.Size            = New-Object System.Drawing.Size(556, 584)
+# 오른쪽에 서버 소식 칸을 붙인다
+$FeedW = 330
+$form.Size            = New-Object System.Drawing.Size((556 + $FeedW), 584)
 $form.StartPosition   = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox     = $false
@@ -204,7 +277,7 @@ $stampRun.Cursor = "Hand"
 
 # 엘리 전용 버튼이 한 줄 더 있으면 아래 것들을 그만큼 내린다.
 $shift = if ($IsAdmin) { 62 } else { 0 }
-if ($IsAdmin) { $form.Size = New-Object System.Drawing.Size(556, (584 + $shift)) }
+if ($IsAdmin) { $form.Size = New-Object System.Drawing.Size((556 + $FeedW), (584 + $shift)) }
 
 # 어디에 깔렸는지 확인하고 바꿀 수 있게. 잘못 고른 사람이 스스로 고칠 길이 필요하다.
 function New-SmallButton($text, $x, $y, $w) {
@@ -458,6 +531,16 @@ function Install-Patch {
     $tmp = Join-Path $env:TEMP "elly-patch-download.zip"
     Remove-Item $tmp -ErrorAction SilentlyContinue
     Get-Web $PatchUrl $tmp
+
+    # 서명된 배포 목록의 해시와 같을 때만 넣는다
+    $pe = $null
+    try { $pe = (Get-Rel).files."Elly-Korean-Patch.zip" } catch { Log "  [배포 목록 확인 실패] $($_.Exception.Message)" }
+    if (-not $pe -or (Rel-Sha256 $tmp) -ne ([string]$pe.sha256).ToLower()) {
+      Remove-Item $tmp -ErrorAction SilentlyContinue
+      SetStep "배포되지 않은 한글패치라 받지 않았습니다." 0
+      Log "한글패치 해시가 배포 목록과 다름"
+      return
+    }
 
     # 받은 게 진짜 리소스팩인지 확인한다(깨진 파일을 넣으면 마크가 켜지다 만다)
     SetStep "받은 파일을 확인하고 있습니다..." 55
@@ -1193,10 +1276,14 @@ $KeyFile = Join-Path $env:APPDATA "elly-helper-key.txt"
 
 function Get-BotEndpoint {
   # 봇 주소가 바뀌어도 친구들이 파일을 다시 받지 않아도 되게, 주소를 따로 읽어온다.
+  # 배포 목록에 적힌 것과 같을 때만 믿는다. 아니면 기본 주소를 쓴다.
   try {
-    $a = (Get-WebText "$BASE/bot-endpoint.txt").Trim()
+    $tmp = Join-Path $env:TEMP ("bot-ep-" + [guid]::NewGuid().ToString("N") + ".txt")
+    Get-ReleaseFile (Get-Rel) "bot-endpoint.txt" "$BASE/bot-endpoint.txt" $tmp
+    $a = ([IO.File]::ReadAllText($tmp)).Trim()
+    Remove-Item -LiteralPath $tmp -ErrorAction SilentlyContinue
     if ($a) { return $a }
-  } catch { }
+  } catch { Log "  [봇 주소 확인 실패] $($_.Exception.Message)" }
   return "http://34.123.58.169:8787"
 }
 
@@ -1339,7 +1426,7 @@ function Tend-Launcher {
     # 1) 아이콘
     $ico = Join-Path $home2 "icon.ico"
     if (-not (Test-Path -LiteralPath $ico)) {
-      try { Get-Web "$BASE/$IconFile" $ico; Log "아이콘 받음" } catch { Log "아이콘 받기 실패: $($_.Exception.Message)" }
+      try { Get-ReleaseFile (Get-Rel) $IconFile "$BASE/$IconFile" $ico; Log "아이콘 받음" } catch { Log "아이콘 받기 실패: $($_.Exception.Message)" }
     }
 
     # 2) 바탕화면 바로가기 — 바탕화면 위치는 윈도우에 물어본다(원드라이브를 쓰면 다르다)
@@ -1358,21 +1445,19 @@ function Tend-Launcher {
       }
     }
 
-    # 3) 실행 파일이 낡았으면 갈아끼운다
-    $latest = Join-Path $home2 "latest.bat"
+    # 3) 확인 실행기(loader)와 실행 파일을 서명된 배포 목록과 맞춘다.
+    #    목록의 해시와 같은 것만 넣고, 확인이 안 되면 아무것도 바꾸지 않는다.
+    #    loader 를 먼저 넣어야 새 실행 파일이 그것을 찾을 수 있다.
     try {
-      Get-Web "$BASE/$LauncherFile" $latest
-      # cmd 는 LF 로만 된 .bat 을 잘못 읽고, 한 번 망가지면 창까지 못 와서 스스로 못 고친다.
-      # 받은 것이 .bat 이 아니면 건드리지 않고, 줄끝은 반드시 CRLF 로 맞춰서 넣는다
-      $lt = [IO.File]::ReadAllText($latest, [Text.Encoding]::UTF8)
-      if ($lt -notmatch "^@echo off") { throw "받은 실행 파일이 올바르지 않음" }
-      $lt = $lt -replace "`r?`n", "`r`n"
-      [IO.File]::WriteAllText($latest, $lt, (New-Object Text.UTF8Encoding($false)))
-      $a = [IO.File]::ReadAllBytes($Launcher)
-      $b = [IO.File]::ReadAllBytes($latest)
-      $same = ($a.Length -eq $b.Length)
-      if ($same) { for ($i = 0; $i -lt $a.Length; $i++) { if ($a[$i] -ne $b[$i]) { $same = $false; break } } }
-      if (-not $same) {
+      $m = Get-Rel
+      $ld = Join-Path $home2 "loader.ps1"
+      if (-not (Test-Path -LiteralPath $ld) -or (Rel-Sha256 $ld) -ne ([string]$m.files."loader.ps1".sha256).ToLower()) {
+        Get-ReleaseFile $m "loader.ps1" "$BASE/loader.ps1" $ld
+        Log "확인 실행기를 넣음"
+      }
+      if ((Rel-Sha256 $Launcher) -ne ([string]$m.files.$LauncherFile.sha256).ToLower()) {
+        $latest = Join-Path $home2 "latest.bat"
+        Get-ReleaseFile $m $LauncherFile "$BASE/$LauncherFile" $latest
         [IO.File]::Copy($Launcher, "$Launcher.bak", $true)
         [IO.File]::Copy($latest, $Launcher, $true)
         Log "실행 파일을 새것으로 바꿈"
@@ -1638,9 +1723,144 @@ $btnChange.Add_Click({
 })
 
 # 창을 켜 둔 채로도 서버 상태가 따라오게 한다
+# ── 서버 소식 (창 오른쪽 칸) ──────────────────────────
+# 봇이 모아 둔 소식과 친구들 진행도를 보여준다. 서버가 꺼져 있어도 봇은 켜져 있어서
+# 지난 소식이 그대로 보인다. 좌표나 공략은 봇 쪽 문장에 애초에 넣지 않는다.
+$feedTabs          = New-Object System.Windows.Forms.TabControl
+$feedTabs.Location = New-Object System.Drawing.Point(540, 20)
+$feedTabs.Size     = New-Object System.Drawing.Size(($FeedW - 36), ($form.ClientSize.Height - 36))
+$feedTabs.Font     = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
+$form.Controls.Add($feedTabs)
+
+function New-FeedBox($tabTitle) {
+  $pg = New-Object System.Windows.Forms.TabPage
+  $pg.Text = $tabTitle
+  $pg.BackColor = [System.Drawing.Color]::White
+  $pg.Padding = New-Object System.Windows.Forms.Padding(8)
+  $rb = New-Object System.Windows.Forms.RichTextBox
+  $rb.Dock = "Fill"; $rb.ReadOnly = $true; $rb.BorderStyle = "None"
+  $rb.BackColor = [System.Drawing.Color]::White
+  $rb.Font = New-Object System.Drawing.Font("맑은 고딕", 9)
+  $rb.DetectUrls = $false; $rb.ScrollBars = "Vertical"; $rb.Cursor = "Arrow"
+  $pg.Controls.Add($rb)
+  $feedTabs.TabPages.Add($pg)
+  return $rb
+}
+$feedNews = New-FeedBox "서버 소식"
+$feedProg = New-FeedBox "진행도"
+
+function Feed-Add($box, $text, $color, $bold, $size) {
+  if (-not $size) { $size = 9 }
+  $style = if ($bold) { [System.Drawing.FontStyle]::Bold } else { [System.Drawing.FontStyle]::Regular }
+  $box.SelectionStart = $box.TextLength; $box.SelectionLength = 0
+  $box.SelectionFont  = New-Object System.Drawing.Font("맑은 고딕", $size, $style)
+  $box.SelectionColor = if ($color) { $color } else { [System.Drawing.Color]::FromArgb(45, 48, 42) }
+  $box.AppendText($text)
+}
+
+# "방금 / 12분 전 / 3시간 전 / 어제 / 9월 23일"
+function Format-Ago($iso) {
+  try {
+    $t = [DateTimeOffset]::Parse($iso).LocalDateTime
+    $m = ((Get-Date) - $t).TotalMinutes
+    if ($m -lt 1)  { return "방금" }
+    if ($m -lt 60) { return ("{0}분 전" -f [int]$m) }
+    if ($t.Date -eq (Get-Date).Date) { return ("{0}시간 전" -f [int]($m / 60)) }
+    if ($t.Date -eq (Get-Date).Date.AddDays(-1)) { return "어제" }
+    return $t.ToString("M월 d일")
+  } catch { return "" }
+}
+
+$FeedColors = @{
+  jackpot   = [System.Drawing.Color]::FromArgb(196, 140, 20)
+  shiny     = [System.Drawing.Color]::FromArgb(150, 80, 190)
+  myth_pull = [System.Drawing.Color]::FromArgb(200, 70, 60)
+  myth_all  = [System.Drawing.Color]::FromArgb(200, 70, 60)
+  dex_tier  = [System.Drawing.Color]::FromArgb(58, 110, 150)
+}
+$FeedDim = [System.Drawing.Color]::FromArgb(150, 153, 145)
+
+function Show-Feed($feed, $notice) {
+  $feedNews.Clear()
+  if ($notice) {
+    Feed-Add $feedNews ("새 소식 · " + $notice.title + "`n") ([System.Drawing.Color]::FromArgb(79, 122, 54)) $true 9.5
+    Feed-Add $feedNews (($notice.body -split "`n")[0] + "`n") $FeedDim $false 8.5
+    Feed-Add $feedNews ("────────────────────`n") $FeedDim $false 8
+  }
+  $ev = @()
+  if ($feed -and $feed.events) { $ev = @($feed.events | Sort-Object { $_.at } -Descending | Select-Object -First 20) }
+  if ($ev.Count -eq 0) {
+    Feed-Add $feedNews "아직 소식이 없습니다.`n" $FeedDim $false
+  } else {
+    foreach ($e in $ev) {
+      $c = $FeedColors[[string]$e.type]
+      Feed-Add $feedNews ((Format-Ago $e.at) + "`n") $FeedDim $false 8
+      Feed-Add $feedNews ($e.text + "`n`n") $c ([bool]$c) 9.5
+    }
+  }
+  $feedNews.SelectionStart = 0; $feedNews.ScrollToCaret()
+
+  $feedProg.Clear()
+  $ps = @()
+  if ($feed -and $feed.players) { $ps = @($feed.players | Where-Object { [int]$_.dex -gt 0 } | Sort-Object { [int]$_.dex } -Descending) }
+  if ($ps.Count -eq 0) {
+    Feed-Add $feedProg "아직 진행도가 없습니다.`n" $FeedDim $false
+  } else {
+    foreach ($p in $ps) {
+      Feed-Add $feedProg ($p.name) $null $true 10.5
+      if ($p.title) { Feed-Add $feedProg ("  「" + $p.title + "」") ([System.Drawing.Color]::FromArgb(200, 70, 60)) $true 9 }
+      Feed-Add $feedProg "`n" $null $false
+      Feed-Add $feedProg ("도감 {0:N0}칸 · 등급 점수 {1:N0}점 · 신화 {2}/150`n" -f [int]$p.dex, [int]$p.points, [int]$p.myth) $null $false 9
+      if ($p.bonus) { Feed-Add $feedProg ("받는 능력치: " + $p.bonus + "`n") $FeedDim $false 8.5 }
+      # 카이 홀덤 전적. 한 판도 안 했으면 줄을 만들지 않는다.
+      if ($p.kai -and [int]$p.kai.hands -gt 0) {
+        $kh = [int]$p.kai.hands; $kw = [int]$p.kai.wins; $kn = [long]$p.kai.net
+        $sign = if ($kn -gt 0) { "+" } elseif ($kn -lt 0) { "-" } else { "" }
+        $kc = if ($kn -gt 0) { [System.Drawing.Color]::FromArgb(79, 122, 54) } elseif ($kn -lt 0) { [System.Drawing.Color]::FromArgb(200, 70, 60) } else { $FeedDim }
+        Feed-Add $feedProg ("카이 전적 {0}판 {1}승 · 승률 {2}% · " -f $kh, $kw, [int][Math]::Round(100.0 * $kw / $kh)) $null $false 8.5
+        Feed-Add $feedProg ($sign + ("{0:N0}" -f [Math]::Abs($kn)) + "`n") $kc $true 8.5
+      }
+      Feed-Add $feedProg "`n" $null $false 6
+    }
+    if ($feed.updated) { Feed-Add $feedProg ("기준: " + (Format-Ago $feed.updated) + "`n") $FeedDim $false 8 }
+  }
+  $feedProg.SelectionStart = 0; $feedProg.ScrollToCaret()
+}
+
+# 봇 주소는 한 번만 물어보고 기억한다. 받는 중에 타이머가 또 부르면 건너뛴다.
+$script:feedBusy = $false
+$script:feedEp = $null
+function Refresh-Feed {
+  if ($script:feedBusy) { return }
+  $script:feedBusy = $true
+  try {
+    $notice = $null
+    # PowerShell 5.1 은 JSON 배열을 한 덩어리로 돌려줘서, 한 번 풀어낸 뒤 첫 항목을 고른다
+    try { $notice = (Get-WebText "$BASE/updates.json") | ConvertFrom-Json | ForEach-Object { $_ } | Select-Object -First 1 } catch { }
+    $feed = $null
+    try {
+      if ($env:ELLY_FEED_FILE) { $raw = Get-Content $env:ELLY_FEED_FILE -Raw -Encoding UTF8 }
+      else {
+        if (-not $script:feedEp) { $script:feedEp = Get-BotEndpoint }
+        $raw = Get-WebText ($script:feedEp + "/feed")
+      }
+      $feed = $raw | ConvertFrom-Json
+    } catch { Log "  [소식 불러오기 실패] $($_.Exception.Message)" }
+    Show-Feed $feed $notice
+    if (-not $feed) {
+      $feedNews.Clear(); $feedProg.Clear()
+      Feed-Add $feedNews "소식을 불러오지 못했습니다.`n잠시 뒤 다시 불러옵니다.`n" $FeedDim $false
+      Feed-Add $feedProg "진행도를 불러오지 못했습니다.`n" $FeedDim $false
+    }
+  } finally { $script:feedBusy = $false }
+}
+$feedTimer = New-Object System.Windows.Forms.Timer
+$feedTimer.Interval = 60000
+$feedTimer.Add_Tick({ Refresh-Feed })
+
 $srvTimer = New-Object System.Windows.Forms.Timer
 $srvTimer.Interval = 15000
 $srvTimer.Add_Tick({ Update-ServerState })
-$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; $srvTimer.Start() })
-$form.Add_FormClosed({ $srvTimer.Stop(); $srvTimer.Dispose() })
+$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; $srvTimer.Start(); Refresh-Feed; $feedTimer.Start(); if ($Notice) { Say $Notice } })
+$form.Add_FormClosed({ $srvTimer.Stop(); $srvTimer.Dispose(); $feedTimer.Stop(); $feedTimer.Dispose() })
 [void]$form.ShowDialog()

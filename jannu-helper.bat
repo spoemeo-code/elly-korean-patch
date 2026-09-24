@@ -2,17 +2,20 @@
 chcp 65001 > nul
 title 잔누 마크 도우미
 
-rem This file only fetches the helper window and runs it. Everything else
-rem (icon, desktop shortcut, updating this file) is handled there, so this
-rem file should never need to change again.
-rem Keep it CRLF with no BOM, or cmd mis-reads the lines.
+rem Runs the loader, which checks the signed release manifest before running
+rem anything. On the first run on this PC the loader is fetched once; after
+rem that it only replaces itself with copies that match the signed manifest.
+rem Keep this file CRLF with no BOM, or cmd mis-reads the lines.
 
-set "SRC=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/gui.ps1"
-set "GUIFILE=%TEMP%\jannu-helper-gui.ps1"
+set "HOMEDIR=%APPDATA%\jannu-helper"
+set "LOADER=%HOMEDIR%\loader.ps1"
+set "SRC=https://raw.githubusercontent.com/spoemeo-code/elly-korean-patch/main/loader.ps1"
+if not exist "%HOMEDIR%" mkdir "%HOMEDIR%" >nul 2>&1
+if exist "%LOADER%" goto run
 
-curl.exe -L -f -s -o "%GUIFILE%" "%SRC%"
+curl.exe -L -f -s -o "%LOADER%" "%SRC%"
 if not errorlevel 1 goto run
-powershell -NoProfile -Command "try { Invoke-WebRequest -UseBasicParsing $env:SRC -OutFile $env:GUIFILE } catch { exit 1 }"
+powershell -NoProfile -Command "try { Invoke-WebRequest -UseBasicParsing $env:SRC -OutFile $env:LOADER } catch { exit 1 }"
 if not errorlevel 1 goto run
 
 echo.
@@ -23,5 +26,5 @@ pause
 exit /b 1
 
 :run
-start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%GUIFILE%" -Server jannu -Launcher "%~f0"
+start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%LOADER%" -Server jannu -Launcher "%~f0"
 exit /b 0

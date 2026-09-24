@@ -1,0 +1,60 @@
+{
+    "version":  1,
+    "signed_at":  "2026-09-25T03:57:27+09:00",
+    "files":  {
+                  "bot-endpoint.txt":  {
+                                           "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
+                                           "size":  25
+                                       },
+                  "elly-helper.bat":  {
+                                          "sha256":  "a35995cf744e89760b49f456d69c6b296f31e7e852abeb830a8720524da282e2",
+                                          "size":  1135
+                                      },
+                  "elly-icon.ico":  {
+                                        "sha256":  "a10a1f2fc4f78390c074a21ec14b900440aa7e9334a238b88c1d4b7acc701669",
+                                        "size":  170604
+                                    },
+                  "Elly-Korean-Patch.zip":  {
+                                                "sha256":  "f1f33e183c85274c6d2670af85392f906ef22637885cbb02ae7edd98d041c14c",
+                                                "size":  1379037,
+                                                "sha1":  "bcf22babd0f869bbb9a76ff29d77d715336a3ae1"
+                                            },
+                  "gui.ps1":  {
+                                  "sha256":  "fef68665e5973eb59ed73060db634437d82679284d624525d385bfde6897c1e5",
+                                  "size":  80620
+                              },
+                  "gui-elly.ps1":  {
+                                       "sha256":  "7e5084c3f53f7680f3cabae097b3bdcc23e8677716006028faad92ee9748ef8c",
+                                       "size":  103379
+                                   },
+                  "jannu-helper.bat":  {
+                                           "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
+                                           "size":  1137
+                                       },
+                  "jannu-icon.ico":  {
+                                         "sha256":  "5c13a9e97f3697c2a567252ae82366a32d657de2ecd95667f709c8ae0c5a04c5",
+                                         "size":  245527
+                                     },
+                  "loader.ps1":  {
+                                     "sha256":  "fea0ed5378824ceab42e6b555ee0cbe9e7fe967fcf7a393a6b3b2998478b77d6",
+                                     "size":  7126
+                                 }
+              },
+    "jannu":  {
+                  "repo":  "JannuH2/Jannu-maku-dudutown",
+                  "commit":  "64baab4d9987053b3e6653dd16abcd66a1842d6c",
+                  "released_at":  "2026-09-25T03:57:27+09:00",
+                  "message":  "Remove Overflowing Bars - not worth keeping",
+                  "committed_at":  "2026-09-23T20:23:37Z",
+                  "files":  {
+                                "mod-sync.ps1":  {
+                                                     "sha256":  "da495afb70e83e0a5b4eabbba48c576cd1803a44da59ea91cf0dd81a48da3ae1",
+                                                     "size":  18743
+                                                 },
+                                "update.bat":  {
+                                                   "sha256":  "27b38cd387cd09a922fbdd1ddd4dbe5c28d1c8237a11f188503c326f6992ad1c",
+                                                   "size":  2591
+                                               }
+                            }
+              }
+}

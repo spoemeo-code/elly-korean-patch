@@ -1,2 +1,9 @@
-# cmd mis-reads LF-only batch files; keep them byte-for-byte CRLF
+# Release files are signed by sha256 of their exact bytes. Git must never
+# rewrite line endings on them, or the served file stops matching the manifest.
 *.bat -text
+*.ps1 -text
+*.txt -text
+*.json -text
+*.sig -text
+*.ico -text
+*.zip -text
