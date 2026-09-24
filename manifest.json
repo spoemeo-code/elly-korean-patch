@@ -1,6 +1,6 @@
 {
-    "version":  3,
-    "signed_at":  "2026-09-25T04:22:26+09:00",
+    "version":  4,
+    "signed_at":  "2026-09-25T06:56:06+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -15,17 +15,17 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "996c24490a866be1df848846f80f2288a1c9aee6c621f7735e6cd09be81395e9",
-                                                "size":  1381350,
-                                                "sha1":  "701697b0cec3ac260d045776848660435c076f9c"
+                                                "sha256":  "e95f7e2cf6079f7db92560df3dcc5d9f295daf2c74fe7c0fdb38dd9095b6f6a4",
+                                                "size":  1381322,
+                                                "sha1":  "bed90e4e728a516047f5f79dd648fade7fa6c221"
                                             },
                   "gui.ps1":  {
-                                  "sha256":  "8334a5aa1f9ee7a8640ef51bd43ed05b4a7408d979476c598fff94c46ce25895",
-                                  "size":  83717
+                                  "sha256":  "7d83c5ee6faf0757acbd6d936e353d875273c42d13c31c7ca91981b74c88e367",
+                                  "size":  84704
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "58be58b91fc3d3ad857faeee0e518e949b82d4df29e45a5b963580907efe5d33",
-                                       "size":  109828
+                                       "sha256":  "01e6f81d16c5174a7f9f980cc44c4c87dd95b9d77dd58d26eca0e42702e8ce8d",
+                                       "size":  113552
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -43,7 +43,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "64baab4d9987053b3e6653dd16abcd66a1842d6c",
-                  "released_at":  "2026-09-25T04:22:26+09:00",
+                  "released_at":  "2026-09-25T06:56:06+09:00",
                   "message":  "Remove Overflowing Bars - not worth keeping",
                   "committed_at":  "2026-09-23T20:23:37Z",
                   "files":  {

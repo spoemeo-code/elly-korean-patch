@@ -144,6 +144,12 @@ function Get-Rel {
   return $script:RelM
 }
 
+# ── 휴대용(USB) ──────────────────────────────────────
+# USB 의 시작 파일이 ELLY_PORTABLE_ROOT 로 자기 폴더를 알려준다. 그러면 설치 위치와 프리즘을
+# USB 안 것으로 고정하고, 남의 PC 에 바로가기 같은 흔적을 남기지 않는다.
+$PortableRoot = $null
+if ($env:ELLY_PORTABLE_ROOT -and (Test-Path -LiteralPath (Join-Path $env:ELLY_PORTABLE_ROOT "prism\portable.txt"))) { $PortableRoot = $env:ELLY_PORTABLE_ROOT }
+
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = $AppName
@@ -321,6 +327,12 @@ $form.Controls.Add($btnRestore)
 $form.Controls.Add($btnKeys)
 $form.Controls.Add($btnAdmin)
 if ($btnCost) { $form.Controls.Add($btnCost) }
+# 휴대용: 이 PC 에서 로그아웃 (USB 에 마이크로소프트 로그인이 남지 않게)
+$btnLogout = $null
+if ($PortableRoot) {
+  $btnLogout = New-SmallButton "이 PC에서 로그아웃" 398 ($toolY + 32) 124
+  $form.Controls.Add($btnLogout)
+}
 
 $logY = 446 + $shift
 
@@ -363,7 +375,7 @@ function SetStep($text, $pct) {
 function Say($t) { SetStep $t -1 }
 
 function Set-Busy($on) {
-  foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnMods, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore, $btnAdmin, $btnCost)) {
+  foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnMods, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore, $btnAdmin, $btnCost, $btnLogout)) {
     if ($b) { $b.Enabled = -not $on }
   }
   $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
@@ -491,6 +503,10 @@ function Test-ShiftHeld {
 # 엘리용은 엘리 것만 본다. 예전 판의 공용 파일까지 읽었더니 잔누 인스턴스를
 # 가리키는 일이 생겼다.
 function Get-SavedTarget {
+  if ($PortableRoot) {
+    $pp = Join-Path $PortableRoot "prism\instances\엘리서버\.minecraft"
+    if (Test-Path -LiteralPath $pp) { return $pp }
+  }
   foreach ($f in @($MainRemember, $PackRemember)) {
     $c = Get-Content (Join-Path $env:APPDATA $f) -Encoding UTF8 -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($c -and (Test-Path $c)) { return $c }
@@ -516,6 +532,27 @@ function Get-Target($caption, $force) {
 # ── 한글패치 설치 ─────────────────────────────────────
 # 파일 이름을 늘 같게 두는 이유: 마크는 리소스팩을 "파일 이름"으로 기억해서,
 # 이름이 버전마다 바뀌면 켜둔 설정이 풀려 매번 다시 켜야 한다.
+# resourcePacks 줄 하나만 고친다. 목록의 맨 뒤에 있는 팩이 가장 우선이라,
+#  - 새 한글패치를 맨 뒤(가장 우선)로 옮기고
+#  - 예전 한글패치(Elly-Korean-Patch-v12, -v13, -Extra 등)는 켜진 목록에서만 뺀다. 파일은 지우지 않는다
+# 다른 팩의 순서와 options.txt 의 다른 줄(단축키 포함)은 건드리지 않는다.
+function Set-PatchOnTop([string]$line, [string]$patchName) {
+  $cur = ($line -replace '^resourcePacks:', '').Trim()
+  $items = @()
+  # PowerShell 5.1 은 JSON 배열을 한 덩어리로 돌려준다. foreach 로 풀어야 항목별로 나온다
+  try { $parsed = $cur | ConvertFrom-Json; $items = @(foreach ($x in $parsed) { [string]$x }) } catch { return $line }
+  $mine = "file/" + $patchName
+  $keep = @(); $dropped = @()
+  foreach ($n in $items) {
+    if ($n -eq $mine) { continue }
+    if ($n -match '^file/Elly-Korean-Patch[-_ ].*\.zip$') { $dropped += $n; continue }
+    $keep += $n
+  }
+  if ($dropped.Count -gt 0) { Log ("  예전 한글패치를 켜진 목록에서 뺌: " + ($dropped -join ", ")) }
+  $all = @($keep) + @($mine)
+  return 'resourcePacks:' + (ConvertTo-Json -InputObject ([string[]]$all) -Compress)
+}
+
 function Install-Patch {
   $force = Test-ShiftHeld
   Set-Busy $true
@@ -621,10 +658,8 @@ function Install-Patch {
           $rows = @($rows) + @('resourcePacks:[]')
         }
         for ($k = 0; $k -lt $rows.Count; $k++) {
-          if ($rows[$k] -like 'resourcePacks:*' -and $rows[$k] -notlike "*$PatchName*") {
-            $cur = $rows[$k] -replace '^resourcePacks:', ''
-            if ($cur.Trim() -eq "[]") { $rows[$k] = 'resourcePacks:[' + $entry + ']' }
-            else { $rows[$k] = 'resourcePacks:' + ($cur -replace '\]\s*$', (',' + $entry + ']')) }
+          if ($rows[$k] -like 'resourcePacks:*') {
+            $rows[$k] = Set-PatchOnTop $rows[$k] $PatchName
             break
           }
         }
@@ -977,7 +1012,7 @@ function Refresh-Stamps($keepMessage) {
   # 지금 어디에 설치되는지 — 안 보이면 "어디에 받는다는 거야?"가 된다
   $tp = Get-SavedTarget
   if ($tp) {
-    $pathLbl.Text = "설치 위치 : " + (Split-Path $tp -Leaf)
+    $pathLbl.Text = if ($PortableRoot) { "설치 위치 : USB 휴대용 (" + $PortableRoot + ")" } else { "설치 위치 : " + (Split-Path $tp -Leaf) }
     $pathLbl.ForeColor = [System.Drawing.Color]::FromArgb(90, 94, 86)
   } else {
     $pathLbl.Text = "설치 위치가 정해지지 않았습니다. 버튼을 누르시면 고르실 수 있습니다."
@@ -1086,7 +1121,7 @@ function Refresh-Stamps($keepMessage) {
     $lc = $null
     try { $lc = Find-Launcher (Get-SavedTarget) } catch { }
     if ($lc -and $lc.Kind -eq "prism") {
-      $btnRun.Text = "$($lc.Name) 로 실행"
+      $btnRun.Text = "$($lc.Name)로 실행"
       $stampRun.Text = "바로 실행됩니다"
     } elseif ($lc) {
       $btnRun.Text = "$($lc.Name) 실행"
@@ -1113,6 +1148,10 @@ function Refresh-Stamps($keepMessage) {
 # 엘리서버는 프리즘 런처를 쓴다. 프리즘은 인스턴스를 지정해서 바로 켤 수 있어서,
 # 폴더를 찾아 들어가 [플레이] 를 누를 필요가 없다.
 function Find-Prism {
+  if ($PortableRoot) {
+    $pe = Join-Path $PortableRoot "prism\prismlauncher.exe"
+    if (Test-Path -LiteralPath $pe) { return $pe }
+  }
   $c = @(
     "$env:LOCALAPPDATA\Programs\PrismLauncher\prismlauncher.exe",
     "$env:PROGRAMFILES\PrismLauncher\prismlauncher.exe",
@@ -1533,6 +1572,8 @@ function Find-Launcher-File {
 }
 
 function Tend-Launcher {
+  # 휴대용이면 남의 PC 에 바로가기나 실행 파일을 만들지 않는다(도우미 갱신은 loader 가 USB 안에서 한다)
+  if ($PortableRoot) { return }
   if (-not $Launcher) { $Launcher = Find-Launcher-File }
   if (-not $Launcher) { return }
   if (-not (Test-Path -LiteralPath $Launcher)) { return }
@@ -1583,6 +1624,17 @@ function Tend-Launcher {
   } catch { Log "실행 파일 돌보기 실패: $($_.Exception.Message)" }
 }
 # ── 버튼 연결 ─────────────────────────────────────────
+if ($btnLogout) {
+  $btnLogout.Add_Click({
+    $acc = Join-Path $PortableRoot "prism\accounts.json"
+    if (Get-Process prismlauncher -ErrorAction SilentlyContinue) { Say "프리즘 런처를 먼저 종료해 주세요."; return }
+    if (Test-Path -LiteralPath $acc) {
+      try { [IO.File]::Delete($acc); Say "이 PC에서 로그아웃했습니다. USB에 로그인 정보가 남지 않습니다." }
+      catch { Say "로그아웃하지 못했습니다 — $($_.Exception.Message)" }
+    } else { Say "저장된 로그인 정보가 없습니다." }
+  })
+}
+
 if ($btnCost) {
   $btnCost.Add_Click({
     # 봇이 가동 기록을 요약해 준다. 창 안에서 바로 읽는다.
@@ -1979,5 +2031,17 @@ $srvTimer = New-Object System.Windows.Forms.Timer
 $srvTimer.Interval = 15000
 $srvTimer.Add_Tick({ Update-ServerState })
 $form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; $srvTimer.Start(); Refresh-Feed; $feedTimer.Start(); if ($Notice) { Say $Notice } })
-$form.Add_FormClosed({ $srvTimer.Stop(); $srvTimer.Dispose(); $feedTimer.Stop(); $feedTimer.Dispose() })
+$form.Add_FormClosed({
+  $srvTimer.Stop(); $srvTimer.Dispose(); $feedTimer.Stop(); $feedTimer.Dispose()
+  # 휴대용: keep-login.txt 가 없으면 USB 에 로그인을 남기지 않는다. 프리즘이 아직 켜져 있으면 꺼질 때까지 기다렸다가 지운다.
+  if ($PortableRoot -and -not (Test-Path -LiteralPath (Join-Path $PortableRoot "keep-login.txt"))) {
+    $acc = Join-Path $PortableRoot "prism\accounts.json"
+    if (Get-Process prismlauncher -ErrorAction SilentlyContinue) {
+      $cmd = "Wait-Process -Name prismlauncher -ErrorAction SilentlyContinue; Remove-Item -LiteralPath '" + ($acc -replace "'", "''") + "' -Force -ErrorAction SilentlyContinue"
+      try { Start-Process powershell -ArgumentList @("-NoProfile", "-WindowStyle", "Hidden", "-Command", $cmd) -WindowStyle Hidden } catch { }
+    } elseif (Test-Path -LiteralPath $acc) {
+      try { [IO.File]::Delete($acc) } catch { }
+    }
+  }
+})
 [void]$form.ShowDialog()

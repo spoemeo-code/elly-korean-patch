@@ -486,6 +486,27 @@ function Get-Target($caption, $force) {
 # ── 한글패치 설치 ─────────────────────────────────────
 # 파일 이름을 늘 같게 두는 이유: 마크는 리소스팩을 "파일 이름"으로 기억해서,
 # 이름이 버전마다 바뀌면 켜둔 설정이 풀려 매번 다시 켜야 한다.
+# resourcePacks 줄 하나만 고친다. 목록의 맨 뒤에 있는 팩이 가장 우선이라,
+#  - 새 한글패치를 맨 뒤(가장 우선)로 옮기고
+#  - 예전 한글패치(Elly-Korean-Patch-v12, -v13, -Extra 등)는 켜진 목록에서만 뺀다. 파일은 지우지 않는다
+# 다른 팩의 순서와 options.txt 의 다른 줄(단축키 포함)은 건드리지 않는다.
+function Set-PatchOnTop([string]$line, [string]$patchName) {
+  $cur = ($line -replace '^resourcePacks:', '').Trim()
+  $items = @()
+  # PowerShell 5.1 은 JSON 배열을 한 덩어리로 돌려준다. foreach 로 풀어야 항목별로 나온다
+  try { $parsed = $cur | ConvertFrom-Json; $items = @(foreach ($x in $parsed) { [string]$x }) } catch { return $line }
+  $mine = "file/" + $patchName
+  $keep = @(); $dropped = @()
+  foreach ($n in $items) {
+    if ($n -eq $mine) { continue }
+    if ($n -match '^file/Elly-Korean-Patch[-_ ].*\.zip$') { $dropped += $n; continue }
+    $keep += $n
+  }
+  if ($dropped.Count -gt 0) { Log ("  예전 한글패치를 켜진 목록에서 뺌: " + ($dropped -join ", ")) }
+  $all = @($keep) + @($mine)
+  return 'resourcePacks:' + (ConvertTo-Json -InputObject ([string[]]$all) -Compress)
+}
+
 function Install-Patch {
   $force = Test-ShiftHeld
   Set-Busy $true
@@ -591,10 +612,8 @@ function Install-Patch {
           $rows = @($rows) + @('resourcePacks:[]')
         }
         for ($k = 0; $k -lt $rows.Count; $k++) {
-          if ($rows[$k] -like 'resourcePacks:*' -and $rows[$k] -notlike "*$PatchName*") {
-            $cur = $rows[$k] -replace '^resourcePacks:', ''
-            if ($cur.Trim() -eq "[]") { $rows[$k] = 'resourcePacks:[' + $entry + ']' }
-            else { $rows[$k] = 'resourcePacks:' + ($cur -replace '\]\s*$', (',' + $entry + ']')) }
+          if ($rows[$k] -like 'resourcePacks:*') {
+            $rows[$k] = Set-PatchOnTop $rows[$k] $PatchName
             break
           }
         }
