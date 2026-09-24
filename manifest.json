@@ -1,6 +1,6 @@
 {
-    "version":  4,
-    "signed_at":  "2026-09-25T06:56:06+09:00",
+    "version":  5,
+    "signed_at":  "2026-09-25T07:02:10+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -24,8 +24,8 @@
                                   "size":  84704
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "01e6f81d16c5174a7f9f980cc44c4c87dd95b9d77dd58d26eca0e42702e8ce8d",
-                                       "size":  113552
+                                       "sha256":  "e972c4b6d7da29be70d5e0c22e195a70ffee4c06d41795b1cc732ab58cacb8b1",
+                                       "size":  113901
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -43,7 +43,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "64baab4d9987053b3e6653dd16abcd66a1842d6c",
-                  "released_at":  "2026-09-25T06:56:06+09:00",
+                  "released_at":  "2026-09-25T07:02:10+09:00",
                   "message":  "Remove Overflowing Bars - not worth keeping",
                   "committed_at":  "2026-09-23T20:23:37Z",
                   "files":  {

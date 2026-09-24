@@ -149,6 +149,11 @@ function Get-Rel {
 # USB 안 것으로 고정하고, 남의 PC 에 바로가기 같은 흔적을 남기지 않는다.
 $PortableRoot = $null
 if ($env:ELLY_PORTABLE_ROOT -and (Test-Path -LiteralPath (Join-Path $env:ELLY_PORTABLE_ROOT "prism\portable.txt"))) { $PortableRoot = $env:ELLY_PORTABLE_ROOT }
+# 휴대용이면 기록·임시 파일도 USB 안에만 쓴다(남의 PC 에 흔적을 남기지 않게). 여기서 띄우는 프리즘·자바도 이 값을 물려받는다.
+if ($PortableRoot) {
+  $ptmp = Join-Path $PortableRoot "helper\temp"
+  try { [void][IO.Directory]::CreateDirectory($ptmp); $env:TEMP = $ptmp; $env:TMP = $ptmp } catch { }
+}
 
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
