@@ -701,11 +701,121 @@ function Get-PackWanted($refresh) {
       [System.Windows.Forms.Application]::DoEvents()
     }
     if ($want.Count -eq 0) { return $null }
+
+    # 팩에 들어 있는 설정 파일(config/). 작아서 내용째 들고 있다가 Install-Configs 가 쓴다.
+    $script:packConfig = @()
+    $cfgSrc = Get-ChildItem $work -Directory | ForEach-Object { Join-Path $_.FullName "config" } |
+              Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($cfgSrc) {
+      foreach ($f in Get-ChildItem $cfgSrc -File -Recurse) {
+        if ($f.Name -like "*.pw.toml") { continue }
+        $rel = $f.FullName.Substring($cfgSrc.Length).TrimStart('\')
+        $b = [IO.File]::ReadAllBytes($f.FullName)
+        $h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace("-", "").ToLower()
+        $script:packConfig += [pscustomobject]@{ Rel = $rel; Bytes = $b; Sha = $h }
+      }
+    }
     $script:packWanted = $want
     return $want
   } finally {
     Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
   }
+}
+
+# 모드 jar 안의 fabric.mod.json 에 적힌 id. 파일 이름은 버전·날짜마다 바뀌지만 id 는 그대로다.
+function Get-JarModId($path) {
+  $z = $null
+  try {
+    $z = [System.IO.Compression.ZipFile]::OpenRead($path)
+    $e = $z.GetEntry("fabric.mod.json")
+    if (-not $e) { return $null }
+    $sr = New-Object System.IO.StreamReader($e.Open(), [Text.Encoding]::UTF8)
+    $t = $sr.ReadToEnd(); $sr.Close()
+    try { $id = ($t | ConvertFrom-Json).id; if ($id) { return [string]$id } } catch { }
+    $m = [regex]::Match($t, '"id"\s*:\s*"([^"]+)"')
+    if ($m.Success) { return $m.Groups[1].Value }
+    return $null
+  } catch { return $null } finally { if ($z) { $z.Dispose() } }
+}
+
+# 같은 모드(같은 id)가 두 벌이면 마크가 "duplicate mod" 로 안 켜진다. 팩에 있는 쪽을 남기고
+#  - 도우미가 전에 깐 기록이 있는 옛 파일은 지운다
+#  - 기록이 없는 파일(직접 까셨을 수 있는 것)은 지우지 않고 mods-중복보관 폴더로 옮긴다
+function Resolve-DuplicateMods($target, $want, $oldMap) {
+  $modsDir = Join-Path $target "mods"
+  $wantFiles = @{}; foreach ($w in $want) { $wantFiles[$w.File] = $true }
+  $byId = @{}
+  foreach ($w in $want) {
+    $p = Join-Path $modsDir $w.File
+    if (Test-Path -LiteralPath $p) { $id = Get-JarModId $p; if ($id) { $byId[$id] = $w.File } }
+    [System.Windows.Forms.Application]::DoEvents()
+  }
+  $mine = @{}; foreach ($v in $oldMap.Values) { if ($v) { $mine[[string]$v] = $true } }
+  $removed = 0; $moved = @()
+  foreach ($j in @(Get-ChildItem -LiteralPath $modsDir -Filter "*.jar" -File -ErrorAction SilentlyContinue)) {
+    if ($wantFiles.ContainsKey($j.Name)) { continue }
+    $id = Get-JarModId $j.FullName
+    if (-not $id -or -not $byId.ContainsKey($id)) { continue }
+    if ($mine.ContainsKey($j.Name)) {
+      [IO.File]::Delete($j.FullName); $removed++
+      Log "  옛 버전 지움: $($j.Name) (같은 모드: $($byId[$id]))"
+    } else {
+      $keep = Join-Path $target "mods-중복보관"
+      if (-not (Test-Path -LiteralPath $keep)) { [void][IO.Directory]::CreateDirectory($keep) }
+      $to = Join-Path $keep $j.Name
+      if (Test-Path -LiteralPath $to) { $to = Join-Path $keep ((Get-Date -Format "yyyyMMdd-HHmmss") + "-" + $j.Name) }
+      [IO.File]::Move($j.FullName, $to); $moved += $j.Name
+      Log "  중복이라 옮김: $($j.Name) → mods-중복보관 (같은 모드: $($byId[$id]))"
+    }
+  }
+  return [pscustomobject]@{ Removed = $removed; Moved = $moved }
+}
+
+# 팩의 설정 파일(config/)을 맞춘다.
+#  - 없으면 넣는다
+#  - 팩 쪽 파일이 지난번과 달라졌을 때만 덮어쓴다. 직접 바꾸신 설정이면 덮기 전에 .bak 으로 남긴다
+#  - 팩이 그대로면 직접 바꾸신 설정을 건드리지 않는다
+#  - 단축키·조작 관련 파일은 어떤 경우에도 건드리지 않는다 (options.txt 는 config 밖이라 애초에 대상이 아니다)
+function Get-ModsNote($dup, $cfg) {
+  $n = ""
+  if ($dup.Removed -gt 0) { $n += " · 옛 버전 $($dup.Removed) 개 정리" }
+  if ($dup.Moved.Count -gt 0) { $n += " · 겹치는 모드 $($dup.Moved.Count) 개를 mods-중복보관 으로 옮김" }
+  if ($cfg.Added -gt 0) { $n += " · 설정 $($cfg.Added) 개 넣음" }
+  if ($cfg.Updated -gt 0) { $n += " · 설정 $($cfg.Updated) 개 갱신" }
+  return $n
+}
+
+function Install-Configs($target) {
+  $res = [pscustomobject]@{ Added = 0; Updated = 0 }
+  if (-not $script:packConfig -or $script:packConfig.Count -eq 0) { return $res }
+  $mapFile = Join-Path $env:APPDATA ($ModMapName -replace 'modmap', 'configmap')
+  $map = @{}
+  try { if (Test-Path $mapFile) { $j = Get-Content $mapFile -Raw -Encoding UTF8 | ConvertFrom-Json; foreach ($pp in $j.PSObject.Properties) { $map[$pp.Name] = [string]$pp.Value } } } catch { }
+  foreach ($c in $script:packConfig) {
+    if ($c.Rel -match '(?i)key|bind|control|options') { Log "  설정 건너뜀(단축키·조작): $($c.Rel)"; continue }
+    $dest = Join-Path (Join-Path $target "config") $c.Rel
+    $dir = Split-Path $dest -Parent
+    if (-not (Test-Path -LiteralPath $dir)) { [void][IO.Directory]::CreateDirectory($dir) }
+    $rec = $map[$c.Rel]
+    if (-not (Test-Path -LiteralPath $dest)) {
+      [IO.File]::WriteAllBytes($dest, $c.Bytes); $map[$c.Rel] = $c.Sha; $res.Added++
+      Log "  설정 넣음: $($c.Rel)"
+      continue
+    }
+    $cur = (Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLower()
+    if ($cur -eq $c.Sha) { $map[$c.Rel] = $c.Sha; continue }
+    if ($rec -and $rec -ne $c.Sha) {
+      if ($cur -ne $rec) { [IO.File]::Copy($dest, "$dest.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss"), $true) }
+      [IO.File]::WriteAllBytes($dest, $c.Bytes); $map[$c.Rel] = $c.Sha; $res.Updated++
+      Log "  설정 바꿈(팩이 달라짐): $($c.Rel)"
+    } elseif (-not $rec) {
+      # 처음 보는 파일인데 이미 다르게 있다 → 직접 맞춰두신 것으로 보고 두되, 다음 팩 변경부터는 따른다
+      $map[$c.Rel] = $c.Sha
+      Log "  설정 그대로 둠(이미 있음): $($c.Rel)"
+    }
+  }
+  try { ($map | ConvertTo-Json -Compress) | Set-Content $mapFile -Encoding UTF8 } catch { }
+  return $res
 }
 
 function Install-Mods {
@@ -749,8 +859,11 @@ function Install-Mods {
     $cleaned = 0
 
     if ($missing.Count -eq 0) {
+      SetStep "같은 모드가 두 벌 있는지 확인하고 있습니다..." 90
+      $dup = Resolve-DuplicateMods $target $want $oldMap
+      $cfg = Install-Configs $target
       Save-ModMap $mapFile $want
-      SetStep "이미 최신입니다. 바로 들어가시면 됩니다. (서버 모드 $($want.Count)개)" 100
+      SetStep ("이미 최신입니다. 바로 들어가시면 됩니다. (서버 모드 $($want.Count)개" + (Get-ModsNote $dup $cfg) + ")") 100
       return
     }
 
@@ -792,8 +905,12 @@ function Install-Mods {
       }
     }
 
+    SetStep "같은 모드가 두 벌 있는지 확인하고 있습니다..." 98
+    $dup = Resolve-DuplicateMods $target $want $oldMap
+    $cleaned += $dup.Removed
+    $cfg = Install-Configs $target
     Save-ModMap $mapFile $want
-    $cleanNote = if ($cleaned -gt 0) { " · 옛 버전 $cleaned 개 정리" } else { "" }
+    $cleanNote = $(if ($cleaned -gt 0) { " · 옛 버전 $cleaned 개 정리" } else { "" }) + (Get-ModsNote ([pscustomobject]@{ Removed = 0; Moved = $dup.Moved }) $cfg)
     if ($fail -gt 0) {
       SetStep "$PackLabel 모드 $ok 개 완료 · $fail 개 실패 — $firstWhy`r`n($($failNames[0])) 다시 누르시면 못 받은 것만 받습니다." 100
     } else {

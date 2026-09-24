@@ -681,6 +681,57 @@ function Get-PackWanted($refresh) {
 # 잔누 서버는 누누님이 만든 update.bat 으로 모드를 맞춘다. 그쪽이 버전이 올라간
 # 옛 모드를 치워주고 비교 화면도 보여줘서, 우리가 따로 받는 것보다 안전하다.
 # 인스턴스 폴더에 없으면 저장소에서 받아 넣어준다.
+# 모드 jar 안의 fabric.mod.json 에 적힌 id. 파일 이름은 버전·날짜마다 바뀌지만 id 는 그대로다.
+function Get-JarModId($path) {
+  $z = $null
+  try {
+    $z = [System.IO.Compression.ZipFile]::OpenRead($path)
+    $e = $z.GetEntry("fabric.mod.json")
+    if (-not $e) { return $null }
+    $sr = New-Object System.IO.StreamReader($e.Open(), [Text.Encoding]::UTF8)
+    $t = $sr.ReadToEnd(); $sr.Close()
+    try { $id = ($t | ConvertFrom-Json).id; if ($id) { return [string]$id } } catch { }
+    $m = [regex]::Match($t, '"id"\s*:\s*"([^"]+)"')
+    if ($m.Success) { return $m.Groups[1].Value }
+    return $null
+  } catch { return $null } finally { if ($z) { $z.Dispose() } }
+}
+
+# mod-sync 가 적어둔 packwiz.json 의 파일(= 팩이 관리하는 것)과 id 가 같은 다른 jar 를 옮긴다.
+# 팩이 관리하지 않는 모드끼리는 건드리지 않는다. 지우지 않고 옮기기만 한다.
+function Move-DuplicateMods($target) {
+  $moved = @()
+  try {
+    $modsDir = Join-Path $target "mods"
+    $pj = Join-Path $target "packwiz.json"
+    if (-not (Test-Path -LiteralPath $pj)) { return $moved }
+    $man = Get-Content -LiteralPath $pj -Raw -Encoding UTF8 | ConvertFrom-Json
+    $packNames = @{}
+    foreach ($pp in $man.cachedFiles.PSObject.Properties) {
+      $loc = [string]$pp.Value.cachedLocation
+      if ($loc) { $packNames[(Split-Path $loc -Leaf)] = $true }
+    }
+    $byId = @{}
+    foreach ($n in $packNames.Keys) {
+      $p = Join-Path $modsDir $n
+      if ($n -like "*.jar" -and (Test-Path -LiteralPath $p)) { $id = Get-JarModId $p; if ($id) { $byId[$id] = $n } }
+      [System.Windows.Forms.Application]::DoEvents()
+    }
+    foreach ($j in @(Get-ChildItem -LiteralPath $modsDir -Filter "*.jar" -File -ErrorAction SilentlyContinue)) {
+      if ($packNames.ContainsKey($j.Name)) { continue }
+      $id = Get-JarModId $j.FullName
+      if (-not $id -or -not $byId.ContainsKey($id)) { continue }
+      $keep = Join-Path $target "mods-중복보관"
+      if (-not (Test-Path -LiteralPath $keep)) { [void][IO.Directory]::CreateDirectory($keep) }
+      $to = Join-Path $keep $j.Name
+      if (Test-Path -LiteralPath $to) { $to = Join-Path $keep ((Get-Date -Format "yyyyMMdd-HHmmss") + "-" + $j.Name) }
+      [IO.File]::Move($j.FullName, $to); $moved += $j.Name
+      Log "  중복이라 옮김: $($j.Name) → mods-중복보관 (같은 모드: $($byId[$id]))"
+    }
+  } catch { Log "  [중복 확인 실패] $($_.Exception.Message)" }
+  return $moved
+}
+
 function Install-Mods {
   Set-Busy $true
   try {
@@ -727,8 +778,16 @@ function Install-Mods {
       [System.Windows.Forms.Application]::DoEvents()
     }
     $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
-    SetStep "$PackLabel 모드 업데이트가 완료되었습니다." 100
     Log "mod-sync 끝남 (코드 $($proc.ExitCode))"
+    # 팩에 jar 로 직접 들어간 모드는 이름이 바뀌면 옛 파일이 "내pc모드"로 남아 두 벌이 된다.
+    # 같은 모드(같은 id)가 두 벌이면 팩이 적어둔 쪽만 남기고 나머지는 mods-중복보관 으로 옮긴다(지우지 않는다).
+    SetStep "같은 모드가 두 벌 있는지 확인하고 있습니다..." 95
+    $moved = @(Move-DuplicateMods $target)
+    if ($moved.Count -gt 0) {
+      SetStep "$PackLabel 모드 업데이트가 완료되었습니다. (겹치는 모드 $($moved.Count) 개를 mods-중복보관 으로 옮김)" 100
+    } else {
+      SetStep "$PackLabel 모드 업데이트가 완료되었습니다." 100
+    }
   } catch {
     $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
     SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0
