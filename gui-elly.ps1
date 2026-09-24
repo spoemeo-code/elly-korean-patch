@@ -1362,6 +1362,12 @@ function Tend-Launcher {
     $latest = Join-Path $home2 "latest.bat"
     try {
       Get-Web "$BASE/$LauncherFile" $latest
+      # cmd 는 LF 로만 된 .bat 을 잘못 읽고, 한 번 망가지면 창까지 못 와서 스스로 못 고친다.
+      # 받은 것이 .bat 이 아니면 건드리지 않고, 줄끝은 반드시 CRLF 로 맞춰서 넣는다
+      $lt = [IO.File]::ReadAllText($latest, [Text.Encoding]::UTF8)
+      if ($lt -notmatch "^@echo off") { throw "받은 실행 파일이 올바르지 않음" }
+      $lt = $lt -replace "`r?`n", "`r`n"
+      [IO.File]::WriteAllText($latest, $lt, (New-Object Text.UTF8Encoding($false)))
       $a = [IO.File]::ReadAllBytes($Launcher)
       $b = [IO.File]::ReadAllBytes($latest)
       $same = ($a.Length -eq $b.Length)
