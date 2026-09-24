@@ -1,0 +1,2 @@
+# cmd mis-reads LF-only batch files; keep them byte-for-byte CRLF
+*.bat -text

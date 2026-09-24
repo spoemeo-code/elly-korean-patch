@@ -1078,7 +1078,8 @@ function Find-Launcher-File {
     foreach ($b in @(Get-ChildItem $d -Filter "*.bat" -File -ErrorAction SilentlyContinue)) {
       try {
         $t = [IO.File]::ReadAllText($b.FullName, [Text.Encoding]::UTF8)
-        if ($t -match [regex]::Escape("elly-korean-patch/main/" + $GuiFileName)) { return $b.FullName }
+        # 예전 실행 파일은 주소를 %BASE%/gui-elly.ps1 처럼 나눠 적었다. 합쳐진 주소만 찾으면 못 알아본다
+        if ($t -match "elly-korean-patch" -and $t -match ("/" + [regex]::Escape($GuiFileName) + '"')) { return $b.FullName }
       } catch { }
     }
   }
