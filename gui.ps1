@@ -1139,7 +1139,12 @@ function Tend-Launcher {
   } catch { Log "실행 파일 돌보기 실패: $($_.Exception.Message)" }
 }
 # ── 버튼 연결 ─────────────────────────────────────────
-$btnRun.Add_Click({ Start-Minecraft })
+# 실행 버튼에서 오류가 나도 도우미 창은 살아 있어야 한다. 무엇이 났는지는 기록에 남긴다
+$btnRun.Add_Click({
+  Log "실행 버튼 누름"
+  try { Start-Minecraft; Log "실행 버튼 처리 끝" }
+  catch { Log "  [실행 오류] $($_.Exception.Message)"; Say "실행하지 못했습니다. 기록 보기를 눌러 나오는 내용을 서버장에게 보내주세요." }
+})
 $btnMods.Add_Click({ Install-Mods })
 $btnPatch.Add_Click({ Install-Patch })
 
