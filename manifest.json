@@ -1,6 +1,6 @@
 {
-    "version":  6,
-    "signed_at":  "2026-09-25T11:44:39+09:00",
+    "version":  7,
+    "signed_at":  "2026-09-25T11:52:05+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -15,9 +15,9 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "3bfbb9f9d561848246896ebc662ca36ce5d67c4dfab655fb3d72650acf7339e6",
-                                                "size":  1391191,
-                                                "sha1":  "f73f00201ee20ec45791a4bf6474402bf2f31bb3"
+                                                "sha256":  "cdf5d389eaae16dc7ae12e6418301688aa6713d2445a8c661cafb4361df65c6e",
+                                                "size":  1391426,
+                                                "sha1":  "66198c0883d95d120a889537c6b7ceac868f8a83"
                                             },
                   "gui.ps1":  {
                                   "sha256":  "99149f1841f71ee1e342ca350c597e1509dfc8fe157c796ca257559005cc2579",
@@ -43,7 +43,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "64baab4d9987053b3e6653dd16abcd66a1842d6c",
-                  "released_at":  "2026-09-25T11:44:39+09:00",
+                  "released_at":  "2026-09-25T11:52:05+09:00",
                   "message":  "Remove Overflowing Bars - not worth keeping",
                   "committed_at":  "2026-09-23T20:23:37Z",
                   "files":  {
