@@ -1,0 +1,2592 @@
+{
+ "IceAndFireCE-2.0-beta.15-1.21.1-fabric": {
+  "name": "Ice and Fire CE",
+  "does": "드래곤과 여러 신화 속 생물, 장비가 생깁니다.",
+  "add": "이제 월드에서 드래곤과 신화 속 생물을 만날 수 있습니다.",
+  "del": "이제 드래곤과 Ice and Fire 생물이 나오지 않습니다.",
+  "lib": false
+ },
+ "accents": {
+  "name": "Accents",
+  "does": "염색할 수 있는 장식품을 몸에 달 수 있고, 작은 능력치도 붙습니다.",
+  "add": "이제 염색한 장식품을 달고 작은 효과도 받을 수 있습니다.",
+  "del": "이제 장식품을 달 수 없고 거기 붙던 효과도 사라집니다.",
+  "lib": false
+ },
+ "accessories": {
+  "name": "Accessories",
+  "does": "반지·목걸이 같은 장신구를 끼우는 칸을 따로 만들어 줍니다.",
+  "add": "이제 장신구 전용 칸에 장신구를 끼울 수 있습니다.",
+  "del": "이제 장신구 전용 칸이 없어집니다.",
+  "lib": false
+ },
+ "accessories-compat-layer": {
+  "name": "Accessories Compatibility Layer",
+  "does": "다른 장신구 모드들을 Accessories 칸 하나로 묶어 주는 호환 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "addonslib": {
+  "name": "AddonsLib",
+  "does": "Macaw's 계열 추가 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "adorabuild-structures": {
+  "name": "AdoraBuild: Structures",
+  "does": "월드 곳곳에 새 건물과 구조물이 100개 넘게 생깁니다.",
+  "add": "이제 탐험하다 보면 새 구조물을 만날 수 있습니다.",
+  "del": "이제 AdoraBuild 구조물이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "aether": {
+  "name": "The Aether",
+  "does": "하늘 위에 떠 있는 새 차원 에테르를 더합니다.",
+  "add": "이제 하늘 차원 에테르에 갈 수 있습니다.",
+  "del": "이제 에테르 차원에 갈 수 없습니다.",
+  "lib": false
+ },
+ "aitk": {
+  "name": "Arrow In The Knee",
+  "does": "플레이어뿐 아니라 몹 몸에도 맞은 화살이 꽂혀 보입니다.",
+  "add": "이제 몹에게 맞은 화살이 몸에 꽂힌 채로 보입니다.",
+  "del": "이제 몹 몸에 화살이 꽂혀 보이지 않습니다.",
+  "lib": false
+ },
+ "alex-mobs-tweaks-omni": {
+  "name": "Alex's Mobs: Tweaks [Performance Optimization]",
+  "does": "Alex's Mobs 몹들이 게임을 덜 무겁게 하도록 손봅니다.",
+  "add": "이제 Alex's Mobs 몹이 많아도 덜 버벅입니다.",
+  "del": "이제 Alex's Mobs 몹 최적화가 적용되지 않습니다.",
+  "lib": false
+ },
+ "alexs-mobs-music-mod": {
+  "name": "Alex's Mobs Music Mod",
+  "does": "Alex's Mobs 보스와 싸울 때 전용 음악이 흐릅니다.",
+  "add": "이제 Alex's Mobs 보스와 싸울 때 음악이 나옵니다.",
+  "del": "이제 Alex's Mobs 보스전에서 전용 음악이 나오지 않습니다.",
+  "lib": false
+ },
+ "alexscuisine": {
+  "name": "Alex's Cuisine",
+  "does": "Alex's Mobs와 어울리는 새 요리와 음식을 더합니다.",
+  "add": "이제 새 요리를 만들어 먹을 수 있습니다.",
+  "del": "이제 Alex's Cuisine 요리를 만들 수 없습니다.",
+  "lib": false
+ },
+ "alexsmobs-fabric": {
+  "name": "Alex's Mobs (Fabric)",
+  "does": "새로운 동물과 몬스터를 90종 넘게 더합니다.",
+  "add": "이제 세상 곳곳에서 새로운 동물과 몬스터를 만납니다.",
+  "del": "이제 Alex's Mobs 동물과 몬스터가 나오지 않습니다.",
+  "lib": false
+ },
+ "alloy-forgery": {
+  "name": "Alloy Forgery",
+  "does": "여러 블록으로 대장간을 짓고 광석을 녹여 합금을 만듭니다.",
+  "add": "이제 대장간을 지어 합금을 녹여 만들 수 있습니다.",
+  "del": "이제 합금 대장간을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "amecs": {
+  "name": "Amecs (Fabric)",
+  "does": "Ctrl·Shift·Alt와 섞은 조합 단축키를 쓸 수 있게 합니다.",
+  "add": "이제 Ctrl·Shift·Alt를 섞은 조합 단축키를 쓸 수 있습니다.",
+  "del": "이제 조합 단축키를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "amendments": {
+  "name": "Amendments",
+  "does": "바닐라 블록들을 조금씩 더 쓸모 있게 고칩니다.",
+  "add": "이제 여러 바닐라 블록이 조금 더 편하게 바뀝니다.",
+  "del": "이제 바닐라 블록이 원래대로 돌아갑니다.",
+  "lib": false
+ },
+ "animatica": {
+  "name": "Animatica",
+  "does": "리소스팩의 움직이는 텍스처를 제대로 보여 줍니다.",
+  "add": "이제 리소스팩의 움직이는 텍스처가 보입니다.",
+  "del": "이제 리소스팩의 움직이는 텍스처가 멈춰 보입니다.",
+  "lib": false
+ },
+ "appleskin": {
+  "name": "AppleSkin",
+  "does": "음식을 먹으면 허기가 얼마나 차는지 미리 보여 줍니다.",
+  "add": "이제 음식을 들면 채워질 허기와 포화도가 보입니다.",
+  "del": "이제 음식의 허기·포화도 미리보기가 보이지 않습니다.",
+  "lib": false
+ },
+ "aquamirae-fabric": {
+  "name": "Aquamirae [Fabric Edition]",
+  "does": "얼어붙은 바다에 새 몬스터와 보스, 장비를 더합니다.",
+  "add": "이제 얼어붙은 바다에서 새 몬스터와 장비를 만납니다.",
+  "del": "이제 Aquamirae 몬스터와 장비가 나오지 않습니다.",
+  "lib": false
+ },
+ "archers": {
+  "name": "Archers (RPG Series)",
+  "does": "궁수 직업과 활 기술, 궁수용 장비를 더합니다.",
+  "add": "이제 궁수 기술과 궁수 장비를 쓸 수 있습니다.",
+  "del": "이제 궁수 기술과 궁수 장비를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "architectury-api": {
+  "name": "Architectury API",
+  "does": "여러 모드가 함께 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "armor-hider": {
+  "name": "Armor Hider",
+  "does": "갑옷과 반짝임, 왼손 아이템을 숨기거나 투명하게 합니다.",
+  "add": "이제 입은 갑옷을 숨기거나 흐리게 보이게 할 수 있습니다.",
+  "del": "이제 갑옷을 숨기는 설정을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "armor-model-api": {
+  "name": "Armor Model API",
+  "does": "입체 갑옷 모델을 쓰는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "armory-rpg-series": {
+  "name": "Armory (RPG Series)",
+  "does": "디자인이 독특하고 세트 효과가 붙는 갑옷을 더합니다.",
+  "add": "이제 세트 효과가 있는 새 갑옷을 입을 수 있습니다.",
+  "del": "이제 Armory 갑옷 세트를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "arsenal-rpg-series": {
+  "name": "Arsenal (RPG Series)",
+  "does": "만들 수 없고 싸워서 얻는 전설 무기를 더합니다.",
+  "add": "이제 싸워서 전설 무기를 얻을 수 있습니다.",
+  "del": "이제 Arsenal 전설 무기가 나오지 않습니다.",
+  "lib": false
+ },
+ "artifacts": {
+  "name": "Artifacts",
+  "does": "탐험하며 얻는 신기한 보물 장신구를 더합니다.",
+  "add": "이제 탐험하다 신기한 보물 장신구를 얻을 수 있습니다.",
+  "del": "이제 Artifacts 보물 장신구가 나오지 않습니다.",
+  "lib": false
+ },
+ "aurae": {
+  "name": "Aurae!",
+  "does": "주변에 은은한 분위기 효과를 더합니다.",
+  "add": "이제 주변에 은은한 분위기 효과가 보입니다.",
+  "del": "이제 Aurae 분위기 효과가 보이지 않습니다.",
+  "lib": false
+ },
+ "axes-are-weapons": {
+  "name": "Axes Are Weapons",
+  "does": "도끼로 싸워도 내구도가 두 배로 닳지 않고 약탈도 붙습니다.",
+  "add": "이제 도끼로 싸워도 내구도가 덜 닳고 약탈을 붙일 수 있습니다.",
+  "del": "이제 도끼로 싸우면 내구도가 원래대로 두 배 닳습니다.",
+  "lib": false
+ },
+ "balm": {
+  "name": "Balm",
+  "does": "BlayTheNinth 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "bclib-neoforge": {
+  "name": "BCLib: New Dawn",
+  "does": "BetterEnd·BetterNether가 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "beautiful-potions": {
+  "name": "Beautiful Potions [MOD EDITION] | 2.0 UPDATE!",
+  "does": "물약마다 병 모양을 다르게 그려 한눈에 알아보게 합니다.",
+  "add": "이제 물약마다 병 모양이 달라 알아보기 쉽습니다.",
+  "del": "이제 물약 병이 원래 모양으로 돌아갑니다.",
+  "lib": false
+ },
+ "better-advancements": {
+  "name": "Better Advancements",
+  "does": "발전 과제 화면을 더 크고 보기 편하게 바꿉니다.",
+  "add": "이제 발전 과제 화면이 넓고 보기 편해집니다.",
+  "del": "이제 발전 과제 화면이 원래대로 돌아갑니다.",
+  "lib": false
+ },
+ "better-archeology": {
+  "name": "Better Archeology",
+  "does": "고고학에 새 유물과 화석, 관련 구조물을 더합니다.",
+  "add": "이제 고고학으로 새 유물과 화석을 캘 수 있습니다.",
+  "del": "이제 Better Archeology 유물과 화석이 나오지 않습니다.",
+  "lib": false
+ },
+ "better-combat-by-daedelus": {
+  "name": "Better Combat [Fabric & Forge]",
+  "does": "무기마다 휘두르는 동작과 연속 공격이 생깁니다.",
+  "add": "이제 무기마다 다른 동작으로 연속 공격을 합니다.",
+  "del": "이제 무기 공격이 원래 방식으로 돌아갑니다.",
+  "lib": false
+ },
+ "better-end-cities-better-end": {
+  "name": "Better End Cities Better End",
+  "does": "엔드 도시를 더 크고 다양하게 바꾸고 BetterEnd와 맞춥니다.",
+  "add": "이제 엔드 도시가 더 크고 다양하게 생깁니다.",
+  "del": "이제 엔드 도시가 원래 모양으로 생깁니다.",
+  "lib": false
+ },
+ "better-end-crashed-ships-tweaks": {
+  "name": "BetterEnd Crashed Ships Tweaks",
+  "does": "BetterEnd의 추락한 배에 전리품을 넣어 줍니다.",
+  "add": "이제 BetterEnd의 추락한 배에서 전리품이 나옵니다.",
+  "del": "이제 BetterEnd의 추락한 배에 전리품이 없습니다.",
+  "lib": false
+ },
+ "better-mount-hud": {
+  "name": "Better Mount HUD",
+  "does": "탈것에 타도 체력·허기·경험치 막대가 다 보입니다.",
+  "add": "이제 탈것에 타도 허기와 경험치 막대가 보입니다.",
+  "del": "이제 탈것에 타면 일부 막대가 가려집니다.",
+  "lib": false
+ },
+ "better-tridents": {
+  "name": "Better Tridents",
+  "does": "삼지창 마법 부여를 더 쓸모 있게 고칩니다.",
+  "add": "이제 삼지창을 더 다양하게 쓸 수 있습니다.",
+  "del": "이제 삼지창이 원래대로 돌아갑니다.",
+  "lib": false
+ },
+ "betterend-elytra-fix": {
+  "name": "BetterEnd Elytra Fix",
+  "does": "장신구 칸의 겉날개가 자꾸 망가지는 문제를 고칩니다.",
+  "add": "이제 장신구 칸에 낀 겉날개가 멀쩡히 버팁니다.",
+  "del": "이제 장신구 칸의 겉날개가 다시 금방 망가질 수 있습니다.",
+  "lib": false
+ },
+ "betterend-neoforge": {
+  "name": "BetterEnd: New Dawn",
+  "does": "엔드에 새 생물 군계와 블록, 식물을 잔뜩 더합니다.",
+  "add": "이제 엔드에서 새 생물 군계와 풍경을 볼 수 있습니다.",
+  "del": "이제 엔드에 BetterEnd 지형이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "betterf3": {
+  "name": "BetterF3",
+  "does": "F3 화면을 색깔 있고 읽기 쉽게 바꿉니다.",
+  "add": "이제 F3 화면이 깔끔하고 읽기 쉽게 보입니다.",
+  "del": "이제 F3 화면이 원래대로 돌아갑니다.",
+  "lib": false
+ },
+ "bettergrassify": {
+  "name": "BetterGrassify",
+  "does": "잔디 블록 옆면도 풀로 덮어 자연스럽게 보이게 합니다.",
+  "add": "이제 잔디 블록 옆면까지 풀로 덮여 보입니다.",
+  "del": "이제 잔디 블록 옆면이 원래대로 흙으로 보입니다.",
+  "lib": false
+ },
+ "betternether-neoforge": {
+  "name": "BetterNether: New Dawn",
+  "does": "네더에 새 생물 군계와 식물, 몬스터를 더합니다.",
+  "add": "이제 네더에서 새 생물 군계와 풍경을 볼 수 있습니다.",
+  "del": "이제 네더에 BetterNether 지형이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "biolith": {
+  "name": "Biolith",
+  "does": "모드 생물 군계를 고르게 배치해 주는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "biomes-o-plenty": {
+  "name": "Biomes O' Plenty",
+  "does": "새 나무와 꽃이 있는 생물 군계를 50개 넘게 더합니다.",
+  "add": "이제 새 생물 군계와 나무, 꽃을 볼 수 있습니다.",
+  "del": "이제 Biomes O' Plenty 생물 군계가 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "bookshelf": {
+  "name": "Bookshelf",
+  "does": "Darkhax 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "boss-music-mod": {
+  "name": "Boss Music Mod",
+  "does": "보스와 싸울 때 전용 음악이 흐릅니다.",
+  "add": "이제 보스와 싸울 때 전용 음악이 나옵니다.",
+  "del": "이제 보스전에서 전용 음악이 나오지 않습니다.",
+  "lib": false
+ },
+ "bosses-of-mass-destruction": {
+  "name": "Bosses of Mass Destruction",
+  "does": "공격 패턴이 다양한 새 보스들을 더합니다.",
+  "add": "이제 새 보스들과 싸울 수 있습니다.",
+  "del": "이제 Bosses of Mass Destruction 보스가 나오지 않습니다.",
+  "lib": false
+ },
+ "bountiful-fares": {
+  "name": "Bountiful Fares",
+  "does": "새 작물과 과일나무, 요리를 더해 농사를 풍성하게 합니다.",
+  "add": "이제 새 작물과 과일, 요리를 만들 수 있습니다.",
+  "del": "이제 Bountiful Fares 작물과 요리가 없어집니다.",
+  "lib": false
+ },
+ "bow-infinity-fix": {
+  "name": "Bow Infinity Fix (Forge/Fabric)",
+  "does": "무한 마법이 붙은 활은 화살이 없어도 쏠 수 있습니다.",
+  "add": "이제 무한 활은 화살 없이도 쏠 수 있습니다.",
+  "del": "이제 무한 활도 화살이 하나는 있어야 쏠 수 있습니다.",
+  "lib": false
+ },
+ "brb": {
+  "name": "Better Recipe Books (+ Smithing Tables, Brewing Stands)",
+  "does": "양조대와 대장장이 작업대에도 제작법 책을 붙여 줍니다.",
+  "add": "이제 양조대와 대장장이 작업대에서도 제작법 책을 봅니다.",
+  "del": "이제 양조대와 대장장이 작업대에 제작법 책이 없습니다.",
+  "lib": false
+ },
+ "bundle-api": {
+  "name": "Bundle API",
+  "does": "여러 묶음을 담는 꾸러미를 만드는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "capes": {
+  "name": "Fabric Capes",
+  "does": "OptiFine·LabyMod 같은 곳의 망토를 보이게 합니다.",
+  "add": "이제 다른 망토 모드의 망토도 보입니다.",
+  "del": "이제 다른 망토 모드의 망토가 보이지 않습니다.",
+  "lib": false
+ },
+ "cardinal-components-api": {
+  "name": "Cardinal Components API",
+  "does": "여러 모드가 데이터를 저장할 때 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "carry-on": {
+  "name": "Carry On",
+  "does": "상자 같은 블록이나 동물을 통째로 들고 옮길 수 있습니다.",
+  "add": "이제 상자나 동물을 들어서 옮길 수 있습니다.",
+  "del": "이제 상자나 동물을 들고 다닐 수 없습니다.",
+  "lib": false
+ },
+ "charm-of-undying": {
+  "name": "Charm of Undying (Fabric/Forge/Quilt)",
+  "does": "불사의 토템을 장신구 칸에 끼워도 효과가 납니다.",
+  "add": "이제 불사의 토템을 장신구 칸에 끼워 둘 수 있습니다.",
+  "del": "이제 불사의 토템은 손에 들어야만 효과가 납니다.",
+  "lib": false
+ },
+ "chat-heads": {
+  "name": "Chat Heads",
+  "does": "채팅 옆에 말한 사람의 얼굴이 나옵니다.",
+  "add": "이제 채팅 옆에 말한 사람의 얼굴이 보입니다.",
+  "del": "이제 채팅에 얼굴이 보이지 않습니다.",
+  "lib": false
+ },
+ "chefs-delight-fabric": {
+  "name": "Chef's Delight [Fabric] - Farmer's Delight Villagers",
+  "does": "Farmer's Delight 요리를 거래하는 요리사 주민이 생깁니다.",
+  "add": "이제 요리사 주민과 요리를 거래할 수 있습니다.",
+  "del": "이제 요리사 주민 직업이 없어집니다.",
+  "lib": false
+ },
+ "cit-resewn": {
+  "name": "CIT Resewn",
+  "does": "리소스팩에 따라 아이템 그림을 이름·조건별로 바꿔 보여 줍니다.",
+  "add": "이제 리소스팩의 아이템별 전용 그림이 보입니다.",
+  "del": "이제 리소스팩의 아이템별 전용 그림이 보이지 않습니다.",
+  "lib": false
+ },
+ "citadel-fabric": {
+  "name": "Citadel (Fabric)",
+  "does": "Alex's Mobs 계열 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "cloth-config": {
+  "name": "Cloth Config API",
+  "does": "여러 모드의 설정 화면을 만들어 주는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "clumps": {
+  "name": "Clumps",
+  "does": "경험치 구슬을 한데 뭉쳐 렉을 줄입니다.",
+  "add": "이제 경험치 구슬이 뭉쳐서 렉이 덜합니다.",
+  "del": "이제 경험치 구슬이 뭉치지 않고 하나씩 흩어집니다.",
+  "lib": false
+ },
+ "collective": {
+  "name": "Collective",
+  "does": "Serilum 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "combat-roll": {
+  "name": "Combat Roll [Fabric & Forge]",
+  "does": "싸우다가 구르기로 재빨리 피할 수 있습니다.",
+  "add": "이제 단축키로 구르기를 해서 피할 수 있습니다.",
+  "del": "이제 구르기를 할 수 없습니다.",
+  "lib": false
+ },
+ "comforts": {
+  "name": "Comforts",
+  "does": "스폰 지점을 안 바꾸는 침낭과 해먹을 더합니다.",
+  "add": "이제 침낭과 해먹에서 스폰 지점 걱정 없이 잘 수 있습니다.",
+  "del": "이제 침낭과 해먹을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "common-network": {
+  "name": "Common Network",
+  "does": "여러 모드가 통신할 때 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "configuration": {
+  "name": "Configuration",
+  "does": "여러 모드의 설정 파일을 관리하는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "connected-glass": {
+  "name": "Connected Glass",
+  "does": "이어 붙이면 테두리 없이 매끈하게 이어지는 유리를 더합니다.",
+  "add": "이제 테두리 없이 이어지는 유리를 쓸 수 있습니다.",
+  "del": "이제 Connected Glass 유리를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "continuity": {
+  "name": "Continuity",
+  "does": "리소스팩의 이어지는 텍스처를 보여 줍니다.",
+  "add": "이제 유리 같은 블록이 매끈하게 이어져 보입니다.",
+  "del": "이제 블록이 이어진 텍스처로 보이지 않습니다.",
+  "lib": false
+ },
+ "controlling": {
+  "name": "Controlling",
+  "does": "조작 설정 화면에 검색창을 달아 줍니다.",
+  "add": "이제 조작 설정에서 단축키를 검색할 수 있습니다.",
+  "del": "이제 조작 설정에 검색창이 없습니다.",
+  "lib": false
+ },
+ "cool-rain": {
+  "name": "Cool Rain",
+  "does": "비가 올 때 블록마다 빗소리가 다르게 납니다.",
+  "add": "이제 비가 오면 블록에 따라 다른 빗소리가 납니다.",
+  "del": "이제 블록별 빗소리가 나지 않습니다.",
+  "lib": false
+ },
+ "coroutil": {
+  "name": "CoroUtil",
+  "does": "Corosus 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "cozy-home": {
+  "name": "Lucky's Cozy Home: Stone & Waterworks Update",
+  "does": "집을 꾸미는 가구를 많이 더합니다.",
+  "add": "이제 여러 가구로 집을 꾸밀 수 있습니다.",
+  "del": "이제 Cozy Home 가구를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "crafttweaker": {
+  "name": "CraftTweaker",
+  "does": "서버가 제작법 등을 바꿀 때 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "crash-assistant": {
+  "name": "Crash Assistant",
+  "does": "게임이 튕기면 원인을 정리한 창을 띄웁니다.",
+  "add": "이제 게임이 튕기면 원인을 알려 주는 창이 뜹니다.",
+  "del": "이제 게임이 튕겨도 안내 창이 뜨지 않습니다.",
+  "lib": false
+ },
+ "creeper-overhaul": {
+  "name": "Creeper Overhaul",
+  "does": "생물 군계마다 생김새와 능력이 다른 크리퍼가 나옵니다.",
+  "add": "이제 생물 군계마다 다른 크리퍼를 만납니다.",
+  "del": "이제 크리퍼가 원래 모습으로만 나옵니다.",
+  "lib": false
+ },
+ "cristel-lib": {
+  "name": "Cristel Lib",
+  "does": "구조물 모드들이 설정에 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "critical-strike": {
+  "name": "Critical Strike",
+  "does": "근접·원거리 공격에 확률 치명타가 생깁니다.",
+  "add": "이제 공격할 때 확률로 치명타가 터집니다.",
+  "del": "이제 확률 치명타가 터지지 않습니다.",
+  "lib": false
+ },
+ "critters-and-companions": {
+  "name": "Critters and Companions",
+  "does": "수달·여우원숭이 같은 작고 귀여운 동물들을 더합니다.",
+  "add": "이제 세상에서 작고 귀여운 동물들을 만납니다.",
+  "del": "이제 Critters and Companions 동물이 나오지 않습니다.",
+  "lib": false
+ },
+ "cubes-without-borders": {
+  "name": "Cubes Without Borders",
+  "does": "게임을 테두리 없는 전체 창 모드로 띄웁니다.",
+  "add": "이제 테두리 없는 전체 창 모드를 쓸 수 있습니다.",
+  "del": "이제 테두리 없는 전체 창 모드를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "cumulus": {
+  "name": "Cumulus",
+  "does": "The Aether가 메인 메뉴를 바꿀 때 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "cupboard": {
+  "name": "Cupboard",
+  "does": "여러 모드가 함께 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "cut-through": {
+  "name": "Cut Through",
+  "does": "잔디 같은 풀을 베지 않고 뒤의 몹을 때릴 수 있습니다.",
+  "add": "이제 풀을 안 베고 너머의 몹을 때릴 수 있습니다.",
+  "del": "이제 풀 너머 몹을 치면 풀이 먼저 베입니다.",
+  "lib": false
+ },
+ "dark-enchanting": {
+  "name": "Dark Enchanting [NeoForge/Fabric]",
+  "does": "경험치를 더 내면 원하는 마법을 골라 부여할 수 있습니다.",
+  "add": "이제 경험치를 더 내고 마법을 골라 부여할 수 있습니다.",
+  "del": "이제 마법을 골라서 부여할 수 없습니다.",
+  "lib": false
+ },
+ "datapatched": {
+  "name": "Datapatched",
+  "does": "다른 모드들이 전리품을 바꿀 때 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "debugify": {
+  "name": "Debugify",
+  "does": "마인크래프트에 알려진 버그들을 고칩니다.",
+  "add": "이제 바닐라의 여러 버그가 고쳐집니다.",
+  "del": "이제 Debugify가 고치던 버그가 다시 생길 수 있습니다.",
+  "lib": false
+ },
+ "deeperdarker": {
+  "name": "Deeper and Darker",
+  "does": "깊은 어둠에 새 블록과 장비, 새 차원을 더합니다.",
+  "add": "이제 깊은 어둠에서 새 블록과 장비를 만납니다.",
+  "del": "이제 Deeper and Darker 블록과 장비가 없어집니다.",
+  "lib": false
+ },
+ "desert-scourge": {
+  "name": "Desert Scourge",
+  "does": "사막에 Calamity 모드를 본뜬 새 보스를 더합니다.",
+  "add": "이제 사막에서 새 보스와 싸울 수 있습니다.",
+  "del": "이제 Desert Scourge 보스가 나오지 않습니다.",
+  "lib": false
+ },
+ "diagonal-fences": {
+  "name": "Diagonal Fences",
+  "does": "울타리를 대각선으로도 이어 붙일 수 있습니다.",
+  "add": "이제 울타리가 대각선으로도 이어집니다.",
+  "del": "이제 울타리가 대각선으로 이어지지 않습니다.",
+  "lib": false
+ },
+ "dont-clear-chat-history": {
+  "name": "Don't Clear Chat History",
+  "does": "재접속해도 위 화살표로 전에 쓴 채팅을 불러올 수 있습니다.",
+  "add": "이제 재접속해도 전에 쓴 채팅을 다시 불러옵니다.",
+  "del": "이제 재접속하면 전에 쓴 채팅 기록이 지워집니다.",
+  "lib": false
+ },
+ "dungeon-and-taverns": {
+  "name": "Dungeons and Taverns",
+  "does": "던전과 여관 같은 새 구조물을 월드에 더합니다.",
+  "add": "이제 탐험하다 던전과 여관을 만날 수 있습니다.",
+  "del": "이제 Dungeons and Taverns 구조물이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "dungeon-difficulty": {
+  "name": "Dungeon Difficulty",
+  "does": "던전 몹을 강하게 만드는 대신 보상도 늘립니다.",
+  "add": "이제 던전 몹이 강해지고 보상도 좋아집니다.",
+  "del": "이제 던전 몹 강화와 추가 보상이 없어집니다.",
+  "lib": false
+ },
+ "durability-tooltip": {
+  "name": "Durability Tooltip",
+  "does": "아이템 설명에 남은 내구도를 숫자로 보여 줍니다.",
+  "add": "이제 아이템 설명에 남은 내구도가 보입니다.",
+  "del": "이제 아이템 설명에 내구도가 나오지 않습니다.",
+  "lib": false
+ },
+ "dynamic-fps": {
+  "name": "Dynamic FPS",
+  "does": "게임 창을 내려 두면 프레임을 줄여 컴퓨터 부담을 덜어 줍니다.",
+  "add": "이제 창을 내려 두면 게임이 컴퓨터를 덜 씁니다.",
+  "del": "이제 창을 내려 둬도 게임이 그대로 돌아갑니다.",
+  "lib": false
+ },
+ "e4mc": {
+  "name": "e4mc",
+  "does": "LAN으로 연 싱글 월드에 누구나 인터넷으로 들어올 수 있습니다.",
+  "add": "이제 LAN으로 연 싱글 월드에 친구를 부를 수 있습니다.",
+  "del": "이제 LAN 월드에 인터넷으로 친구를 부를 수 없습니다.",
+  "lib": false
+ },
+ "easy-anvils": {
+  "name": "Easy Anvils",
+  "does": "모루에 올린 아이템이 남아 있고, 수리 비용이 덜 억울해집니다.",
+  "add": "이제 모루 수리 비용이 계속 불어나지 않고, 올려 둔 아이템도 남습니다.",
+  "del": "이제 모루는 원래대로 수리할수록 비용이 불어납니다.",
+  "lib": false
+ },
+ "easy-magic": {
+  "name": "Easy Magic",
+  "does": "마법 부여대에 올린 아이템이 창을 닫아도 남고, 목록을 다시 굴릴 수 있습니다.",
+  "add": "이제 마법 부여대에 올린 아이템이 창을 닫아도 남고, 목록도 다시 굴릴 수 있습니다.",
+  "del": "이제 마법 부여대는 원래대로 동작하고, 목록을 다시 굴릴 수 없습니다.",
+  "lib": false
+ },
+ "eating-animation-fabric": {
+  "name": "Eating Animation [Fabric]",
+  "does": "음식을 먹을 때 손에 든 음식이 조금씩 줄어드는 모습을 보여 줍니다.",
+  "add": "이제 음식을 먹을 때 손에 든 음식이 줄어드는 모습이 보입니다.",
+  "del": "이제 음식을 먹을 때 별도의 먹는 모습이 보이지 않습니다.",
+  "lib": false
+ },
+ "elytra-slot": {
+  "name": "Elytra Slot",
+  "does": "겉날개를 전용 칸에 따로 낄 수 있습니다.",
+  "add": "이제 겉날개를 전용 칸에 끼고 흉갑도 함께 입을 수 있습니다.",
+  "del": "이제 겉날개를 전용 칸에 낄 수 없고, 흉갑 자리에 입어야 합니다.",
+  "lib": false
+ },
+ "emi": {
+  "name": "EMI",
+  "does": "아이템 목록과 제작법을 화면 옆에서 찾아볼 수 있습니다.",
+  "add": "이제 인벤토리 옆에서 아이템과 제작법을 바로 찾아볼 수 있습니다.",
+  "del": "이제 인벤토리 옆 아이템·제작법 목록(EMI)이 보이지 않습니다.",
+  "lib": false
+ },
+ "emi-enchanting": {
+  "name": "EMI Enchanting",
+  "does": "EMI에서 마법 부여별로 붙일 수 있는 아이템과 충돌 관계를 보여 줍니다.",
+  "add": "이제 EMI에서 마법 부여가 어떤 아이템에 붙는지 볼 수 있습니다.",
+  "del": "이제 EMI에서 마법 부여 정보가 보이지 않습니다.",
+  "lib": false
+ },
+ "emi-loot": {
+  "name": "EMI Loot",
+  "does": "EMI에서 상자·블록·몹이 무엇을 떨어뜨리는지 보여 줍니다.",
+  "add": "이제 EMI에서 블록이나 몹이 떨어뜨리는 아이템을 볼 수 있습니다.",
+  "del": "이제 EMI에서 블록·몹의 드롭 아이템이 보이지 않습니다.",
+  "lib": false
+ },
+ "enchanted-bookshelves": {
+  "name": "Enchanted Bookshelves",
+  "does": "조각된 책장에 꽂은 마법이 부여된 책이 반짝입니다.",
+  "add": "이제 조각된 책장에 꽂은 마법이 부여된 책이 반짝입니다.",
+  "del": "이제 조각된 책장에 꽂은 마법이 부여된 책이 반짝이지 않습니다.",
+  "lib": false
+ },
+ "enchanting-infuser": {
+  "name": "Enchanting Infuser",
+  "does": "원하는 마법을 직접 골라 부여하는 새 부여대가 생깁니다.",
+  "add": "이제 운에 맡기지 않고 원하는 마법을 골라 부여할 수 있습니다.",
+  "del": "이제 마법을 직접 골라 부여하는 부여대를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "enchantment-descriptions": {
+  "name": "Enchantment Descriptions",
+  "does": "마법이 부여된 책에 마우스를 올리면 마법 설명이 나옵니다.",
+  "add": "이제 마법이 부여된 책에 마우스를 올리면 설명이 보입니다.",
+  "del": "이제 마법이 부여된 책에 마법 설명이 나오지 않습니다.",
+  "lib": false
+ },
+ "endermanoverhaul": {
+  "name": "Enderman Overhaul (Fabric port)",
+  "does": "바이옴마다 생김새와 습성이 다른 엔더맨이 나타납니다.",
+  "add": "이제 바이옴마다 모습이 다른 여러 엔더맨을 만날 수 있습니다.",
+  "del": "이제 바이옴별 엔더맨은 나오지 않고 원래 엔더맨만 나옵니다.",
+  "lib": false
+ },
+ "ends-delight": {
+  "name": "End's Delight",
+  "does": "엔드의 재료로 만드는 요리가 생깁니다.",
+  "add": "이제 엔드에서 얻은 재료로 요리를 만들 수 있습니다.",
+  "del": "이제 엔드 재료로 만드는 요리를 만들 수 없습니다.",
+  "lib": false
+ },
+ "enhanced-block-entities": {
+  "name": "Enhanced Block Entities",
+  "does": "상자·표지판 같은 블록을 가볍게 그려 렉을 줄여 줍니다.",
+  "add": "이제 상자나 표지판이 많은 곳에서도 화면이 덜 끊깁니다.",
+  "del": "이제 상자·표지판을 그리는 최적화가 적용되지 않습니다.",
+  "lib": false
+ },
+ "entity-model-features": {
+  "name": "[EMF] Entity Model Features [Fabric & Forge]",
+  "does": "리소스팩에 들어 있는 몹 모델 변경을 적용해 줍니다.",
+  "add": "이제 리소스팩이 바꾼 몹 모양이 그대로 보입니다.",
+  "del": "이제 리소스팩이 바꾼 몹 모양이 보이지 않습니다.",
+  "lib": false
+ },
+ "entity-texture-features-fabric": {
+  "name": "[ETF] Entity Texture Features - [Fabric & Forge]",
+  "does": "같은 몹도 텍스처를 여러 가지로 보여 주고, 빛나는 부분도 표현합니다.",
+  "add": "이제 리소스팩에 따라 같은 몹도 여러 모습으로 보입니다.",
+  "del": "이제 몹의 텍스처 변형과 빛나는 효과가 보이지 않습니다.",
+  "lib": false
+ },
+ "entityculling": {
+  "name": "Entity Culling",
+  "does": "보이지 않는 몹과 블록을 그리지 않아 프레임을 올려 줍니다.",
+  "add": "이제 벽 뒤에 가려진 것들을 그리지 않아 화면이 덜 끊깁니다.",
+  "del": "이제 가려진 몹과 블록도 모두 그려서 조금 더 무거울 수 있습니다.",
+  "lib": false
+ },
+ "explorers-compass": {
+  "name": "Explorer's Compass",
+  "does": "원하는 구조물을 골라 방향을 가리키는 나침반이 생깁니다.",
+  "add": "이제 탐험가의 나침반으로 구조물 방향을 찾을 수 있습니다.",
+  "del": "이제 탐험가의 나침반을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "fabric-api": {
+  "name": "Fabric API",
+  "does": "다른 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "fabric-language-kotlin": {
+  "name": "Fabric Language Kotlin",
+  "does": "다른 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "fabric-waystones": {
+  "name": "Wraith Waystones",
+  "does": "웨이스톤을 세워 두고 그 사이를 순간이동할 수 있습니다.",
+  "add": "이제 웨이스톤을 찍어 두고 그곳으로 순간이동할 수 있습니다.",
+  "del": "이제 웨이스톤으로 순간이동할 수 없습니다.",
+  "lib": false
+ },
+ "fabrishot": {
+  "name": "Fabrishot",
+  "does": "아주 큰 해상도로 스크린샷을 찍을 수 있습니다.",
+  "add": "이제 화면보다 훨씬 큰 스크린샷을 찍을 수 있습니다.",
+  "del": "이제 대형 스크린샷 기능을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "farmers-cutting-betterend": {
+  "name": "Farmer's Cutting: BetterEnd",
+  "does": "BetterEnd 재료를 도마에서 손질할 수 있습니다.",
+  "add": "이제 BetterEnd 재료를 도마로 손질할 수 있습니다.",
+  "del": "이제 BetterEnd 재료를 도마로 손질할 수 없습니다.",
+  "lib": false
+ },
+ "farmers-cutting-biomes-o-plenty": {
+  "name": "Farmer's Cutting: Biomes O' Plenty",
+  "does": "Biomes O' Plenty 재료를 도마에서 손질할 수 있습니다.",
+  "add": "이제 Biomes O' Plenty 재료를 도마로 손질할 수 있습니다.",
+  "del": "이제 Biomes O' Plenty 재료를 도마로 손질할 수 없습니다.",
+  "lib": false
+ },
+ "farmers-cutting-natures-spirit": {
+  "name": "Farmer's Cutting: Nature's Spirit",
+  "does": "Nature's Spirit 재료를 도마에서 손질할 수 있습니다.",
+  "add": "이제 Nature's Spirit 재료를 도마로 손질할 수 있습니다.",
+  "del": "이제 Nature's Spirit 재료를 도마로 손질할 수 없습니다.",
+  "lib": false
+ },
+ "farmers-delight-refabricated": {
+  "name": "Farmer's Delight Refabricated",
+  "does": "도마와 조리 냄비로 여러 요리를 만들고 새 작물을 기릅니다.",
+  "add": "이제 도마와 조리 냄비로 다양한 요리를 만들 수 있습니다.",
+  "del": "이제 Farmer's Delight 요리와 작물을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "farmers-structures": {
+  "name": "Farmers Structures",
+  "does": "농사를 주제로 한 새 구조물이 월드에 생성됩니다.",
+  "add": "이제 새로 탐험하는 곳에 농장 구조물이 생길 수 있습니다.",
+  "del": "이제 새로 탐험하는 곳에 농장 구조물이 생기지 않습니다.",
+  "lib": false
+ },
+ "faster-iris-shadow-mapper": {
+  "name": "Faster Iris Shadow Mapper",
+  "does": "셰이더를 켰을 때 그림자 계산을 빠르게 해 줍니다.",
+  "add": "이제 셰이더를 켜도 그림자 때문에 덜 느려집니다.",
+  "del": "이제 셰이더 그림자 최적화가 적용되지 않습니다.",
+  "lib": false
+ },
+ "fastquit": {
+  "name": "FastQuit",
+  "does": "월드 저장이 끝나기 전에 바로 타이틀 화면으로 나갈 수 있습니다.",
+  "add": "이제 월드를 나갈 때 저장을 기다리지 않고 바로 나갑니다.",
+  "del": "이제 월드를 나갈 때 저장이 끝날 때까지 기다려야 합니다.",
+  "lib": false
+ },
+ "ferritecore-fabric": {
+  "name": "FerriteCore (Fabric)",
+  "does": "게임이 쓰는 메모리를 줄여 줍니다.",
+  "add": "이제 게임이 메모리를 덜 씁니다.",
+  "del": "이제 메모리 절약 최적화가 적용되지 않습니다.",
+  "lib": false
+ },
+ "forge-config-api-port": {
+  "name": "Forge Config API Port",
+  "does": "다른 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "fragmentum-fabric": {
+  "name": "Fragmentum [Fabric Edition]",
+  "does": "Obscuria 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "framework": {
+  "name": "Framework",
+  "does": "MrCrayfish 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "frostiful": {
+  "name": "Frostiful",
+  "does": "추운 곳에서 몸이 얼어붙는 체온 시스템이 생깁니다.",
+  "add": "이제 추운 곳에 오래 있으면 몸이 얼어 따뜻하게 챙겨야 합니다.",
+  "del": "이제 추위 때문에 몸이 얼어붙지 않습니다.",
+  "lib": false
+ },
+ "fusion-connected-textures": {
+  "name": "Fusion (Connected Textures)",
+  "does": "리소스팩의 이어지는 텍스처 같은 기능을 쓰게 해 주는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "fzzy-config": {
+  "name": "Fzzy Config",
+  "does": "다른 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "galosphere": {
+  "name": "Galosphere",
+  "does": "동굴에 새 바이옴과 몹, 광물이 생깁니다.",
+  "add": "이제 동굴에서 새 바이옴과 몹을 만날 수 있습니다.",
+  "del": "이제 Galosphere의 동굴 바이옴과 몹이 나오지 않습니다.",
+  "lib": false
+ },
+ "gazebos": {
+  "name": "Gazebos (RPG Series)",
+  "does": "마을에 작은 주문 서재가 있는 정자가 생깁니다.",
+  "add": "이제 마을에서 주문 서재가 딸린 정자를 볼 수 있습니다.",
+  "del": "이제 마을에 주문 서재 정자가 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "geckolib": {
+  "name": "GeckoLib",
+  "does": "여러 모드의 몹·장비 애니메이션을 맡는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "glitchcore": {
+  "name": "GlitchCore",
+  "does": "Biomes O' Plenty 등 Glitchfiend 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "glowing-emissive-ores-definitive-edition": {
+  "name": "Glowing Emissive Ores Definitive Edition",
+  "does": "여러 모드와 바닐라의 광석이 은은하게 빛나 보입니다.",
+  "add": "이제 광석이 어두운 곳에서도 빛나 보입니다.",
+  "del": "이제 광석이 따로 빛나 보이지 않습니다.",
+  "lib": false
+ },
+ "glowing-torchflower": {
+  "name": "Glowing Torchflower",
+  "does": "횃불꽃이 빛을 냅니다.",
+  "add": "이제 횃불꽃을 심으면 주변이 밝아집니다.",
+  "del": "이제 횃불꽃이 빛을 내지 않습니다.",
+  "lib": false
+ },
+ "glowing-trims-mod": {
+  "name": "Glowing Trims Mod",
+  "does": "갑옷 장식이 늘 빛나 보입니다.",
+  "add": "이제 갑옷 장식이 어두운 곳에서도 빛나 보입니다.",
+  "del": "이제 갑옷 장식이 빛나 보이지 않습니다.",
+  "lib": false
+ },
+ "goblin-traders": {
+  "name": "Goblin Traders",
+  "does": "가끔 고블린 상인이 나타나 물건을 사고팝니다.",
+  "add": "이제 돌아다니다 고블린 상인과 거래할 수 있습니다.",
+  "del": "이제 고블린 상인이 나타나지 않습니다.",
+  "lib": false
+ },
+ "hapi": {
+  "name": "Hybrid API [HAPI]",
+  "does": "Hybrid Aquatic 등 Hybrid Labs 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "horse-buff": {
+  "name": "Horse Buff",
+  "does": "말을 탈 때 불편했던 점들을 손봐 줍니다.",
+  "add": "이제 말을 타고 다니기가 한결 편해집니다.",
+  "del": "이제 말 관련 편의 기능이 빠지고 원래대로 돌아갑니다.",
+  "lib": false
+ },
+ "hybrid-aquatic": {
+  "name": "Hybrid Aquatic",
+  "does": "강과 바다, 늪에 새 수중 생물과 블록이 생깁니다.",
+  "add": "이제 물속에서 새로운 물고기와 생물을 만날 수 있습니다.",
+  "del": "이제 Hybrid Aquatic의 수중 생물이 나오지 않습니다.",
+  "lib": false
+ },
+ "hybrid-delights": {
+  "name": "Hybrid Delights",
+  "does": "Hybrid Aquatic의 해산물로 만드는 요리가 생깁니다.",
+  "add": "이제 Hybrid Aquatic 해산물로 요리를 만들 수 있습니다.",
+  "del": "이제 Hybrid Aquatic 해산물 요리를 만들 수 없습니다.",
+  "lib": false
+ },
+ "icarus": {
+  "name": "Icarus",
+  "does": "망토 칸에 낄 수 있는 알록달록한 날개가 생깁니다.",
+  "add": "이제 여러 색깔의 날개를 달고 날 수 있습니다.",
+  "del": "이제 Icarus 날개를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "ice-and-fire-dragons-x-better-combat": {
+  "name": "Ice and Fire Dragons X Better Combat",
+  "does": "Ice and Fire 무기에 Better Combat 공격 동작을 붙여 줍니다.",
+  "add": "이제 Ice and Fire 무기도 Better Combat 방식으로 휘두릅니다.",
+  "del": "이제 Ice and Fire 무기에 Better Combat 동작이 적용되지 않습니다.",
+  "lib": false
+ },
+ "iceandfire_smithing": {
+  "name": "Ice And Fire Smithing",
+  "does": "Ice and Fire 장비를 대장장이 작업대로 단계별로 강화합니다.",
+  "add": "이제 Ice and Fire 장비를 대장장이 작업대에서 단계별로 만듭니다.",
+  "del": "이제 Ice and Fire 장비를 대장장이 작업대로 만들지 않습니다.",
+  "lib": false
+ },
+ "iceberg-fabric": {
+  "name": "Iceberg [Fabric]",
+  "does": "Legendary Tooltips 등 툴팁 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "illager-invasion": {
+  "name": "Illager Invasion",
+  "does": "새로운 일리저 무리와 그들의 물건이 생깁니다.",
+  "add": "이제 새로운 일리저들이 나타나 싸우게 됩니다.",
+  "del": "이제 Illager Invasion의 새 일리저가 나오지 않습니다.",
+  "lib": false
+ },
+ "immediatelyfast": {
+  "name": "ImmediatelyFast",
+  "does": "화면 그리기를 빠르게 해 프레임을 올려 줍니다.",
+  "add": "이제 글자나 아이콘이 많은 화면도 덜 끊깁니다.",
+  "del": "이제 화면 그리기 최적화가 적용되지 않습니다.",
+  "lib": false
+ },
+ "immersive-aircraft": {
+  "name": "Immersive Aircraft",
+  "does": "직접 만들어 타는 소박한 비행기들이 생깁니다.",
+  "add": "이제 비행기를 만들어 타고 하늘을 날 수 있습니다.",
+  "del": "이제 Immersive Aircraft 비행기를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "immersive-armors": {
+  "name": "Immersive Armors",
+  "does": "바닐라 느낌을 살린 여러 갑옷 세트가 생깁니다.",
+  "add": "이제 새로운 갑옷 세트를 만들어 입을 수 있습니다.",
+  "del": "이제 Immersive Armors 갑옷을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "immersive-melodies": {
+  "name": "Immersive Melodies",
+  "does": "여러 악기로 노래를 연주할 수 있습니다.",
+  "add": "이제 악기를 들고 노래를 연주할 수 있습니다.",
+  "del": "이제 Immersive Melodies 악기로 연주할 수 없습니다.",
+  "lib": false
+ },
+ "immersive-optimization": {
+  "name": "Immersive Optimization",
+  "does": "멀리 있는 몹의 계산을 줄여 서버를 가볍게 해 줍니다.",
+  "add": "이제 몹이 많아도 서버가 덜 버벅입니다.",
+  "del": "이제 몹 계산 최적화가 적용되지 않습니다.",
+  "lib": false
+ },
+ "immersive-paintings": {
+  "name": "Immersive Paintings",
+  "does": "원하는 그림을 넣어 그림으로 걸 수 있습니다.",
+  "add": "이제 내 그림 파일을 올려 벽에 걸 수 있습니다.",
+  "del": "이제 직접 올린 그림을 걸 수 없습니다.",
+  "lib": false
+ },
+ "inventory-profiles-next": {
+  "name": "Inventory Profiles Next",
+  "does": "인벤토리 정리, 칸 잠금, 장비 세트 같은 편의 기능을 줍니다.",
+  "add": "이제 버튼 하나로 인벤토리와 상자를 정리할 수 있습니다.",
+  "del": "이제 인벤토리 자동 정리와 칸 잠금을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "irisshaders": {
+  "name": "Iris Shaders",
+  "does": "셰이더팩을 켤 수 있게 해 줍니다.",
+  "add": "이제 셰이더팩을 골라 켤 수 있습니다.",
+  "del": "이제 셰이더팩을 켤 수 없습니다.",
+  "lib": false
+ },
+ "item-borders-fabric": {
+  "name": "Item Borders [Fabric]",
+  "does": "아이템 칸에 희귀도에 맞는 색 테두리를 둘러 줍니다.",
+  "add": "이제 아이템 칸 테두리 색으로 희귀도를 알 수 있습니다.",
+  "del": "이제 아이템 칸에 희귀도 테두리가 보이지 않습니다.",
+  "lib": false
+ },
+ "items-displayed": {
+  "name": "Items Displayed [Fabric]",
+  "does": "아이템을 바닥이나 선반 위에 올려 장식할 수 있습니다.",
+  "add": "이제 아이템을 바닥에 내려놓아 장식처럼 둘 수 있습니다.",
+  "del": "이제 아이템을 바닥에 올려 장식할 수 없습니다.",
+  "lib": false
+ },
+ "jade": {
+  "name": "Jade 🔍",
+  "does": "바라보는 블록이나 몹의 이름과 정보를 화면 위에 띄워 줍니다.",
+  "add": "이제 바라보는 블록이나 몹의 정보가 화면 위에 뜹니다.",
+  "del": "이제 바라보는 블록·몹 정보 창이 뜨지 않습니다.",
+  "lib": false
+ },
+ "jamlib": {
+  "name": "JamLib",
+  "does": "JamCoreModding 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "jei": {
+  "name": "Just Enough Items (JEI)",
+  "does": "아이템 목록과 제작법을 찾아볼 수 있습니다.",
+  "add": "이제 인벤토리에서 아이템 제작법을 찾아볼 수 있습니다.",
+  "del": "이제 JEI로 제작법을 찾아볼 수 없습니다.",
+  "lib": false
+ },
+ "jewelry": {
+  "name": "Jewelry (RPG Series)",
+  "does": "보석을 캐서 반지와 목걸이 같은 장신구를 만듭니다.",
+  "add": "이제 보석으로 반지와 목걸이를 만들어 낄 수 있습니다.",
+  "del": "이제 Jewelry 장신구를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "jupiter": {
+  "name": "Jupiter",
+  "does": "다른 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "just-enough-backups": {
+  "name": "Just Enough Backups (JEB)",
+  "does": "월드를 자동·수동으로 백업하고 게임 안에서 되돌릴 수 있습니다.",
+  "add": "이제 월드가 정기적으로 백업됩니다.",
+  "del": "이제 이 모드로 월드를 백업하지 않습니다.",
+  "lib": false
+ },
+ "kawaii-1.0.3": {
+  "name": "Kawaii",
+  "does": "분홍빛 귀여운 작업대·화로·침대와 리본·레이스 장식이 생깁니다.",
+  "add": "이제 귀여운 작업대와 화로, 침대로 방을 꾸밀 수 있습니다.",
+  "del": "이제 귀여운 작업대·화로·침대와 장식을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "kiwi-fabric": {
+  "name": "Kiwi 🥝 (Fabric)",
+  "does": "Snownee 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "korean-patch-fabric": {
+  "name": "Korean Chat Patch",
+  "does": "채팅창이나 표지판에서 한글을 매끄럽게 입력할 수 있습니다.",
+  "add": "이제 채팅과 글상자에서 한글이 매끄럽게 입력됩니다.",
+  "del": "이제 한글 입력이 매끄럽지 않을 수 있습니다.",
+  "lib": false
+ },
+ "lambdynamiclights": {
+  "name": "LambDynamicLights",
+  "does": "횃불 등을 손에 들면 주변이 밝아집니다.",
+  "add": "이제 횃불을 손에 들기만 해도 주변이 밝아집니다.",
+  "del": "이제 손에 든 횃불로 주변이 밝아지지 않습니다.",
+  "lib": false
+ },
+ "language-reload": {
+  "name": "Language Reload",
+  "does": "언어를 바꿀 때 로딩을 빠르게 하고 빠진 번역을 채워 줍니다.",
+  "add": "이제 언어를 바꿀 때 로딩이 짧아집니다.",
+  "del": "이제 언어를 바꿀 때 로딩이 다시 길어집니다.",
+  "lib": false
+ },
+ "lavender-api": {
+  "name": "Lavender API",
+  "does": "가이드북 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "legendary-tooltips-fabric": {
+  "name": "Legendary Tooltips [Fabric]",
+  "does": "아이템 설명창에 희귀도별로 꾸민 테두리를 둘러 줍니다.",
+  "add": "이제 아이템 설명창이 희귀도에 따라 화려하게 보입니다.",
+  "del": "이제 아이템 설명창이 원래 모양으로 보입니다.",
+  "lib": false
+ },
+ "lets-do-addon-corn-expansion": {
+  "name": "[Let's Do Addon] Corn Expansion",
+  "does": "Farm & Charm 옥수수로 만드는 음식과 물건이 늘어납니다.",
+  "add": "이제 옥수수로 더 많은 음식을 만들 수 있습니다.",
+  "del": "이제 옥수수 추가 요리를 만들 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-bakery-farm-charm-compat": {
+  "name": "[Let's Do] Bakery - Farm&Charm Compat",
+  "does": "빵과 컵케이크, 케이크를 구워 먹거나 올려 둘 수 있습니다.",
+  "add": "이제 여러 가지 빵과 케이크를 구울 수 있습니다.",
+  "del": "이제 Bakery 빵과 케이크를 만들 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-beachparty": {
+  "name": "[Let's Do] Beachparty",
+  "does": "해변 장식과 음료, 여름 놀이 물건이 생깁니다.",
+  "add": "이제 해변 장식과 음료로 바닷가를 꾸밀 수 있습니다.",
+  "del": "이제 Beachparty 해변 물건을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-brewery-farm-charm-compat": {
+  "name": "[Let's Do] Brewery - Farm&Charm Compat",
+  "does": "맥주를 빚고 양조장을 꾸밀 수 있습니다.",
+  "add": "이제 직접 맥주를 빚을 수 있습니다.",
+  "del": "이제 Brewery 양조 기능을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-candlelight-farm-charm-compat": {
+  "name": "[Let's Do] Candlelight - Farm&Charm Compat",
+  "does": "근사한 식탁 장식과 코스 요리가 생깁니다.",
+  "add": "이제 촛불 켠 식탁을 차리고 요리를 대접할 수 있습니다.",
+  "del": "이제 Candlelight 요리와 장식을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-emi-compat": {
+  "name": "[Let's Do Addon] EMI Compat",
+  "does": "Let's Do 모드들의 제작법을 EMI에서 보여 줍니다.",
+  "add": "이제 EMI에서 Let's Do 모드의 제작법도 볼 수 있습니다.",
+  "del": "이제 EMI에서 Let's Do 모드 제작법이 보이지 않습니다.",
+  "lib": false
+ },
+ "lets-do-farm-charm": {
+  "name": "[Let's Do] Farm & Charm",
+  "does": "새 곡물과 과일, 조리 냄비와 고기 분쇄기가 생깁니다.",
+  "add": "이제 새 작물을 기르고 농가 요리를 만들 수 있습니다.",
+  "del": "이제 Farm & Charm 작물과 요리를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-furniture": {
+  "name": "[Let's Do] Furniture",
+  "does": "Let's Do 분위기의 가구가 잔뜩 생깁니다.",
+  "add": "이제 여러 가구로 집을 꾸밀 수 있습니다.",
+  "del": "이제 Let's Do 가구를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-herbal-brews": {
+  "name": "[Let's Do] HerbalBrews",
+  "does": "차와 커피를 끓이고 보온병에 담아 다닐 수 있습니다.",
+  "add": "이제 차와 커피를 끓여 마실 수 있습니다.",
+  "del": "이제 HerbalBrews 차와 커피를 만들 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-lilis-lucky-lures": {
+  "name": "[Let's Do] Lili's Lucky Lures",
+  "does": "새 낚시 도구와 낚시터, 장식 블록이 생깁니다.",
+  "add": "이제 새 낚시 도구로 더 다양하게 낚시할 수 있습니다.",
+  "del": "이제 Lili's Lucky Lures 낚시 도구를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-lilis-pottery": {
+  "name": "[Let's Do] Lili's Pottery",
+  "does": "점토와 유약으로 도자기를 빚을 수 있습니다.",
+  "add": "이제 점토로 도자기를 빚어 장식할 수 있습니다.",
+  "del": "이제 Lili's Pottery 도자기를 만들 수 없습니다.",
+  "lib": false
+ },
+ "lets-do-meadow": {
+  "name": "[Let's Do] Meadow",
+  "does": "초원 바이옴이 새로 꾸며지고 치즈를 만들 수 있습니다.",
+  "add": "이제 초원에서 새 풍경을 보고 치즈도 만들 수 있습니다.",
+  "del": "이제 Meadow 초원 풍경과 치즈 만들기가 빠집니다.",
+  "lib": false
+ },
+ "lets-do-vinery": {
+  "name": "[Let's Do] Vinery",
+  "does": "포도를 길러 와인을 담그고 숙성시킬 수 있습니다.",
+  "add": "이제 포도를 길러 와인을 담글 수 있습니다.",
+  "del": "이제 Vinery 포도와 와인을 만들 수 없습니다.",
+  "lib": false
+ },
+ "libipn": {
+  "name": "libIPN",
+  "does": "Inventory Profiles Next가 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "lithium": {
+  "name": "Lithium (Fabric/NeoForge)",
+  "does": "게임 계산을 가볍게 해 서버와 게임을 빠르게 합니다.",
+  "add": "이제 서버와 게임이 한결 가볍게 돌아갑니다.",
+  "del": "이제 Lithium 최적화가 적용되지 않습니다.",
+  "lib": false
+ },
+ "lithostitched": {
+  "name": "Lithostitched",
+  "does": "지형 생성 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "lne-archers": {
+  "name": "LNE Archers Add-On",
+  "does": "궁수(RPG Series) 관련 구조물과 무기가 생깁니다.",
+  "add": "이제 궁수 관련 새 구조물과 무기를 만날 수 있습니다.",
+  "del": "이제 LNE 궁수 구조물과 무기가 나오지 않습니다.",
+  "lib": false
+ },
+ "lne-paladins": {
+  "name": "LNE Paladins & Priests Add-On",
+  "does": "성기사·사제 직업에 맞춘 구조물과 무기를 Loot & Explore에 더합니다.",
+  "add": "이제 성기사·사제용 무기가 나오는 구조물이 생성됩니다.",
+  "del": "이제 성기사·사제용 구조물과 무기가 나오지 않습니다.",
+  "lib": false
+ },
+ "lne-rogues": {
+  "name": "LNE Rogues & Warriors Add-On",
+  "does": "도적·전사 직업에 맞춘 구조물과 무기를 Loot & Explore에 더합니다.",
+  "add": "이제 도적·전사용 무기가 나오는 구조물이 생성됩니다.",
+  "del": "이제 도적·전사용 구조물과 무기가 나오지 않습니다.",
+  "lib": false
+ },
+ "lne-wizards": {
+  "name": "LNE Wizards Add-On",
+  "does": "마법사 직업에 맞춘 구조물과 무기를 Loot & Explore에 더합니다.",
+  "add": "이제 마법사용 무기가 나오는 구조물이 생성됩니다.",
+  "del": "이제 마법사용 구조물과 무기가 나오지 않습니다.",
+  "lib": false
+ },
+ "loot-integrations": {
+  "name": "Loot Integrations",
+  "does": "구조물 상자에 다른 모드의 아이템도 섞여 나오게 합니다.",
+  "add": "이제 구조물 상자에서 여러 모드의 아이템이 함께 나옵니다.",
+  "del": "이제 구조물 상자에 다른 모드 아이템이 섞여 나오지 않습니다.",
+  "lib": false
+ },
+ "loot-integrations-ice-and-fire": {
+  "name": "Loot Integrations: Ice and Fire",
+  "does": "구조물 상자에 Ice and Fire 아이템이 섞여 나오게 합니다.",
+  "add": "이제 구조물 상자에서 Ice and Fire 아이템도 나옵니다.",
+  "del": "이제 구조물 상자에 Ice and Fire 아이템이 섞여 나오지 않습니다.",
+  "lib": false
+ },
+ "loot-n-explore": {
+  "name": "Loot & Explore",
+  "does": "새 구조물과 새로운 적을 세계에 더하는 탐험 모드입니다.",
+  "add": "이제 새 구조물을 탐험하고 새로운 적과 싸울 수 있습니다.",
+  "del": "이제 Loot & Explore의 구조물과 적이 나오지 않습니다.",
+  "lib": false
+ },
+ "lootr-fabric": {
+  "name": "Lootr (Fabric)",
+  "does": "구조물 상자를 사람마다 따로 열 수 있게 합니다.",
+  "add": "이제 먼저 연 사람이 있어도 내 몫의 전리품이 따로 나옵니다.",
+  "del": "이제 구조물 상자는 먼저 연 사람이 가져가면 끝입니다.",
+  "lib": false
+ },
+ "macaws-bridges": {
+  "name": "Macaw's Bridges",
+  "does": "나무·돌로 된 여러 모양의 다리를 만들 수 있습니다.",
+  "add": "이제 여러 모양의 다리를 만들어 놓을 수 있습니다.",
+  "del": "이제 Macaw's 다리 블록을 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-doors": {
+  "name": "Macaw's Doors",
+  "does": "모든 나무 색의 문과 서부풍·차고·장지문 같은 문을 더합니다.",
+  "add": "이제 나무 종류별 문과 독특한 모양의 문을 쓸 수 있습니다.",
+  "del": "이제 Macaw's 문을 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-fences-and-walls": {
+  "name": "Macaw's Fences and Walls",
+  "does": "바닐라 느낌의 울타리·담장·울타리 문을 더합니다.",
+  "add": "이제 새 울타리와 담장, 울타리 문을 쓸 수 있습니다.",
+  "del": "이제 Macaw's 울타리와 담장을 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-furniture": {
+  "name": "Macaw's Furniture",
+  "does": "옷장·서랍·의자·책상·소파 같은 가구를 더합니다.",
+  "add": "이제 옷장, 의자, 책상 같은 가구로 집을 꾸밀 수 있습니다.",
+  "del": "이제 Macaw's 가구를 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-natures-spirit": {
+  "name": "Macaw's Nature's Spirit",
+  "does": "Nature's Spirit 나무로도 Macaw's 블록을 만들게 해 줍니다.",
+  "add": "이제 Nature's Spirit 나무로 Macaw's 가구·문 등을 만들 수 있습니다.",
+  "del": "이제 Nature's Spirit 나무로 된 Macaw's 블록이 없습니다.",
+  "lib": false
+ },
+ "macaws-paths-and-pavings": {
+  "name": "Macaw's Paths and Pavings",
+  "does": "바닐라 느낌의 길과 바닥 포장 블록을 더합니다.",
+  "add": "이제 여러 무늬의 길과 포장 블록을 깔 수 있습니다.",
+  "del": "이제 Macaw's 길·포장 블록을 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-roofs": {
+  "name": "Macaw's Roofs",
+  "does": "계단 대신 진짜 지붕 블록으로 지붕을 올릴 수 있습니다.",
+  "add": "이제 지붕 전용 블록으로 지붕을 올릴 수 있습니다.",
+  "del": "이제 Macaw's 지붕 블록을 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-stairs": {
+  "name": "Macaw's Stairs",
+  "does": "바닐라 느낌의 계단, 계단 난간, 발코니를 더합니다.",
+  "add": "이제 새 계단과 난간, 발코니를 만들 수 있습니다.",
+  "del": "이제 Macaw's 계단과 난간을 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-trapdoors": {
+  "name": "Macaw's Trapdoors",
+  "does": "모든 나무 종류의 다락문과 새 모양의 다락문을 더합니다.",
+  "add": "이제 나무 종류별 다락문과 새 다락문을 쓸 수 있습니다.",
+  "del": "이제 Macaw's 다락문을 만들 수 없습니다.",
+  "lib": false
+ },
+ "macaws-windows": {
+  "name": "Macaw's Windows",
+  "does": "창문, 모자이크 유리, 블라인드, 덧문, 커튼을 더합니다.",
+  "add": "이제 여러 창문과 커튼, 블라인드로 꾸밀 수 있습니다.",
+  "del": "이제 Macaw's 창문과 커튼을 만들 수 없습니다.",
+  "lib": false
+ },
+ "mace-but-3d": {
+  "name": "Mace but 3D",
+  "does": "철퇴를 손에 들었을 때 입체 모델로 보여 줍니다.",
+  "add": "이제 손에 든 철퇴가 입체로 보입니다.",
+  "del": "이제 손에 든 철퇴가 원래의 납작한 모양으로 보입니다.",
+  "lib": false
+ },
+ "magicskin": {
+  "name": "Magic Skin",
+  "does": "64x64보다 큰 고해상도 스킨도 쓸 수 있게 합니다.",
+  "add": "이제 64x64보다 큰 스킨도 제대로 보입니다.",
+  "del": "이제 64x64보다 큰 스킨은 제대로 보이지 않습니다.",
+  "lib": false
+ },
+ "main-menu-credits": {
+  "name": "Main Menu Credits",
+  "does": "타이틀 화면 구석에 안내 문구를 띄워 줍니다.",
+  "add": "이제 타이틀 화면에 모드팩 안내 문구가 보입니다.",
+  "del": "이제 타이틀 화면에 안내 문구가 보이지 않습니다.",
+  "lib": false
+ },
+ "make-bubbles-pop": {
+  "name": "Make Bubbles Pop [Client] [Fabric/Forge]",
+  "does": "물속 거품이 수면에 닿으면 톡 터지게 보여 줍니다.",
+  "add": "이제 물속 거품이 수면에서 터지는 모습이 보입니다.",
+  "del": "이제 물속 거품이 수면에서 그냥 사라집니다.",
+  "lib": false
+ },
+ "map-tooltip": {
+  "name": "Map Tooltip",
+  "does": "인벤토리에서 지도에 마우스를 올리면 지도 내용을 보여 줍니다.",
+  "add": "이제 지도에 마우스만 올려도 내용이 보입니다.",
+  "del": "이제 지도를 손에 들어야 내용을 볼 수 있습니다.",
+  "lib": false
+ },
+ "maplink": {
+  "name": "Map Link  (formerly Remote Player Waypoints for Xaero's Map)",
+  "does": "서버 웹 지도의 정보를 Xaero 지도에 옮겨 보여 줍니다.",
+  "add": "이제 Xaero 지도에 다른 플레이어와 서버 지도 표시가 보입니다.",
+  "del": "이제 Xaero 지도에 서버 웹 지도의 플레이어·표시가 뜨지 않습니다.",
+  "lib": false
+ },
+ "mavapi": {
+  "name": "More Axolotl Variants API",
+  "does": "아홀로틀 색 변형을 더하는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "max-health-fix": {
+  "name": "Max Health Fix",
+  "does": "접속할 때 최대 체력이 초기화되는 버그를 고칩니다.",
+  "add": "이제 다시 접속해도 늘어난 최대 체력이 그대로 남습니다.",
+  "del": "이제 다시 접속하면 늘어난 최대 체력이 깎일 수 있습니다.",
+  "lib": false
+ },
+ "mebahels-api": {
+  "name": "Mebahel's API",
+  "does": "Mebahel 계열 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "mebahels-creatures-draugr": {
+  "name": "Mebahel's Creatures - Draugr Invasion",
+  "does": "드라우그 무리와 보스, 마법 아이템, 새 구조물을 더합니다.",
+  "add": "이제 드라우그 무리와 습격, 새 구조물을 만날 수 있습니다.",
+  "del": "이제 드라우그와 그 구조물·습격이 나오지 않습니다.",
+  "lib": false
+ },
+ "mebahels-creatures-dwarven-automatons": {
+  "name": "Mebahel's Creatures - Dwarven Automatons",
+  "does": "증기와 톱니로 움직이는 드워프 기계 적대 세력을 더합니다.",
+  "add": "이제 드워프 기계 적들을 만날 수 있습니다.",
+  "del": "이제 드워프 기계 적들이 나오지 않습니다.",
+  "lib": false
+ },
+ "mebahels-elder-scrolls-score": {
+  "name": "Mebahel's Elder Scrolls Core",
+  "does": "엘더스크롤풍 연금술, 영혼석, 자물쇠 따기, 수호석을 더합니다.",
+  "add": "이제 연금술 재료와 영혼석, 자물쇠 따기를 쓸 수 있습니다.",
+  "del": "이제 엘더스크롤풍 연금술과 영혼석, 자물쇠 따기가 없습니다.",
+  "lib": false
+ },
+ "mezz-config": {
+  "name": "MezzConfig",
+  "does": "여러 모드의 설정 기능에 쓰이는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "midnightlib": {
+  "name": "MidnightLib",
+  "does": "여러 모드의 설정 화면에 쓰이는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "minerally": {
+  "name": "Minerally",
+  "does": "광석 더미, 수정, 정동, 광물 바위 같은 광물 블록을 더합니다.",
+  "add": "이제 광석 더미와 수정, 광물 바위를 볼 수 있습니다.",
+  "del": "이제 Minerally의 광석 더미와 수정이 생기지 않습니다.",
+  "lib": false
+ },
+ "mini-boss-boss-bars": {
+  "name": "Mini-boss Boss Bars",
+  "does": "엘더 가디언, 워든 같은 강한 몹에도 보스 체력바를 띄웁니다.",
+  "add": "이제 엘더 가디언, 워든 같은 몹도 보스 체력바가 보입니다.",
+  "del": "이제 중간 보스급 몹에 보스 체력바가 뜨지 않습니다.",
+  "lib": false
+ },
+ "mining-speed-tooltips": {
+  "name": "Mining Speed Tooltips",
+  "does": "도구 설명에 채굴 속도를 보여 줍니다.",
+  "add": "이제 도구에 마우스를 올리면 채굴 속도가 보입니다.",
+  "del": "이제 도구 설명에 채굴 속도가 보이지 않습니다.",
+  "lib": false
+ },
+ "mixintrace": {
+  "name": "MixinTrace",
+  "does": "게임이 튕길 때 원인을 찾기 쉽게 기록을 남기는 도구입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "mns-moogs-nether-structures": {
+  "name": "MNS - Moog's Nether Structures",
+  "does": "바닐라 블록으로 지은 구조물을 네더 곳곳에 더합니다.",
+  "add": "이제 네더에서 새 구조물들을 볼 수 있습니다.",
+  "del": "이제 네더에 Moog's 구조물이 생기지 않습니다.",
+  "lib": false
+ },
+ "mod-loading-screen": {
+  "name": "Mod Loading Screen",
+  "does": "게임을 켤 때 모드 로딩 진행 상황을 보여 줍니다.",
+  "add": "이제 게임을 켤 때 모드 로딩 진행률이 보입니다.",
+  "del": "이제 게임을 켤 때 모드 로딩 진행률이 보이지 않습니다.",
+  "lib": false
+ },
+ "model-gap-fix": {
+  "name": "Model Gap Fix",
+  "does": "아이템·블록 모델에 생기는 틈을 메워 줍니다.",
+  "add": "이제 손에 든 아이템 모델에 틈이 보이지 않습니다.",
+  "del": "이제 아이템 모델 가장자리에 틈이 보일 수 있습니다.",
+  "lib": false
+ },
+ "modernfix": {
+  "name": "ModernFix",
+  "does": "메모리를 덜 쓰고 로딩을 빠르게 하며 여러 버그를 고칩니다.",
+  "add": "이제 게임이 더 빨리 켜지고 메모리를 덜 씁니다.",
+  "del": "이제 ModernFix의 속도 개선과 버그 수정이 빠집니다.",
+  "lib": false
+ },
+ "modmenu": {
+  "name": "Mod Menu",
+  "does": "설치된 모드 목록과 각 모드 설정을 볼 수 있는 메뉴를 더합니다.",
+  "add": "이제 타이틀 화면에서 모드 목록과 설정을 볼 수 있습니다.",
+  "del": "이제 모드 목록 메뉴가 보이지 않습니다.",
+  "lib": false
+ },
+ "moogs-end-structures": {
+  "name": "MES - Moog's End Structures",
+  "does": "바닐라 느낌의 구조물을 엔드 곳곳에 더합니다.",
+  "add": "이제 엔드에서 새 구조물들을 볼 수 있습니다.",
+  "del": "이제 엔드에 Moog's 구조물이 생기지 않습니다.",
+  "lib": false
+ },
+ "moogs-structure-lib": {
+  "name": "Moog's Structure Lib (moogs_structures)",
+  "does": "Moog's 구조물 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "more-compatibility-variants-bop": {
+  "name": "More Compatibility Variants (Biomes o' Plenty)",
+  "does": "Biomes O' Plenty 나무의 조합법 충돌을 막는 호환 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "more-compatibility-variants-bx": {
+  "name": "More Compatibility Variants (BetterEnd/BetterNether)",
+  "does": "BetterEnd·BetterNether 나무의 조합법 충돌을 막는 호환 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "more-compatibility-variants-lets-do": {
+  "name": "More Compatibility Variants [Let's Do]",
+  "does": "Let's Do 모드 나무의 조합법 충돌을 막는 호환 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "more-compatibility-variants-ns": {
+  "name": "More Compatibility Variants (Nature's Spirit)",
+  "does": "Nature's Spirit 나무의 조합법 충돌을 막는 호환 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "more-delight-fabric": {
+  "name": "More Delight (Fabric)",
+  "does": "Farmer's Delight에 요리와 칼 종류를 더 늘려 줍니다.",
+  "add": "이제 Farmer's Delight 요리와 칼을 더 많이 만들 수 있습니다.",
+  "del": "이제 More Delight의 요리와 칼을 만들 수 없습니다.",
+  "lib": false
+ },
+ "more-rpg-library": {
+  "name": "More RPG Library",
+  "does": "More RPG Classes 계열 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "morechathistory": {
+  "name": "More Chat History",
+  "does": "채팅 기록을 더 많이 남겨 둡니다.",
+  "add": "이제 채팅창을 더 멀리 거슬러 올라가 볼 수 있습니다.",
+  "del": "이제 오래된 채팅은 원래대로 금방 사라집니다.",
+  "lib": false
+ },
+ "moreculling": {
+  "name": "MoreCulling",
+  "does": "보이지 않는 면을 더 많이 빼고 그려서 프레임을 올립니다.",
+  "add": "이제 보이지 않는 부분을 덜 그려서 게임이 더 부드럽습니다.",
+  "del": "이제 MoreCulling의 화면 최적화가 빠집니다.",
+  "lib": false
+ },
+ "mouse-tweaks": {
+  "name": "Mouse Tweaks",
+  "does": "마우스 드래그와 휠로 인벤토리 아이템을 빠르게 옮깁니다.",
+  "add": "이제 드래그나 휠로 아이템을 빠르게 옮길 수 있습니다.",
+  "del": "이제 마우스 드래그·휠로 아이템을 옮길 수 없습니다.",
+  "lib": false
+ },
+ "multibeds-fabric": {
+  "name": "MultiBeds [Fabric]",
+  "does": "침대 모양, 이불 무늬, 색, 자수를 골라 꾸밀 수 있습니다.",
+  "add": "이제 침대 모양과 이불 무늬를 골라 꾸밀 수 있습니다.",
+  "del": "이제 침대를 따로 꾸밀 수 없습니다.",
+  "lib": false
+ },
+ "mythicmetals": {
+  "name": "Mythic Metals",
+  "does": "여러 새 광석과 그 광석으로 만드는 도구·무기·갑옷을 더합니다.",
+  "add": "이제 새 광석을 캐서 도구와 갑옷을 만들 수 있습니다.",
+  "del": "이제 Mythic Metals 광석과 장비가 나오지 않습니다.",
+  "lib": false
+ },
+ "mythika": {
+  "name": "Mythika: Creatures of Greek Myth",
+  "does": "그리스 신화 속 괴물과 생물을 세계에 더합니다.",
+  "add": "이제 그리스 신화 속 생물들을 만날 수 있습니다.",
+  "del": "이제 그리스 신화 생물들이 나오지 않습니다.",
+  "lib": false
+ },
+ "naturalist": {
+  "name": "Naturalist",
+  "does": "곰, 사슴, 뱀 같은 동물 수십 종을 세계에 더합니다.",
+  "add": "이제 여러 야생 동물이 저마다의 습성대로 돌아다닙니다.",
+  "del": "이제 Naturalist 동물들이 나오지 않습니다.",
+  "lib": false
+ },
+ "natures-compass": {
+  "name": "Nature's Compass",
+  "does": "원하는 생물 군계를 찾아 주는 나침반을 더합니다.",
+  "add": "이제 나침반으로 원하는 생물 군계를 찾을 수 있습니다.",
+  "del": "이제 생물 군계를 찾아 주는 나침반이 없습니다.",
+  "lib": false
+ },
+ "natures-delight": {
+  "name": "Nature's Delight",
+  "does": "Nature's Spirit 재료로 Farmer's Delight 요리를 만들게 해 줍니다.",
+  "add": "이제 Nature's Spirit 재료로 새 요리를 만들 수 있습니다.",
+  "del": "이제 Nature's Spirit 재료로 만드는 요리가 없습니다.",
+  "lib": false
+ },
+ "natures-spirit": {
+  "name": "Nature's Spirit",
+  "does": "새 생물 군계와 나무, 블록을 세계 생성에 더합니다.",
+  "add": "이제 새 생물 군계와 나무들을 볼 수 있습니다.",
+  "del": "이제 Nature's Spirit 생물 군계와 나무가 생기지 않습니다.",
+  "lib": false
+ },
+ "necronomicon": {
+  "name": "Necronomicon API",
+  "does": "여러 모드가 함께 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "nether-depths-upgrade": {
+  "name": "Nether Depths Upgrade",
+  "does": "네더 용암 바다에 물고기 아홉 종과 식물을 더합니다.",
+  "add": "이제 네더 용암 바다에서 물고기를 낚을 수 있습니다.",
+  "del": "이제 네더 용암 속 물고기와 식물이 나오지 않습니다.",
+  "lib": false
+ },
+ "netherportalfix": {
+  "name": "NetherPortalFix",
+  "does": "여럿이 쓸 때 네더 차원문이 엉뚱한 곳으로 이어지는 걸 막습니다.",
+  "add": "이제 네더 차원문을 오가도 들어온 문으로 제대로 돌아옵니다.",
+  "del": "이제 네더 차원문이 가끔 엉뚱한 문으로 이어질 수 있습니다.",
+  "lib": false
+ },
+ "nexuslib": {
+  "name": "NexusLib",
+  "does": "여러 모드가 함께 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "no-chat-reports": {
+  "name": "No Chat Reports",
+  "does": "채팅이 모장에 신고되지 않게 막습니다.",
+  "add": "이제 채팅 메시지가 신고되지 않습니다.",
+  "del": "이제 채팅이 원래대로 신고될 수 있습니다.",
+  "lib": false
+ },
+ "not-enough-animations": {
+  "name": "Not Enough Animations",
+  "does": "1인칭에서만 보이던 동작을 3인칭에서도 보여 줍니다.",
+  "add": "이제 지도 들기, 먹기 같은 동작이 3인칭에서도 보입니다.",
+  "del": "이제 3인칭에서 추가 동작이 보이지 않습니다.",
+  "lib": false
+ },
+ "nyfs-spiders": {
+  "name": "Nyf's Spiders",
+  "does": "거미가 벽과 천장을 진짜 거미처럼 기어다니게 합니다.",
+  "add": "이제 거미가 벽과 천장을 타고 기어다닙니다.",
+  "del": "이제 거미가 원래대로 움직입니다.",
+  "lib": false
+ },
+ "obscure-tooltips": {
+  "name": "Obscure Tooltips",
+  "does": "아이템 설명창을 효과와 애니메이션으로 꾸며 줍니다.",
+  "add": "이제 아이템 설명창이 등급별로 화려하게 보입니다.",
+  "del": "이제 아이템 설명창이 기본 모양으로 보입니다.",
+  "lib": false
+ },
+ "off-hand-tick-fix": {
+  "name": "Off Hand Tick Fix",
+  "does": "왼손에 든 아이템도 제대로 작동하도록 고칩니다.",
+  "add": "이제 왼손에 든 일부 무기도 효과가 제대로 작동합니다.",
+  "del": "이제 왼손에 든 일부 무기의 효과가 작동하지 않을 수 있습니다.",
+  "lib": false
+ },
+ "open-parties-and-claims": {
+  "name": "Open Parties and Claims",
+  "does": "청크를 내 땅으로 지정하고 파티를 맺을 수 있습니다.",
+  "add": "이제 청크를 내 땅으로 지정하고 파티를 맺을 수 있습니다.",
+  "del": "이제 땅 지정과 파티 기능을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "optigui": {
+  "name": "OptiGUI",
+  "does": "리소스팩으로 상자·화로 같은 GUI 모양을 바꿀 수 있게 합니다.",
+  "add": "이제 리소스팩에 맞춰 GUI 화면 모양이 바뀝니다.",
+  "del": "이제 GUI 화면이 기본 모양으로 보입니다.",
+  "lib": false
+ },
+ "overflowing-bars": {
+  "name": "Overflowing Bars",
+  "does": "체력·방어 막대가 한 줄을 넘으면 겹쳐서 보여 줍니다.",
+  "add": "이제 체력·방어 막대가 한 줄을 넘으면 겹쳐서 보입니다.",
+  "del": "이제 체력·방어 막대가 한 줄을 넘어가도 겹쳐서 표시되지 않습니다.",
+  "lib": false
+ },
+ "owo-lib": {
+  "name": "oωo (owo-lib)",
+  "does": "여러 모드의 화면과 설정에 쓰이는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "paginated-advancements": {
+  "name": "Paginated Advancements & Custom Frames",
+  "does": "발전 과제 화면을 크게 쓰고 여러 쪽으로 나눠 보여 줍니다.",
+  "add": "이제 발전 과제 화면을 넓게 보고 쪽을 넘길 수 있습니다.",
+  "del": "이제 발전 과제 화면이 기본 모양으로 보입니다.",
+  "lib": false
+ },
+ "paladins-and-priests": {
+  "name": "Paladins & Priests (RPG Series)",
+  "does": "동료를 지키고 치유하는 성기사·사제 직업을 더합니다.",
+  "add": "이제 성기사나 사제가 되어 동료를 지키고 치유할 수 있습니다.",
+  "del": "이제 성기사·사제 무기와 주문을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "pillager-caravans": {
+  "name": "Pillager Caravans",
+  "does": "호위를 거느리고 떠도는 약탈자 행렬을 더합니다.",
+  "add": "이제 세계를 떠도는 약탈자 행렬을 만날 수 있습니다.",
+  "del": "이제 약탈자 행렬이 나타나지 않습니다.",
+  "lib": false
+ },
+ "ping-wheel": {
+  "name": "Ping Wheel",
+  "does": "장소나 몹을 잠깐 표시해서 친구에게 알릴 수 있습니다.",
+  "add": "이제 장소나 몹을 찍어서 친구에게 보여 줄 수 있습니다.",
+  "del": "이제 핑으로 위치를 표시할 수 없습니다.",
+  "lib": false
+ },
+ "platform": {
+  "name": "Platform",
+  "does": "여러 모드가 함께 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "playeranimator": {
+  "name": "playerAnimator",
+  "does": "플레이어 동작 애니메이션을 쓰는 모드들의 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "plushie-buddies": {
+  "name": "Plushie Buddies",
+  "does": "여러 가지 인형을 더합니다.",
+  "add": "이제 여러 인형을 모아 꾸밀 수 있습니다.",
+  "del": "이제 Plushie Buddies 인형이 나오지 않습니다.",
+  "lib": false
+ },
+ "polymorph": {
+  "name": "Polymorph",
+  "does": "조합 결과가 여럿일 때 원하는 걸 고를 수 있게 합니다.",
+  "add": "이제 조합법이 겹쳐도 원하는 결과를 고를 수 있습니다.",
+  "del": "이제 조합법이 겹치면 한 가지 결과만 나옵니다.",
+  "lib": false
+ },
+ "polytone": {
+  "name": "Polytone",
+  "does": "리소스팩으로 블록 색, 생물 군계 색, 소리를 바꿀 수 있게 합니다.",
+  "add": "이제 리소스팩에 맞춰 블록과 생물 군계 색이 바뀝니다.",
+  "del": "이제 리소스팩의 색·소리 변경이 적용되지 않습니다.",
+  "lib": false
+ },
+ "power-damage-fix": {
+  "name": "Power Damage Fix",
+  "does": "힘 마법이 붙은 활의 피해가 낮게 들어가는 버그를 고칩니다.",
+  "add": "이제 힘 마법이 붙은 활이 제 피해를 줍니다.",
+  "del": "이제 힘 마법이 붙은 활의 피해가 조금 낮게 들어갑니다.",
+  "lib": false
+ },
+ "prickle": {
+  "name": "Prickle",
+  "does": "여러 모드의 설정 파일에 쓰이는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "prism-fabric": {
+  "name": "Prism [Fabric]",
+  "does": "아이템 설명창 색을 꾸미는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "puffish-skills": {
+  "name": "Pufferfish's Skills [Fabric & Forge & NeoForge]",
+  "does": "경험을 쌓아 스킬 트리에서 능력을 찍을 수 있게 합니다.",
+  "add": "이제 스킬 트리에서 능력을 골라 찍을 수 있습니다.",
+  "del": "이제 스킬 트리를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "puzzle": {
+  "name": "Puzzle",
+  "does": "OptiFine 대체 모드 설정을 한 화면에 모아 줍니다.",
+  "add": "이제 그래픽 관련 설정을 한 화면에서 바꿀 수 있습니다.",
+  "del": "이제 Puzzle 설정 화면이 없습니다.",
+  "lib": false
+ },
+ "puzzles-lib": {
+  "name": "Puzzles Lib",
+  "does": "Fuzs가 만든 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "ranged-weapon-api": {
+  "name": "Ranged Weapon API",
+  "does": "RPG Series 활·쇠뇌 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "refield": {
+  "name": "Refield",
+  "does": "현수막 무늬를 늘리고 겹칠 수 있는 한도를 없앱니다.",
+  "add": "이제 새 무늬로 현수막을 더 자유롭게 꾸밀 수 있습니다.",
+  "del": "이제 현수막 무늬와 한도가 원래대로 돌아갑니다.",
+  "lib": false
+ },
+ "relics-rpg": {
+  "name": "Relics (RPG Series)",
+  "does": "착용하면 능력을 올려 주는 장신구를 더합니다.",
+  "add": "이제 장신구를 착용해 능력을 올릴 수 있습니다.",
+  "del": "이제 Relics 장신구가 나오지 않습니다.",
+  "lib": false
+ },
+ "resourceful-config": {
+  "name": "Resourceful Config",
+  "does": "여러 모드의 설정에 쓰이는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "resourceful-lib": {
+  "name": "Resourceful Lib",
+  "does": "여러 모드가 함께 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "respect-my-trims": {
+  "name": "Respect My Trims",
+  "does": "금 갑옷 장식이 있으면 피글린이 덤비지 않게 합니다.",
+  "add": "이제 금 갑옷 장식을 한 갑옷도 피글린이 봐줍니다.",
+  "del": "이제 금 갑옷 장식만으로는 피글린을 달랠 수 없습니다.",
+  "lib": false
+ },
+ "rightclickharvest": {
+  "name": "RightClickHarvest",
+  "does": "다 자란 작물을 우클릭으로 거두고 다시 심어 줍니다.",
+  "add": "이제 작물을 우클릭하면 수확하고 자동으로 다시 심습니다.",
+  "del": "이제 작물을 우클릭으로 수확할 수 없습니다.",
+  "lib": false
+ },
+ "rogues-and-warriors": {
+  "name": "Rogues & Warriors (RPG Series)",
+  "does": "도적과 전사 직업의 무기, 갑옷, 전투 기술이 생깁니다.",
+  "add": "이제 도적·전사 무기와 갑옷으로 전투 기술을 쓸 수 있습니다.",
+  "del": "이제 도적·전사 무기와 갑옷, 전투 기술이 나오지 않습니다.",
+  "lib": false
+ },
+ "rotten-creatures": {
+  "name": "Rotten Creatures",
+  "does": "여러 종류의 새로운 좀비 몹이 나타납니다.",
+  "add": "이제 새로운 좀비 몹들이 월드에 나타납니다.",
+  "del": "이제 새로운 좀비 몹들이 더는 나타나지 않습니다.",
+  "lib": false
+ },
+ "rrls": {
+  "name": "Remove Reloading Screen",
+  "does": "리소스 팩을 뒤에서 불러와 로딩 화면 없이 계속 놀 수 있습니다.",
+  "add": "이제 리소스 팩을 불러오는 동안에도 게임을 계속할 수 있습니다.",
+  "del": "이제 리소스 팩을 불러올 때 로딩 화면을 기다려야 합니다.",
+  "lib": false
+ },
+ "rune-crafting": {
+  "name": "Runes",
+  "does": "마법을 쓸 때 탄약처럼 소모하는 룬을 만들 수 있습니다.",
+  "add": "이제 룬을 만들어 마법 재료로 쓸 수 있습니다.",
+  "del": "이제 룬을 만들 수 없고 마법에 룬을 쓰지 않습니다.",
+  "lib": false
+ },
+ "runelic": {
+  "name": "Runelic",
+  "does": "다른 모드들이 쓰는 룬 문자 글꼴을 담은 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "satin-api": {
+  "name": "Satin API",
+  "does": "셰이더 효과를 쓰는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "sawmill": {
+  "name": "Sawmill",
+  "does": "나무 블록을 한 번에 여러 목재 블록으로 깎는 제재소와 목수 주민이 생깁니다.",
+  "add": "이제 제재소에서 나무를 원하는 목재 블록으로 깎을 수 있습니다.",
+  "del": "이제 제재소와 목수 주민이 더는 나오지 않습니다.",
+  "lib": false
+ },
+ "searchables": {
+  "name": "Searchables",
+  "does": "다른 모드들의 검색·자동 완성 기능에 쓰이는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "selene": {
+  "name": "Moonlight Lib",
+  "does": "Supplementaries 등 MehVahdJukaar 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "shetiphiancore-fabric": {
+  "name": "ShetiPhianCore [Fabric]",
+  "does": "ShetiPhian 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "shield-api": {
+  "name": "Shield API",
+  "does": "새 방패를 넣는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "shield-expansion": {
+  "name": "Shield Expansion",
+  "does": "방패로 막기 직전에 튕겨 내기를 할 수 있고, 방패 등급과 마법이 생깁니다.",
+  "add": "이제 방패로 공격을 튕겨 내고 방패에 새 마법을 부여할 수 있습니다.",
+  "del": "이제 방패 튕겨 내기와 방패 등급, 방패 마법이 사라집니다.",
+  "lib": false
+ },
+ "shulkerboxtooltip": {
+  "name": "Shulker Box Tooltip [Fabric/Forge/NeoForge]",
+  "does": "인벤토리에서 셜커 상자 위에 마우스를 올리면 안에 든 것을 보여 줍니다.",
+  "add": "이제 셜커 상자를 열지 않아도 안에 든 것이 보입니다.",
+  "del": "이제 셜커 상자 안을 보려면 직접 열어야 합니다.",
+  "lib": false
+ },
+ "simple-death-chest": {
+  "name": "Simple Death Chest",
+  "does": "죽은 자리에 가지고 있던 아이템을 담은 상자가 놓입니다.",
+  "add": "이제 죽으면 그 자리에 아이템이 담긴 상자가 생깁니다.",
+  "del": "이제 죽어도 아이템 상자가 생기지 않습니다.",
+  "lib": false
+ },
+ "simplehats": {
+  "name": "Simple Hats",
+  "does": "여러 가지 꾸미기용 모자를 모아서 쓸 수 있습니다.",
+  "add": "이제 꾸미기용 모자를 모아서 쓸 수 있습니다.",
+  "del": "이제 꾸미기용 모자가 더는 나오지 않습니다.",
+  "lib": false
+ },
+ "simply-bows": {
+  "name": "Simply Bows",
+  "does": "특별한 능력이 붙은 여러 가지 활이 생깁니다.",
+  "add": "이제 특별한 능력이 있는 새 활을 쓸 수 있습니다.",
+  "del": "이제 Simply Bows의 활들이 나오지 않습니다.",
+  "lib": false
+ },
+ "simply-swords": {
+  "name": "Simply Swords [Fabric & Forge]",
+  "does": "창, 글레이브, 차크람, 카타나, 대망치 등 여러 무기가 생깁니다.",
+  "add": "이제 창, 카타나, 대망치 같은 새 무기를 쓸 수 있습니다.",
+  "del": "이제 Simply Swords의 무기들이 나오지 않습니다.",
+  "lib": false
+ },
+ "simply-tooltips": {
+  "name": "Simply Tooltips",
+  "does": "아이템 설명 창을 더 보기 좋은 모양으로 그려 줍니다.",
+  "add": "이제 아이템 설명 창이 새 모양으로 보입니다.",
+  "del": "이제 아이템 설명 창이 원래 모양으로 돌아갑니다.",
+  "lib": false
+ },
+ "skill-tree": {
+  "name": "Skill Tree (RPG Series)",
+  "does": "경험을 쌓아 기술 나무에서 직업 기술을 골라 배울 수 있습니다.",
+  "add": "이제 기술 나무에서 원하는 기술을 골라 배울 수 있습니다.",
+  "del": "이제 기술 나무로 기술을 배울 수 없습니다.",
+  "lib": false
+ },
+ "sleepy-hollows": {
+  "name": "Sleepy Hollows",
+  "does": "어둠이 깔린 새 지역과 보스, 전용 갑옷이 생깁니다.",
+  "add": "이제 어두운 새 지역과 보스, 전용 갑옷을 만날 수 있습니다.",
+  "del": "이제 Sleepy Hollows의 지역과 보스, 갑옷이 나오지 않습니다.",
+  "lib": false
+ },
+ "smart-tooltip-scroll": {
+  "name": "Smart Tooltip Scroll",
+  "does": "너무 긴 아이템 설명 창을 줄이거나 스크롤해서 볼 수 있게 합니다.",
+  "add": "이제 긴 아이템 설명 창을 스크롤해서 볼 수 있습니다.",
+  "del": "이제 긴 아이템 설명 창을 스크롤해서 볼 수 없습니다.",
+  "lib": false
+ },
+ "smarter-farmers-farmers-replant": {
+  "name": "Smarter Farmers (farmers replant)",
+  "does": "농부 주민이 거둔 작물에 맞는 씨앗을 다시 심습니다.",
+  "add": "이제 농부 주민이 알맞은 씨앗을 골라 다시 심습니다.",
+  "del": "이제 농부 주민이 씨앗을 골라 심지 않습니다.",
+  "lib": false
+ },
+ "snow-real-magic-fabric": {
+  "name": "Snow! Real Magic! ⛄ (Fabric)",
+  "does": "눈이 풀과 계단, 울타리 위에도 자연스럽게 쌓입니다.",
+  "add": "이제 눈이 풀이나 계단 위에도 자연스럽게 쌓입니다.",
+  "del": "이제 눈이 원래처럼 평평한 곳에만 쌓입니다.",
+  "lib": false
+ },
+ "sodium": {
+  "name": "Sodium",
+  "does": "화면 그리는 방식을 바꿔 프레임을 크게 올리고 끊김을 줄입니다.",
+  "add": "이제 게임이 더 부드럽게 돌아갑니다.",
+  "del": "이제 Sodium의 프레임 향상 효과가 사라집니다.",
+  "lib": false
+ },
+ "sodium-extra": {
+  "name": "Sodium Extra",
+  "does": "Sodium에 입자, 날씨, 안개 같은 그래픽 설정을 더 붙입니다.",
+  "add": "이제 비디오 설정에서 그래픽을 더 세세하게 조절할 수 있습니다.",
+  "del": "이제 Sodium Extra의 추가 그래픽 설정이 사라집니다.",
+  "lib": false
+ },
+ "sophisticated-backpacks-(unoffical-fabric-port)": {
+  "name": "Sophisticated Backpacks (Unoffical Fabric port)",
+  "does": "업그레이드로 기능을 붙일 수 있는 배낭이 생깁니다.",
+  "add": "이제 배낭을 메고 다니며 업그레이드를 붙일 수 있습니다.",
+  "del": "이제 Sophisticated 배낭을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "sophisticated-core-(unofficial-fabric-port)": {
+  "name": "Sophisticated Core (Unofficial Fabric port)",
+  "does": "Sophisticated 배낭·저장소 모드가 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "sophisticated-storage-(unofficial-fabric-port)": {
+  "name": "Sophisticated Storage (Unofficial Fabric port)",
+  "does": "등급을 올리고 업그레이드를 붙일 수 있는 상자와 통이 생깁니다.",
+  "add": "이제 업그레이드할 수 있는 상자와 통을 쓸 수 있습니다.",
+  "del": "이제 Sophisticated 상자와 통을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "sound-physics-remastered": {
+  "name": "Sound Physics Remastered",
+  "does": "동굴에서는 소리가 울리고 벽 너머 소리는 먹먹하게 들립니다.",
+  "add": "이제 소리가 주변 지형에 따라 울리거나 막혀 들립니다.",
+  "del": "이제 소리가 원래처럼 울림 없이 들립니다.",
+  "lib": false
+ },
+ "sparkweave": {
+  "name": "Sparkweave Engine",
+  "does": "같은 제작자의 여러 모드가 함께 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "sparse-structures": {
+  "name": "Sparse Structures",
+  "does": "구조물 사이 간격을 넓혀 월드에 구조물이 덜 촘촘하게 생깁니다.",
+  "add": "이제 구조물이 더 드문드문 생깁니다.",
+  "del": "이제 구조물이 원래 간격대로 생깁니다.",
+  "lib": false
+ },
+ "spawn-animations-compats": {
+  "name": "Spawn Animations Compats",
+  "does": "Spawn Animations가 다른 모드의 몹에도 적용되도록 이어 주는 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "spawn-animations-mod": {
+  "name": "Spawn Animations [Server] [Fabric/NeoForge]",
+  "does": "몹이 땅을 파고 올라오는 등 등장할 때 움직임을 보여 줍니다.",
+  "add": "이제 몹이 나타날 때 등장 동작을 보여 줍니다.",
+  "del": "이제 몹이 등장 동작 없이 바로 나타납니다.",
+  "lib": false
+ },
+ "spell-engine": {
+  "name": "Spell Engine",
+  "does": "RPG Series 마법 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "spell-power": {
+  "name": "Spell Power Attributes",
+  "does": "RPG Series 마법 모드들이 쓰는 주문력 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "spider-overhaul": {
+  "name": "Spider Overhaul",
+  "does": "거미의 생김새와 움직임을 더 거미답게 바꿉니다.",
+  "add": "이제 거미가 더 실감 나게 움직입니다.",
+  "del": "이제 거미가 원래 모습과 움직임으로 돌아갑니다.",
+  "lib": false
+ },
+ "starter-kit": {
+  "name": "Starter Kit",
+  "does": "처음 접속한 플레이어에게 시작 장비와 아이템을 줍니다.",
+  "add": "이제 처음 들어오면 시작 장비를 받습니다.",
+  "del": "이제 처음 들어와도 시작 장비를 받지 않습니다.",
+  "lib": false
+ },
+ "status-effect-bars": {
+  "name": "Status Effect Bars",
+  "does": "상태 효과 아이콘에 남은 시간을 막대로 보여 줍니다.",
+  "add": "이제 상태 효과가 얼마나 남았는지 막대로 보입니다.",
+  "del": "이제 상태 효과 아이콘에 남은 시간 막대가 보이지 않습니다.",
+  "lib": false
+ },
+ "status-effect-timer": {
+  "name": "Status Effect Timer",
+  "does": "화면 오른쪽 위 상태 효과 아이콘에 남은 시간을 숫자로 보여 줍니다.",
+  "add": "이제 상태 효과 아이콘에 남은 시간이 숫자로 보입니다.",
+  "del": "이제 상태 효과 아이콘에 남은 시간이 보이지 않습니다.",
+  "lib": false
+ },
+ "storage-drawers": {
+  "name": "Storage Drawers",
+  "does": "한 종류 아이템을 잔뜩 넣고 앞면에서 바로 꺼내는 서랍이 생깁니다.",
+  "add": "이제 서랍에 같은 아이템을 많이 모아 둘 수 있습니다.",
+  "del": "이제 Storage Drawers의 서랍을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "structory": {
+  "name": "Structory",
+  "does": "월드 곳곳에 분위기 있는 작은 구조물과 폐허가 생깁니다.",
+  "add": "이제 새 구조물과 폐허가 월드에 생깁니다.",
+  "del": "이제 Structory 구조물이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "structure-pool-api": {
+  "name": "Structure Pool API",
+  "does": "다른 모드들이 마을 등에 건물을 끼워 넣을 때 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "subtle-effects": {
+  "name": "Subtle Effects",
+  "does": "불티, 숨결, 물방울 같은 자잘한 입자와 소리를 곳곳에 더합니다.",
+  "add": "이제 주변에 자잘한 입자와 소리 연출이 보입니다.",
+  "del": "이제 Subtle Effects의 입자와 소리 연출이 사라집니다.",
+  "lib": false
+ },
+ "supermartijn642s-config-lib": {
+  "name": "SuperMartijn642's Config Lib",
+  "does": "SuperMartijn642 모드들이 설정 파일에 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "supermartijn642s-core-lib": {
+  "name": "SuperMartijn642's Core Lib",
+  "does": "SuperMartijn642 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "supplementaries": {
+  "name": "Supplementaries",
+  "does": "병, 표지판 기둥, 수도꼭지, 풍향계 등 바닐라풍 장식과 장치가 생깁니다.",
+  "add": "이제 병, 수도꼭지, 풍향계 같은 장식과 장치를 쓸 수 있습니다.",
+  "del": "이제 Supplementaries의 장식과 장치를 쓸 수 없습니다.",
+  "lib": false
+ },
+ "terrablender": {
+  "name": "TerraBlender",
+  "does": "새 생물 군계를 넣는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "text-placeholder-api": {
+  "name": "Text Placeholder API",
+  "does": "다른 모드들이 채팅·문구를 꾸밀 때 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "thermoo": {
+  "name": "Thermoo",
+  "does": "Frostiful·Scorchful 같은 체온 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "thermoo-patches": {
+  "name": "Thermoo Patches",
+  "does": "Thermoo 체온 모드들과 다른 모드를 이어 주는 호환 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "things-fabric": {
+  "name": "Things [Fabric]",
+  "does": "특별한 효과가 있는 장신구와 잡다한 도구들이 생깁니다.",
+  "add": "이제 효과가 붙은 장신구와 도구를 쓸 수 있습니다.",
+  "del": "이제 Things의 장신구와 도구가 나오지 않습니다.",
+  "lib": false
+ },
+ "too-many-bows": {
+  "name": "Too Many Bows",
+  "does": "저마다 특별한 능력을 지닌 활이 아주 많이 생깁니다.",
+  "add": "이제 능력이 붙은 여러 가지 활을 쓸 수 있습니다.",
+  "del": "이제 Too Many Bows의 활들이 나오지 않습니다.",
+  "lib": false
+ },
+ "towns-and-towers": {
+  "name": "Towns and Towers",
+  "does": "새 모양의 마을과 약탈자 전초기지, 배가 월드에 생깁니다.",
+  "add": "이제 새 마을과 약탈자 전초기지, 배가 월드에 생깁니다.",
+  "del": "이제 Towns and Towers 구조물이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "trimmable-tools": {
+  "name": "Trimmable Tools",
+  "does": "갑옷처럼 도구와 무기에도 장식을 입힐 수 있습니다.",
+  "add": "이제 도구와 무기에도 장식을 입힐 수 있습니다.",
+  "del": "이제 도구와 무기에 장식을 입힐 수 없습니다.",
+  "lib": false
+ },
+ "trimseffects": {
+  "name": "TrimsEffects - 2.1 NOW AVAILABLE!",
+  "does": "갑옷 장식마다 착용하면 효과가 붙습니다.",
+  "add": "이제 갑옷 장식을 입히면 그에 맞는 효과를 받습니다.",
+  "del": "이제 갑옷 장식을 입혀도 효과가 붙지 않습니다.",
+  "lib": false
+ },
+ "trinkets": {
+  "name": "Trinkets (Fabric)",
+  "does": "반지, 목걸이 같은 장신구를 끼우는 칸을 인벤토리에 더합니다.",
+  "add": "이제 인벤토리에 장신구 칸이 생깁니다.",
+  "del": "이제 인벤토리의 장신구 칸이 사라집니다.",
+  "lib": false
+ },
+ "true-ending": {
+  "name": "True Ending ~ Ender Dragon Overhaul",
+  "does": "엔더 드래곤이 싸울수록 강해지고 새 공격과 연출을 씁니다.",
+  "add": "이제 엔더 드래곤이 새 공격을 쓰며 더 강하게 싸웁니다.",
+  "del": "이제 엔더 드래곤이 원래대로 싸웁니다.",
+  "lib": false
+ },
+ "txnilib": {
+  "name": "TxniLib",
+  "does": "Txni 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "unnamed-desert": {
+  "name": "Unnamed Desert",
+  "does": "사막과 악지 군계에 새 구조물이 생깁니다.",
+  "add": "이제 사막과 악지에 새 구조물이 생깁니다.",
+  "del": "이제 사막과 악지에 이 모드 구조물이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "unnamed-sea": {
+  "name": "Unnamed Sea",
+  "does": "바다와 해변 군계에 새 구조물이 생깁니다.",
+  "add": "이제 바다와 해변에 새 구조물이 생깁니다.",
+  "del": "이제 바다와 해변에 이 모드 구조물이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "unsafe-world-random-access-detector": {
+  "name": "Unsafe World Random Access Detector",
+  "does": "특정 서버 튕김의 원인을 찾아 기록하는 점검용 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "uranus": {
+  "name": "Uranus",
+  "does": "몹 애니메이션 등을 다루는 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "variants-and-ventures": {
+  "name": "Variants&Ventures",
+  "does": "환경에 어울리는 새 변종 몹들이 나타납니다.",
+  "add": "이제 곳곳에서 새 변종 몹을 만날 수 있습니다.",
+  "del": "이제 Variants&Ventures의 변종 몹이 나타나지 않습니다.",
+  "lib": false
+ },
+ "village-taverns": {
+  "name": "Village Taverns (RPG Series)",
+  "does": "마을에 술 한잔하고 쉬어 갈 수 있는 선술집이 생깁니다.",
+  "add": "이제 마을에서 선술집을 볼 수 있습니다.",
+  "del": "이제 마을에 선술집이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "villager-names": {
+  "name": "Villager Names",
+  "does": "주민과 골렘에게 저마다 이름이 붙습니다.",
+  "add": "이제 주민과 골렘에게 이름이 붙습니다.",
+  "del": "이제 주민과 골렘에게 이름이 붙지 않습니다.",
+  "lib": false
+ },
+ "villagersplus": {
+  "name": "VillagersPlus (Fabric/Neoforge)",
+  "does": "새 직업의 주민과 거래, 작업대가 생깁니다.",
+  "add": "이제 새 직업 주민과 거래할 수 있습니다.",
+  "del": "이제 VillagersPlus의 새 직업 주민이 나오지 않습니다.",
+  "lib": false
+ },
+ "villagerstradingplus": {
+  "name": "VillagersTradingPlus",
+  "does": "주민 거래 목록과 값을 서버에서 바꿀 수 있게 합니다.",
+  "add": "이제 주민 거래가 서버에 맞게 바뀔 수 있습니다.",
+  "del": "이제 주민 거래가 원래 목록으로 돌아갑니다.",
+  "lib": false
+ },
+ "visual-workbench": {
+  "name": "Visual Workbench",
+  "does": "제작대에 올린 아이템이 제작대 위에 그대로 보입니다.",
+  "add": "이제 제작대 위에 올려 둔 아이템이 보입니다.",
+  "del": "이제 제작대 위에 아이템이 보이지 않습니다.",
+  "lib": false
+ },
+ "what-are-they-up-to": {
+  "name": "What Are They Up To (Watut)",
+  "does": "다른 플레이어가 채팅을 치는지, 창을 열었는지, 자리를 비웠는지 보여 줍니다.",
+  "add": "이제 다른 플레이어가 무엇을 하는 중인지 보입니다.",
+  "del": "이제 다른 플레이어의 입력·자리 비움 표시가 보이지 않습니다.",
+  "lib": false
+ },
+ "when-dungeons-arise-fabric": {
+  "name": "When Dungeons Arise - Fabric!",
+  "does": "월드에 크고 복잡한 던전과 구조물이 생깁니다.",
+  "add": "이제 월드에 커다란 던전과 구조물이 생깁니다.",
+  "del": "이제 When Dungeons Arise 던전이 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "whenchat": {
+  "name": "WhenChat",
+  "does": "받은 채팅마다 앞에 [시:분:초] 시간을 붙여 줍니다.",
+  "add": "이제 채팅마다 받은 시간이 함께 보입니다.",
+  "del": "이제 채팅에 받은 시간이 보이지 않습니다.",
+  "lib": false
+ },
+ "wizard-mobs": {
+  "name": "Wizard Mobs",
+  "does": "마법을 쓰는 마법사 몹들이 나타납니다.",
+  "add": "이제 마법을 쓰는 마법사 몹을 만날 수 있습니다.",
+  "del": "이제 마법사 몹이 나타나지 않습니다.",
+  "lib": false
+ },
+ "wizards-fabric-3.1.1+1.21.1": {
+  "name": "Wizards (RPG Series)",
+  "does": "마법사 직업의 지팡이, 로브, 비전·불·냉기 마법이 생깁니다.",
+  "add": "이제 마법사 지팡이와 로브로 마법을 쓸 수 있습니다.",
+  "del": "이제 마법사 지팡이와 로브, 마법이 나오지 않습니다.",
+  "lib": false
+ },
+ "worldweaver-neoforge": {
+  "name": "WorldWeaver: New Dawn",
+  "does": "BetterX 모드들이 지형 생성에 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "wormhole-portals": {
+  "name": "Wormhole (Portals)",
+  "does": "먼 곳으로 순간이동하는 포털을 직접 지을 수 있습니다.",
+  "add": "이제 순간이동 포털을 지어 쓸 수 있습니다.",
+  "del": "이제 Wormhole 포털을 쓸 수 없습니다.",
+  "lib": false
+ },
+ "wunderlib-neoforge": {
+  "name": "WunderLib: New Dawn",
+  "does": "BetterX 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "xaeroplus": {
+  "name": "XaeroPlus",
+  "does": "Xaero 미니맵과 월드 지도에 추가 기능을 붙입니다.",
+  "add": "이제 Xaero 지도에서 추가 기능을 쓸 수 있습니다.",
+  "del": "이제 Xaero 지도의 추가 기능이 사라집니다.",
+  "lib": false
+ },
+ "xaeros-minimap": {
+  "name": "Xaero's Minimap",
+  "does": "화면 구석에 주변 지형과 몹을 보여 주는 미니맵이 생깁니다.",
+  "add": "이제 화면 구석에 미니맵이 보이고 웨이포인트를 찍을 수 있습니다.",
+  "del": "이제 화면 구석에 미니맵이 보이지 않습니다.",
+  "lib": false
+ },
+ "xaeros-world-map": {
+  "name": "Xaero's World Map",
+  "does": "지금까지 둘러본 곳을 전체 화면 지도로 보여 줍니다.",
+  "add": "이제 둘러본 곳을 전체 화면 지도로 볼 수 있습니다.",
+  "del": "이제 전체 화면 지도를 열 수 없습니다.",
+  "lib": false
+ },
+ "yacl": {
+  "name": "YetAnotherConfigLib",
+  "does": "여러 모드의 설정 화면에 쓰이는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "yosbr": {
+  "name": "Your Options Shall Be Respected (YOSBR)",
+  "does": "모드팩 기본 설정이 내 설정을 덮어쓰지 않게 지켜 주는 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "youre-in-grave-danger": {
+  "name": "You're in Grave Danger",
+  "does": "죽으면 그 자리에 아이템이 든 무덤이 생깁니다.",
+  "add": "이제 죽으면 그 자리에 무덤이 생기고 아이템이 담깁니다.",
+  "del": "이제 죽어도 무덤이 생기지 않습니다.",
+  "lib": false
+ },
+ "yung-structures-addon-for-loot-integrations": {
+  "name": "Yung Structures Addon for Loot Integrations",
+  "does": "YUNG 구조물 상자에 다른 모드 아이템도 들어가게 이어 주는 호환 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "yungs-api-fabric": {
+  "name": "YUNG's API (Fabric)",
+  "does": "YUNG 구조물 모드들이 쓰는 기반 모드입니다.",
+  "add": "",
+  "del": "",
+  "lib": true
+ },
+ "yungs-better-desert-temples-fabric": {
+  "name": "YUNG's Better Desert Temples (Fabric)",
+  "does": "사막 사원을 더 크고 복잡한 모습으로 바꿉니다.",
+  "add": "이제 사막 사원이 더 크고 복잡한 모습으로 생깁니다.",
+  "del": "이제 사막 사원이 원래 모습으로 생깁니다.",
+  "lib": false
+ },
+ "yungs-better-ocean-monuments-fabric": {
+  "name": "YUNG's Better Ocean Monuments (Fabric)",
+  "does": "바다 유적을 더 크고 다양한 모습으로 바꿉니다.",
+  "add": "이제 바다 유적이 더 다양한 모습으로 생깁니다.",
+  "del": "이제 바다 유적이 원래 모습으로 생깁니다.",
+  "lib": false
+ },
+ "yungs-better-strongholds-fabric": {
+  "name": "YUNG's Better Strongholds (Fabric)",
+  "does": "요새를 더 크고 분위기 있는 모습으로 바꿉니다.",
+  "add": "이제 요새가 더 크고 분위기 있게 생깁니다.",
+  "del": "이제 요새가 원래 모습으로 생깁니다.",
+  "lib": false
+ },
+ "yungs-better-witch-huts-fabric": {
+  "name": "YUNG's Better Witch Huts (Fabric)",
+  "does": "마녀 오두막을 더 크고 여러 모양으로 바꿉니다.",
+  "add": "이제 마녀 오두막이 더 다양한 모습으로 생깁니다.",
+  "del": "이제 마녀 오두막이 원래 모습으로 생깁니다.",
+  "lib": false
+ },
+ "yungs-bridges-fabric": {
+  "name": "YUNG's Bridges (Fabric)",
+  "does": "강 위에 자연스럽게 다리가 놓입니다.",
+  "add": "이제 강 위에 다리가 생깁니다.",
+  "del": "이제 강 위에 다리가 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "yungs-cave-biomes-fabric": {
+  "name": "YUNG's Cave Biomes (Fabric)",
+  "does": "지하에 새로운 동굴 생물 군계와 블록이 생깁니다.",
+  "add": "이제 지하에서 새 동굴 생물 군계를 볼 수 있습니다.",
+  "del": "이제 새 동굴 생물 군계가 새로 생기지 않습니다.",
+  "lib": false
+ },
+ "zoomify": {
+  "name": "Zoomify",
+  "does": "단축키를 누르면 화면을 확대해서 멀리 볼 수 있습니다.",
+  "add": "이제 단축키로 화면을 확대할 수 있습니다.",
+  "del": "이제 단축키로 화면을 확대할 수 없습니다.",
+  "lib": false
+ }
+}

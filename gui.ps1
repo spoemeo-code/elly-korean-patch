@@ -760,7 +760,7 @@ function Move-DuplicateMods($target) {
 
 # 비교 창을 맨 앞으로 가져올 때 쓴다
 if (-not ("FrontWin" -as [type])) {
-  Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class FrontWin { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); }'
+  Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class FrontWin { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, int m, IntPtr w, IntPtr l); }'
 }
 
 function Install-Mods {
@@ -1436,9 +1436,154 @@ function News-Add($text, $color, $bold, $size) {
 function News-Date($iso) {
   try { return ([DateTimeOffset]::Parse($iso)).ToOffset([TimeSpan]::FromHours(9)).ToString("M월 d일 HH:mm") } catch { return "" }
 }
+function News-Home {
+  $h = Join-Path (Join-Path $env:APPDATA $AppHome) "news-cache"
+  if (-not (Test-Path -LiteralPath $h)) { [void][IO.Directory]::CreateDirectory($h) }
+  return $h
+}
+# 모드 한 줄 설명표(서명된 배포 파일). 없거나 확인이 안 되면 설명 없이 이름만 보여 준다.
+$script:ModDesc = $null
+function Get-ModDesc {
+  if ($null -ne $script:ModDesc) { return $script:ModDesc }
+  $script:ModDesc = @{}
+  try {
+    $m = Get-Rel
+    $e = $m.files."jannu-mod-desc.json"
+    if (-not $e) { return $script:ModDesc }
+    $p = Join-Path (News-Home) "jannu-mod-desc.json"
+    if (-not (Test-Path -LiteralPath $p) -or (Rel-Sha256 $p) -ne ([string]$e.sha256).ToLower()) {
+      Get-ReleaseFile $m "jannu-mod-desc.json" "$BASE/jannu-mod-desc.json" $p
+    }
+    $j = [IO.File]::ReadAllText($p, [Text.Encoding]::UTF8) | ConvertFrom-Json
+    foreach ($pr in $j.PSObject.Properties) { $script:ModDesc[$pr.Name] = $pr.Value }
+  } catch { Log "  [모드 설명표 받기 실패] $($_.Exception.Message)" }
+  return $script:ModDesc
+}
+# 파일 이름에서 모드 버전만 골라낸다(마인크래프트 버전 1.21.x 는 뺀다). 못 찾으면 빈 값.
+function Guess-ModVersion([string]$fn) {
+  $base = $fn -replace '\.(jar|zip)$', ''
+  foreach ($t in ($base -split '[-_+ ]')) {
+    $t = $t -replace '^(v|mc|fabric)', ''
+    if ($t -match '^\d+(\.\d+)+[a-z0-9.]*$' -and $t -notmatch '^1\.2[01](\.\d+)?$') { return $t }
+  }
+  return ""
+}
+# 커밋 하나에서 바뀐 모드 목록을 뽑는다. 커밋은 바뀌지 않으니 한 번 뽑으면 PC 에 저장해 두고 다시 묻지 않는다.
+function Get-CommitChanges([string]$sha) {
+  $cp = Join-Path (News-Home) "$sha.json"
+  if (Test-Path -LiteralPath $cp) {
+    try { return @([IO.File]::ReadAllText($cp, [Text.Encoding]::UTF8) | ConvertFrom-Json | ForEach-Object { $_ }) } catch { }
+  }
+  $c = (Get-WebText "https://api.github.com/repos/$PackRepo/commits/$sha") | ConvertFrom-Json
+  # 누누님이 "서버 전용 모드를 PC 배포에서만 뺀다"고 적은 커밋은 뺀 모드를 게임에서 없어진 것으로 쓰지 않는다
+  $srvOnly = ([string]$c.commit.message) -match '(?i)server[- ]only|from client'
+  $out = @()
+  foreach ($f in @($c.files | ForEach-Object { $_ })) {
+    $fn = [string]$f.filename; $st = [string]$f.status; $patch = [string]$f.patch
+    if ($fn -match '^(mods|resourcepacks|shaderpacks)/(.+)\.pw\.toml$') {
+      $folder = $Matches[1]; $slug = $Matches[2]
+      $nm = if ($patch -match '(?m)^[-+ ]name = "(.+)"') { $Matches[1] } else { "" }
+      $kind = "update"; $ver = ""; $side = ""
+      if ($st -eq "added") { $kind = "add" }
+      elseif ($st -eq "removed") { $kind = if ($srvOnly -or $patch -match '(?m)^-side = "server"') { "srvdel" } else { "del" } }
+      elseif ($patch -match '(?m)^\+filename = "(.+)"') { $ver = Guess-ModVersion $Matches[1] }
+      elseif ($patch -match '(?m)^\+side = "(.+)"') { $kind = "side"; $side = $Matches[1] }
+      else { $kind = "fix" }
+      $out += [pscustomobject]@{ Kind = $kind; Folder = $folder; Slug = $slug; Name = $nm; Ver = $ver; Side = $side }
+    } elseif ($fn -match '^mods/(.+)\.jar$') {
+      $k = if ($st -eq "removed") { "del" } elseif ($st -eq "added") { "add" } else { "fix" }
+      $out += [pscustomobject]@{ Kind = $k; Folder = "mods"; Slug = $Matches[1]; Name = ""; Ver = ""; Side = "" }
+    } elseif ($fn -in @("mod-sync.ps1", "update.bat")) {
+      $out += [pscustomobject]@{ Kind = "tool"; Folder = ""; Slug = ""; Name = ""; Ver = ""; Side = "" }
+    } elseif ($fn -match '^(config|defaultconfigs|kubejs)/') {
+      $out += [pscustomobject]@{ Kind = "config"; Folder = ""; Slug = ""; Name = ""; Ver = ""; Side = "" }
+    } elseif ($fn -match '\.md$') {
+      $out += [pscustomobject]@{ Kind = "doc"; Folder = ""; Slug = ""; Name = ""; Ver = ""; Side = "" }
+    } elseif ($fn -notin @("index.toml", "pack.toml")) {
+      $out += [pscustomobject]@{ Kind = "other"; Folder = ""; Slug = ""; Name = ""; Ver = ""; Side = "" }
+    }
+  }
+  try { [IO.File]::WriteAllText($cp, (ConvertTo-Json -InputObject @($out) -Depth 4), (New-Object Text.UTF8Encoding($false))) } catch { }
+  return $out
+}
+# 바뀐 목록 → 보여 줄 줄들. 각 줄은 @(글, 종류) — 종류 main(본문) / sub(설명, 흐리게)
+function Describe-Changes($chg) {
+  $d = Get-ModDesc
+  $lines = @()
+  $nameOf = {
+    param($x)
+    $e = $d[$x.Slug]
+    if ($e -and $e.name) { return [string]$e.name }
+    if ($x.Name) { return $x.Name }
+    return $x.Slug
+  }
+  $word = { param($x) switch ($x.Folder) { "resourcepacks" { "리소스팩" } "shaderpacks" { "셰이더팩" } default { "모드" } } }
+  $josa = { param($w) if ($w -eq "모드") { "를" } else { "을" } }
+  $noteOf = {
+    param($x, $field)
+    $e = $d[$x.Slug]
+    if (-not $e) { return "" }
+    if ($e.lib) { return [string]$e.does }
+    return [string]$e.$field
+  }
+  foreach ($grp in @(@("del", "뺐습니다", "del"), @("add", "넣었습니다", "add"))) {
+    $xs = @($chg | Where-Object { $_.Kind -eq $grp[0] })
+    if ($xs.Count -eq 0) { continue }
+    if ($xs.Count -eq 1) {
+      $x = $xs[0]; $w = & $word $x
+      $lines += , @(("{0} {1}{2} {3}." -f (& $nameOf $x), $w, (& $josa $w), $grp[1]), "main")
+      $n = & $noteOf $x $grp[2]; if ($n) { $lines += , @($n, "sub") }
+    } else {
+      $w = & $word $xs[0]
+      $head = if ($grp[0] -eq "add") { "새 $w $($xs.Count)개를 $($grp[1])." } else { "$w $($xs.Count)개를 $($grp[1])." }
+      $lines += , @($head, "main")
+      foreach ($x in $xs) {
+        $n = & $noteOf $x $grp[2]
+        $lines += , @(("· " + (& $nameOf $x)), "item")
+        if ($n) { $lines += , @(("   " + $n), "sub") }
+      }
+    }
+  }
+  # 서버 전용 모드를 PC 로 받는 목록에서만 뺀 경우 — 게임에서 없어지는 게 아니다
+  $sd = @($chg | Where-Object { $_.Kind -eq "srvdel" })
+  if ($sd.Count) {
+    $lines += , @("서버에서만 쓰는 모드 $($sd.Count)개를 PC로 받는 목록에서 뺐습니다.", "main")
+    $lines += , @((($sd | ForEach-Object { & $nameOf $_ }) -join ", "), "sub")
+  }
+  $ups = @($chg | Where-Object { $_.Kind -eq "update" })
+  if ($ups.Count -eq 1) {
+    $x = $ups[0]; $w = & $word $x
+    $v = if ($x.Ver) { "새 버전($($x.Ver))으로" } else { "새 버전으로" }
+    $lines += , @(("{0} {1}{2} {3} 올렸습니다(오류 수정·개선)." -f (& $nameOf $x), $w, (& $josa $w), $v), "main")
+  } elseif ($ups.Count -gt 1) {
+    $ns = @($ups | ForEach-Object { & $nameOf $_ })
+    $list = if ($ns.Count -gt 6) { ($ns[0..5] -join ", ") + " 외 $($ns.Count - 6)개" } else { $ns -join ", " }
+    $lines += , @("모드 $($ups.Count)개를 새 버전으로 올렸습니다(오류 수정·개선).", "main")
+    $lines += , @($list, "sub")
+  }
+  $sides = @($chg | Where-Object { $_.Kind -eq "side" })
+  if ($sides.Count -gt 3) { $lines += , @("모드 $($sides.Count)개의 설치 위치(서버·PC) 구분을 바로잡았습니다.", "main") }
+  else {
+    foreach ($x in $sides) {
+      $t = switch ($x.Side) { "server" { "{0} 모드는 이제 서버에만 둡니다. PC에는 받지 않습니다." } "client" { "{0} 모드는 이제 각자 PC에만 설치합니다." } default { "{0} 모드를 서버와 PC 양쪽에 설치하도록 바꿨습니다." } }
+      $lines += , @(($t -f (& $nameOf $x)), "main")
+    }
+  }
+  $fixes = @($chg | Where-Object { $_.Kind -eq "fix" })
+  if ($fixes.Count -eq 1) { $lines += , @(("{0} 모드의 받는 주소를 고쳤습니다." -f (& $nameOf $fixes[0])), "main") }
+  elseif ($fixes.Count -gt 1) { $lines += , @("모드 $($fixes.Count)개의 받는 주소를 고쳤습니다.", "main") }
+  if (@($chg | Where-Object { $_.Kind -eq "config" }).Count) { $lines += , @("모드 설정을 조정했습니다.", "main") }
+  if (@($chg | Where-Object { $_.Kind -eq "tool" }).Count) { $lines += , @("모드 동기화 도구를 고쳤습니다.", "main") }
+  if ($lines.Count -eq 0) {
+    if (@($chg | Where-Object { $_.Kind -eq "doc" }).Count) { $lines += , @("안내문을 고쳤습니다.", "main") }
+    else { $lines += , @("모드팩 목록을 정리했습니다.", "main") }
+  }
+  return , $lines
+}
 function Refresh-JannuNews {
   if (-not $newsBox) { return }
   $dim = [System.Drawing.Color]::FromArgb(130, 134, 125); $green = [System.Drawing.Color]::FromArgb(62, 120, 50); $blue = [System.Drawing.Color]::FromArgb(58, 96, 150); $amber = [System.Drawing.Color]::FromArgb(176, 120, 20)
+  $sub = [System.Drawing.Color]::FromArgb(100, 104, 96)
   $newsBox.Clear()
   $items = @()
   try {
@@ -1447,16 +1592,18 @@ function Refresh-JannuNews {
     $gh = (Get-WebText "https://api.github.com/repos/$PackRepo/commits?per_page=12") | ConvertFrom-Json | ForEach-Object { $_ }
     $seenPinned = $false
     foreach ($c in $gh) {
-      $msg = (([string]$c.commit.message) -split "`n")[0]
       $isPinned = ($c.sha -eq $pinned)
-      $items += [pscustomobject]@{ At = [string]$c.commit.committer.date; Kind = "mod"; Text = $msg; Pending = (-not $seenPinned -and -not $isPinned); Pinned = $isPinned }
+      $lines = $null
+      try { $lines = Describe-Changes (Get-CommitChanges ([string]$c.sha)) } catch { Log "  [커밋 $($c.sha.Substring(0,7)) 읽기 실패] $($_.Exception.Message)" }
+      if (-not $lines) { $lines = , @("모드팩이 바뀌었습니다.", "main") }
+      $items += [pscustomobject]@{ At = [string]$c.commit.committer.date; Kind = "mod"; Lines = $lines; Pending = (-not $seenPinned -and -not $isPinned); Pinned = $isPinned }
       if ($isPinned) { $seenPinned = $true }
     }
-    $items += [pscustomobject]@{ At = [string]$m.signed_at; Kind = "patch"; Text = "한글패치가 갱신되었습니다 (배포 번호 $($m.version))"; Pending = $false; Pinned = $false }
+    $items += [pscustomobject]@{ At = [string]$m.signed_at; Kind = "patch"; Lines = , @("한글패치가 갱신되었습니다 (배포 번호 $($m.version))", "main"); Pending = $false; Pinned = $false }
     # 한글패치 이전 갱신 날짜(저장소 기록)
     try {
       $pc = (Get-WebText "https://api.github.com/repos/spoemeo-code/elly-korean-patch/commits?path=Elly-Korean-Patch.zip&per_page=4") | ConvertFrom-Json | ForEach-Object { $_ }
-      foreach ($c in @($pc | Select-Object -Skip 1)) { $items += [pscustomobject]@{ At = [string]$c.commit.committer.date; Kind = "patch"; Text = "한글패치가 갱신되었습니다"; Pending = $false; Pinned = $false } }
+      foreach ($c in @($pc | Select-Object -Skip 1)) { $items += [pscustomobject]@{ At = [string]$c.commit.committer.date; Kind = "patch"; Lines = , @("한글패치가 갱신되었습니다", "main"); Pending = $false; Pinned = $false } }
     } catch { }
   } catch {
     Log "  [업데이트 내역 불러오기 실패] $($_.Exception.Message)"
@@ -1473,12 +1620,14 @@ function Refresh-JannuNews {
     $tc = if ($it.Kind -eq "patch") { $blue } else { $green }
     News-Add ((News-Date $it.At) + "  ") $dim $false 8.5
     News-Add ($tag + "`n") $tc $true 8.5
-    News-Add ($it.Text + "`n") $null $false 9
+    foreach ($ln in $it.Lines) {
+      if ($ln[1] -eq "sub") { News-Add ($ln[0] + "`n") $sub $false 8.5 } elseif ($ln[1] -eq "item") { News-Add ($ln[0] + "`n") $null $true 8.5 } else { News-Add ($ln[0] + "`n") $null $false 9 }
+    }
     if ($it.Pending) { News-Add "아직 배포 전입니다. 서버장이 확인하면 받으실 수 있습니다.`n" $amber $false 8.5 }
     News-Add "`n" $null $false 5
   }
-  News-Add "모드 변경 메모는 누누님이 남긴 글 그대로입니다.`n" $dim $false 8
   $newsBox.SelectionStart = 0; $newsBox.ScrollToCaret()
+  [void][FrontWin]::SendMessage($newsBox.Handle, 0x115, [IntPtr]6, [IntPtr]::Zero)   # 맨 위로 (WM_VSCROLL, SB_TOP)
 }
 
 $form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; Refresh-JannuNews; if ($Notice) { Say $Notice } })
