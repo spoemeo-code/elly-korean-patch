@@ -1,6 +1,6 @@
 {
-    "version":  10,
-    "signed_at":  "2026-09-25T19:05:11+09:00",
+    "version":  11,
+    "signed_at":  "2026-09-25T19:13:19+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -15,9 +15,9 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "8725ec6f2b70f35a246886a2ccce605553fd72b6c91f69c889e938e73462bbd5",
-                                                "size":  1421021,
-                                                "sha1":  "f8ea35d946e7be5cbed2089bc1c9a5050d196745"
+                                                "sha256":  "421f4b1d5e5102b89245caeaaa28be96600df457bae1867b8fdcd8fe28567cf2",
+                                                "size":  2120919,
+                                                "sha1":  "b3bd4bd48f0ef108375cb673500e05481373534b"
                                             },
                   "gui.ps1":  {
                                   "sha256":  "dffe7526e92f53b562538665fa26bf68c76955d18b7b4f321f82e6091307e147",
@@ -47,7 +47,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "4be6a43df56358d60545db31ed74b8cb2c60c8ed",
-                  "released_at":  "2026-09-25T19:05:11+09:00",
+                  "released_at":  "2026-09-25T19:13:19+09:00",
                   "message":  "Fix Citadel Fabric crash: remove broken team-color mixin (missing refmap)",
                   "committed_at":  "2026-09-25T07:37:41Z",
                   "files":  {
