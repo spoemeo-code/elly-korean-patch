@@ -270,7 +270,9 @@ $btnWake.Controls.Add($stampWake)
 $stampWake.Add_Click({ $btnWake.PerformClick() })
 $stampWake.Cursor = "Hand"
 
-$btnRun = New-BigButton "마인크래프트 실행" 274 ([System.Drawing.Color]::FromArgb(58, 96, 92))
+# 가장 자주 누르는 버튼이라 가장 눈에 띄게 한다(밝은 초록, 큰 글씨). 이름은 런처와 상관없이 "게임 실행".
+$btnRun = New-BigButton "게임 실행" 274 ([System.Drawing.Color]::FromArgb(34, 139, 84))
+$btnRun.Font = New-Object System.Drawing.Font("맑은 고딕", 13, [System.Drawing.FontStyle]::Bold)
 
 # 엘리 전용. 프리즘이 아닌 런처를 쓰면 팩이 자동으로 맞춰지지 않아 직접 맞춰야 한다.
 $btnMods = $null
@@ -1132,16 +1134,16 @@ function Refresh-Stamps($keepMessage) {
     $lc = $null
     try { $lc = Find-Launcher (Get-SavedTarget) } catch { }
     if ($lc -and $lc.Kind -eq "prism") {
-      $btnRun.Text = "$($lc.Name)로 실행"
-      $stampRun.Text = "바로 실행됩니다"
+      $btnRun.Text = "게임 실행"
+      $stampRun.Text = "$($lc.Name)로 바로 실행됩니다"
     } elseif ($lc) {
-      $btnRun.Text = "$($lc.Name) 실행"
-      $stampRun.Text = "인스턴스에서 [플레이] 를 눌러주세요"
+      $btnRun.Text = "게임 실행"
+      $stampRun.Text = "$($lc.Name)가 열립니다`r`n인스턴스에서 [플레이] 를 눌러주세요"
     } else {
       $btnRun.Text = "프리즘 런처 받기"
       $stampRun.Text = "엘리서버는 프리즘 런처로 들어옵니다`r`n눌러서 받으실 수 있습니다"
     }
-    $stampRun.ForeColor = $ColorDim
+    $stampRun.ForeColor = [System.Drawing.Color]::FromArgb(226, 244, 230)
   }
 
   if (-not $keepMessage) {

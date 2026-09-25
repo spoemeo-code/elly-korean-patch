@@ -257,7 +257,9 @@ if ($btnNews) {
 }
 
 # 맨 아래는 실행. 업데이트 → 실행 순서로 읽히게 둔다.
-$btnRun = New-BigButton "마인크래프트 실행" 274 ([System.Drawing.Color]::FromArgb(58, 96, 92))
+# 가장 자주 누르는 버튼이라 가장 눈에 띄게 한다(밝은 초록, 큰 글씨). 이름은 런처와 상관없이 "게임 실행".
+$btnRun = New-BigButton "게임 실행" 274 ([System.Drawing.Color]::FromArgb(34, 139, 84))
+$btnRun.Font = New-Object System.Drawing.Font("맑은 고딕", 13, [System.Drawing.FontStyle]::Bold)
 $form.Controls.Add($btnRun)
 $stampRun = New-Stamp
 $btnRun.Controls.Add($stampRun)
@@ -1106,16 +1108,16 @@ function Refresh-Stamps($keepMessage) {
     $lc = $null
     try { $lc = Find-Launcher (Get-SavedTarget) } catch { }
     if ($lc -and $lc.Kind -eq "prism") {
-      $btnRun.Text = "마인크래프트 실행"
+      $btnRun.Text = "게임 실행"
       $stampRun.Text = "바로 실행됩니다"
     } elseif ($lc) {
-      $btnRun.Text = "$($lc.Name) 실행"
-      $stampRun.Text = "인스턴스에서 [플레이] 를 눌러주세요"
+      $btnRun.Text = "게임 실행"
+      $stampRun.Text = "$($lc.Name)가 열립니다`r`n인스턴스에서 [플레이] 를 눌러주세요"
     } else {
-      $btnRun.Text = "마인크래프트 실행"
+      $btnRun.Text = "게임 실행"
       $stampRun.Text = ""
     }
-    $stampRun.ForeColor = $ColorDim
+    $stampRun.ForeColor = [System.Drawing.Color]::FromArgb(226, 244, 230)
   }
 
   if (-not $keepMessage) {

@@ -1,6 +1,6 @@
 {
-    "version":  9,
-    "signed_at":  "2026-09-25T15:55:39+09:00",
+    "version":  10,
+    "signed_at":  "2026-09-25T19:05:11+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -15,17 +15,17 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "c08d6b55974975a369e2bfc294d4454a698665fc4787ffc53df5e3a45ff009f1",
-                                                "size":  1406440,
-                                                "sha1":  "b56977539512cdc86d72531c1b31d3bce9515c52"
+                                                "sha256":  "8725ec6f2b70f35a246886a2ccce605553fd72b6c91f69c889e938e73462bbd5",
+                                                "size":  1421021,
+                                                "sha1":  "f8ea35d946e7be5cbed2089bc1c9a5050d196745"
                                             },
                   "gui.ps1":  {
-                                  "sha256":  "c0c38b3cf2d972131c94ee8ef43d028229770a917a8927378628b60579f3a7a6",
-                                  "size":  100671
+                                  "sha256":  "dffe7526e92f53b562538665fa26bf68c76955d18b7b4f321f82e6091307e147",
+                                  "size":  100946
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "9b63ed2424698ea36c8daf40583024718e6c1424b78bbb6284b069d5d032342f",
-                                       "size":  114817
+                                       "sha256":  "1e23a69369dfb37aa8ea4c76101017fb1f466f7a004f9da0540852c3768d8116",
+                                       "size":  115123
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -36,8 +36,8 @@
                                          "size":  245527
                                      },
                   "jannu-mod-desc.json":  {
-                                              "sha256":  "464af6c3c77dfae0851ebc3c2a2f8e002d057f9e7cbf86e90b32eb7aadbd5f2b",
-                                              "size":  105733
+                                              "sha256":  "b55b4726710f5df7afcf24933b7ee601095e8854da5b20a34b3e155b5ba1b40c",
+                                              "size":  106905
                                           },
                   "loader.ps1":  {
                                      "sha256":  "f283973fbc4e799e999d2c8b2ffa49e07afb3f5191cec89c59b06aee033beb6b",
@@ -46,10 +46,10 @@
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "64baab4d9987053b3e6653dd16abcd66a1842d6c",
-                  "released_at":  "2026-09-25T15:55:39+09:00",
-                  "message":  "Remove Overflowing Bars - not worth keeping",
-                  "committed_at":  "2026-09-23T20:23:37Z",
+                  "commit":  "4be6a43df56358d60545db31ed74b8cb2c60c8ed",
+                  "released_at":  "2026-09-25T19:05:11+09:00",
+                  "message":  "Fix Citadel Fabric crash: remove broken team-color mixin (missing refmap)",
+                  "committed_at":  "2026-09-25T07:37:41Z",
                   "files":  {
                                 "mod-sync.ps1":  {
                                                      "sha256":  "da495afb70e83e0a5b4eabbba48c576cd1803a44da59ea91cf0dd81a48da3ae1",
