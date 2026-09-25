@@ -1,6 +1,6 @@
 {
-    "version":  7,
-    "signed_at":  "2026-09-25T11:52:05+09:00",
+    "version":  8,
+    "signed_at":  "2026-09-25T15:05:01+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -20,12 +20,12 @@
                                                 "sha1":  "66198c0883d95d120a889537c6b7ceac868f8a83"
                                             },
                   "gui.ps1":  {
-                                  "sha256":  "99149f1841f71ee1e342ca350c597e1509dfc8fe157c796ca257559005cc2579",
-                                  "size":  85193
+                                  "sha256":  "940f911e59d47182d4681b699d18376b370af19ff9f0dd9817fdcc149d16ed18",
+                                  "size":  91929
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "64f16647010fbdc8e7ecb77452f12e6146c9acdaec7208cfed873e968656c25f",
-                                       "size":  114390
+                                       "sha256":  "9b63ed2424698ea36c8daf40583024718e6c1424b78bbb6284b069d5d032342f",
+                                       "size":  114817
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -43,7 +43,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "64baab4d9987053b3e6653dd16abcd66a1842d6c",
-                  "released_at":  "2026-09-25T11:52:05+09:00",
+                  "released_at":  "2026-09-25T15:05:01+09:00",
                   "message":  "Remove Overflowing Bars - not worth keeping",
                   "committed_at":  "2026-09-23T20:23:37Z",
                   "files":  {

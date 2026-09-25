@@ -141,7 +141,8 @@ function Get-Rel {
 # ── 창 ────────────────────────────────────────────────
 $form                 = New-Object System.Windows.Forms.Form
 $form.Text            = $AppName
-$form.Size            = New-Object System.Drawing.Size(556, 548)
+# 잔누판은 오른쪽에 업데이트 내역 칸을 붙인다
+$form.Size            = New-Object System.Drawing.Size($(if ($Server -eq "jannu") { 856 } else { 556 }), 548)
 $form.StartPosition   = "CenterScreen"
 $form.FormBorderStyle = "FixedSingle"
 $form.MaximizeBox     = $false
@@ -215,7 +216,7 @@ if ($ServerAddr) {
   $btnJoin = New-BigButton "서버 주소 복사" 212 ([System.Drawing.Color]::FromArgb(120, 96, 60))
   $form.Controls.Add($btnJoin)
 } elseif ($NewsUrl) {
-  $btnNews = New-BigButton "업데이트 내역 보기" 212 ([System.Drawing.Color]::FromArgb(88, 80, 120))
+  $btnNews = New-BigButton "디스코드 공지보기" 212 ([System.Drawing.Color]::FromArgb(88, 80, 120))
   $form.Controls.Add($btnNews)
 }
 
@@ -249,7 +250,7 @@ if ($btnJoin) {
 }
 if ($btnNews) {
   $stampNews = New-Stamp
-  $stampNews.Text = "디스코드 페이지로 연결됩니다."
+  $stampNews.Text = "디스코드 서버-업데이트 채널로 연결됩니다."
   $btnNews.Controls.Add($stampNews)
   $stampNews.Add_Click({ $btnNews.PerformClick() })
   $stampNews.Cursor = "Hand"
@@ -547,7 +548,7 @@ function Install-Patch {
     $z.Dispose()
     if (-not $hasMeta -or $langCount -eq 0) {
       Remove-Item $tmp -ErrorAction SilentlyContinue
-      SetStep "받은 파일이 리소스팩이 아닙니다. 엘리에게 알려주세요." 0
+      SetStep "받은 파일이 리소스팩이 아닙니다. 서버장에게 알려주세요." 0
       return
     }
 
@@ -757,6 +758,11 @@ function Move-DuplicateMods($target) {
   return $moved
 }
 
+# 비교 창을 맨 앞으로 가져올 때 쓴다
+if (-not ("FrontWin" -as [type])) {
+  Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class FrontWin { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h); }'
+}
+
 function Install-Mods {
   Set-Busy $true
   try {
@@ -795,12 +801,27 @@ function Install-Mods {
     }
     Log "mod-sync.ps1 확인됨 — 커밋 $($j.commit)"
 
-    SetStep "비교 화면을 여는 중입니다. 열린 창에서 이어서 해주세요." 50
+    # 비교 창은 모드 정보를 다 받은 뒤에야 뜬다(보통 1분쯤). 그동안 멈춘 것처럼 보이지 않게 경과 시간을 보여주고,
+    # 창이 뜨면 맨 앞으로 가져온다.
+    SetStep "모드 정보를 불러오는 중입니다... (보통 1분쯤 걸립니다)" 50
     $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
     $proc = Start-Process powershell -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$sync`"", "-PackUrl", "$raw/pack.toml") -WorkingDirectory $target -WindowStyle Hidden -PassThru
+    $t0 = Get-Date; $shown = $false; $lastSec = -1
     while (-not $proc.HasExited) {
       Start-Sleep -Milliseconds 400
       [System.Windows.Forms.Application]::DoEvents()
+      if (-not $shown) {
+        $proc.Refresh()
+        # 숨긴 콘솔 창도 핸들이 있어서, 제목이 생긴 창(= 비교 창 "모드 동기화")이 떠야 연 것으로 본다
+        if ($proc.MainWindowHandle -ne [IntPtr]::Zero -and $proc.MainWindowTitle) {
+          $shown = $true
+          try { [void][FrontWin]::SetForegroundWindow($proc.MainWindowHandle) } catch { }
+          SetStep "비교 화면이 열렸습니다. 그 창에서 [최종 확인]을 눌러 주십시오." 60
+        } else {
+          $sec = [int]((Get-Date) - $t0).TotalSeconds
+          if ($sec -ne $lastSec -and $sec % 5 -eq 0) { $lastSec = $sec; SetStep "모드 정보를 불러오는 중입니다... $sec 초 (보통 1분쯤 걸립니다)" 50 }
+        }
+      }
     }
     $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
     Log "mod-sync 끝남 (코드 $($proc.ExitCode))"
@@ -1250,6 +1271,8 @@ function Find-Launcher-File {
   ) | Where-Object { $_ -and (Test-Path $_) } | Sort-Object -Unique
   foreach ($d in $spots) {
     foreach ($b in @(Get-ChildItem $d -Filter "*.bat" -File -ErrorAction SilentlyContinue)) {
+      # 도우미가 받아 둔 새 판(latest.bat)과 백업은 실행 파일이 아니다
+      if ($b.Name -ieq "latest.bat" -or $b.Name -like "*.bak") { continue }
       try {
         $t = [IO.File]::ReadAllText($b.FullName, [Text.Encoding]::UTF8)
         # 예전 실행 파일은 주소를 %BASE%/gui-elly.ps1 처럼 나눠 적었다. 합쳐진 주소만 찾으면 못 알아본다
@@ -1300,7 +1323,10 @@ function Tend-Launcher {
         Get-ReleaseFile $m "loader.ps1" "$BASE/loader.ps1" $ld
         Log "확인 실행기를 넣음"
       }
-      if ((Rel-Sha256 $Launcher) -ne ([string]$m.files.$LauncherFile.sha256).ToLower()) {
+      $isLatest = $false
+      try { $isLatest = ([IO.Path]::GetFullPath($Launcher) -ieq [IO.Path]::GetFullPath((Join-Path $home2 "latest.bat"))) } catch { }
+      if ($isLatest) { Log "실행 파일 경로가 받아 둔 새 판과 같아서 건너뜀" }
+      elseif ((Rel-Sha256 $Launcher) -ne ([string]$m.files.$LauncherFile.sha256).ToLower()) {
         $latest = Join-Path $home2 "latest.bat"
         Get-ReleaseFile $m $LauncherFile "$BASE/$LauncherFile" $latest
         [IO.File]::Copy($Launcher, "$Launcher.bak", $true)
@@ -1380,5 +1406,80 @@ $btnChange.Add_Click({
   Refresh-Stamps $true
 })
 
-$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; if ($Notice) { Say $Notice } })
+# ── 업데이트 내역 (잔누판 창 오른쪽 칸) ───────────────────
+# 잔누서버 모드 변경(누누님 저장소 기록)과 한글패치 갱신만 보여준다. 엘리서버 소식은 넣지 않는다.
+# 최신이 위. 인터넷이 안 되면 "불러오지 못했습니다" 한 줄.
+$newsBox = $null
+if ($Server -eq "jannu") {
+  $newsHead = New-Object System.Windows.Forms.Label
+  $newsHead.Text = "업데이트 내역"
+  $newsHead.Font = New-Object System.Drawing.Font("맑은 고딕", 12, [System.Drawing.FontStyle]::Bold)
+  $newsHead.ForeColor = [System.Drawing.Color]::FromArgb(45, 48, 42)
+  $newsHead.Location = New-Object System.Drawing.Point(540, 24)
+  $newsHead.Size = New-Object System.Drawing.Size(290, 24)
+  $form.Controls.Add($newsHead)
+  $newsBox = New-Object System.Windows.Forms.RichTextBox
+  $newsBox.Location = New-Object System.Drawing.Point(540, 54)
+  $newsBox.Size = New-Object System.Drawing.Size(292, ($form.ClientSize.Height - 74))
+  $newsBox.ReadOnly = $true; $newsBox.BorderStyle = "FixedSingle"; $newsBox.BackColor = [System.Drawing.Color]::White
+  $newsBox.Font = New-Object System.Drawing.Font("맑은 고딕", 9); $newsBox.DetectUrls = $false; $newsBox.ScrollBars = "Vertical"; $newsBox.Cursor = "Arrow"
+  $form.Controls.Add($newsBox)
+}
+function News-Add($text, $color, $bold, $size) {
+  if (-not $size) { $size = 9 }
+  $style = if ($bold) { [System.Drawing.FontStyle]::Bold } else { [System.Drawing.FontStyle]::Regular }
+  $newsBox.SelectionStart = $newsBox.TextLength; $newsBox.SelectionLength = 0
+  $newsBox.SelectionFont = New-Object System.Drawing.Font("맑은 고딕", $size, $style)
+  $newsBox.SelectionColor = if ($color) { $color } else { [System.Drawing.Color]::FromArgb(45, 48, 42) }
+  $newsBox.AppendText($text)
+}
+function News-Date($iso) {
+  try { return ([DateTimeOffset]::Parse($iso)).ToOffset([TimeSpan]::FromHours(9)).ToString("M월 d일 HH:mm") } catch { return "" }
+}
+function Refresh-JannuNews {
+  if (-not $newsBox) { return }
+  $dim = [System.Drawing.Color]::FromArgb(130, 134, 125); $green = [System.Drawing.Color]::FromArgb(62, 120, 50); $blue = [System.Drawing.Color]::FromArgb(58, 96, 150); $amber = [System.Drawing.Color]::FromArgb(176, 120, 20)
+  $newsBox.Clear()
+  $items = @()
+  try {
+    $m = Get-Rel
+    $pinned = [string]$m.jannu.commit
+    $gh = (Get-WebText "https://api.github.com/repos/$PackRepo/commits?per_page=12") | ConvertFrom-Json | ForEach-Object { $_ }
+    $seenPinned = $false
+    foreach ($c in $gh) {
+      $msg = (([string]$c.commit.message) -split "`n")[0]
+      $isPinned = ($c.sha -eq $pinned)
+      $items += [pscustomobject]@{ At = [string]$c.commit.committer.date; Kind = "mod"; Text = $msg; Pending = (-not $seenPinned -and -not $isPinned); Pinned = $isPinned }
+      if ($isPinned) { $seenPinned = $true }
+    }
+    $items += [pscustomobject]@{ At = [string]$m.signed_at; Kind = "patch"; Text = "한글패치가 갱신되었습니다 (배포 번호 $($m.version))"; Pending = $false; Pinned = $false }
+    # 한글패치 이전 갱신 날짜(저장소 기록)
+    try {
+      $pc = (Get-WebText "https://api.github.com/repos/spoemeo-code/elly-korean-patch/commits?path=Elly-Korean-Patch.zip&per_page=4") | ConvertFrom-Json | ForEach-Object { $_ }
+      foreach ($c in @($pc | Select-Object -Skip 1)) { $items += [pscustomobject]@{ At = [string]$c.commit.committer.date; Kind = "patch"; Text = "한글패치가 갱신되었습니다"; Pending = $false; Pinned = $false } }
+    } catch { }
+  } catch {
+    Log "  [업데이트 내역 불러오기 실패] $($_.Exception.Message)"
+    News-Add "업데이트 내역을 불러오지 못했습니다.`n" $dim $false
+    return
+  }
+  $pinItem = $items | Where-Object { $_.Pinned } | Select-Object -First 1
+  News-Add "지금 받으시는 판`n" $dim $false 8.5
+  News-Add ("모드 " + $(if ($pinItem) { (News-Date $pinItem.At) } else { "확인 중" }) + " 기준`n") $green $true 9.5
+  News-Add "한글패치 배포 번호 $($m.version)`n" $green $true 9.5
+  News-Add "────────────────────`n" $dim $false 8
+  foreach ($it in ($items | Sort-Object { [DateTimeOffset]::Parse($_.At) } -Descending | Select-Object -First 14)) {
+    $tag = if ($it.Kind -eq "patch") { "한글패치" } else { "잔누 모드" }
+    $tc = if ($it.Kind -eq "patch") { $blue } else { $green }
+    News-Add ((News-Date $it.At) + "  ") $dim $false 8.5
+    News-Add ($tag + "`n") $tc $true 8.5
+    News-Add ($it.Text + "`n") $null $false 9
+    if ($it.Pending) { News-Add "아직 배포 전입니다. 서버장이 확인하면 받으실 수 있습니다.`n" $amber $false 8.5 }
+    News-Add "`n" $null $false 5
+  }
+  News-Add "모드 변경 메모는 누누님이 남긴 글 그대로입니다.`n" $dim $false 8
+  $newsBox.SelectionStart = 0; $newsBox.ScrollToCaret()
+}
+
+$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; Refresh-JannuNews; if ($Notice) { Say $Notice } })
 [void]$form.ShowDialog()

@@ -1572,6 +1572,8 @@ function Find-Launcher-File {
   ) | Where-Object { $_ -and (Test-Path $_) } | Sort-Object -Unique
   foreach ($d in $spots) {
     foreach ($b in @(Get-ChildItem $d -Filter "*.bat" -File -ErrorAction SilentlyContinue)) {
+      # 도우미가 받아 둔 새 판(latest.bat)과 백업은 실행 파일이 아니다
+      if ($b.Name -ieq "latest.bat" -or $b.Name -like "*.bak") { continue }
       try {
         $t = [IO.File]::ReadAllText($b.FullName, [Text.Encoding]::UTF8)
         # 예전 실행 파일은 주소를 %BASE%/gui-elly.ps1 처럼 나눠 적었다. 합쳐진 주소만 찾으면 못 알아본다
@@ -1624,7 +1626,10 @@ function Tend-Launcher {
         Get-ReleaseFile $m "loader.ps1" "$BASE/loader.ps1" $ld
         Log "확인 실행기를 넣음"
       }
-      if ((Rel-Sha256 $Launcher) -ne ([string]$m.files.$LauncherFile.sha256).ToLower()) {
+      $isLatest = $false
+      try { $isLatest = ([IO.Path]::GetFullPath($Launcher) -ieq [IO.Path]::GetFullPath((Join-Path $home2 "latest.bat"))) } catch { }
+      if ($isLatest) { Log "실행 파일 경로가 받아 둔 새 판과 같아서 건너뜀" }
+      elseif ((Rel-Sha256 $Launcher) -ne ([string]$m.files.$LauncherFile.sha256).ToLower()) {
         $latest = Join-Path $home2 "latest.bat"
         Get-ReleaseFile $m $LauncherFile "$BASE/$LauncherFile" $latest
         [IO.File]::Copy($Launcher, "$Launcher.bak", $true)
