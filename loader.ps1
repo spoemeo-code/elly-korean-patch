@@ -69,7 +69,10 @@ function Get-ReleaseFile($m, [string]$name, [string]$url, [string]$dest) {
   $e = $m.files.$name
   if (-not $e) { throw "확인: $name 이(가) 배포 목록에 없습니다" }
   $tmp = "$dest.part"
-  try { Rel-Fetch $url $tmp } catch { throw "연결: $($_.Exception.Message)" }
+  # 배포 직후 raw 캐시(최대 5분)가 옛 파일을 주지 않게, 기대하는 해시로 주소를 바꿔서 받는다
+  $sep = if ($url.Contains("?")) { "&" } else { "?" }
+  $fresh = $url + $sep + "v=" + ([string]$e.sha256).Substring(0, 12)
+  try { Rel-Fetch $fresh $tmp } catch { throw "연결: $($_.Exception.Message)" }
   if ((Get-Item -LiteralPath $tmp).Length -ne [long]$e.size -or (Rel-Sha256 $tmp) -ne ([string]$e.sha256).ToLower()) {
     Remove-Item -LiteralPath $tmp -ErrorAction SilentlyContinue
     throw "확인: $name 이(가) 배포된 파일과 다릅니다"

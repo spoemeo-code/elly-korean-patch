@@ -120,7 +120,10 @@ function Get-ReleaseFile($m, [string]$name, [string]$url, [string]$dest) {
   $e = $m.files.$name
   if (-not $e) { throw "확인: $name 이(가) 배포 목록에 없습니다" }
   $tmp = "$dest.part"
-  try { Rel-Fetch $url $tmp } catch { throw "연결: $($_.Exception.Message)" }
+  # 배포 직후 raw 캐시(최대 5분)가 옛 파일을 주지 않게, 기대하는 해시로 주소를 바꿔서 받는다
+  $sep = if ($url.Contains("?")) { "&" } else { "?" }
+  $fresh = $url + $sep + "v=" + ([string]$e.sha256).Substring(0, 12)
+  try { Rel-Fetch $fresh $tmp } catch { throw "연결: $($_.Exception.Message)" }
   if ((Get-Item -LiteralPath $tmp).Length -ne [long]$e.size -or (Rel-Sha256 $tmp) -ne ([string]$e.sha256).ToLower()) {
     Remove-Item -LiteralPath $tmp -ErrorAction SilentlyContinue
     throw "확인: $name 이(가) 배포된 파일과 다릅니다"
@@ -521,7 +524,10 @@ function Install-Patch {
     SetStep "최신 한글패치를 받고 있습니다..." 15
     $tmp = Join-Path $env:TEMP "elly-patch-download.zip"
     Remove-Item $tmp -ErrorAction SilentlyContinue
-    Get-Web $PatchUrl $tmp
+    # 서명 목록에 적힌 해시로 주소를 바꿔 raw 캐시(최대 5분)의 옛 zip 을 피한다
+    $pv = ""
+    try { $pv = "?v=" + ([string](Get-Rel).files."Elly-Korean-Patch.zip".sha256).Substring(0, 12) } catch { }
+    Get-Web ($PatchUrl + $pv) $tmp
 
     # 서명된 배포 목록의 해시와 같을 때만 넣는다
     $pe = $null
