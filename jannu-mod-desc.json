@@ -657,6 +657,13 @@
   "del": "이제 던전 몹 강화와 추가 보상이 없어집니다.",
   "lib": false
  },
+ "dungeon_difficulty-fabric-3.8.0+1.21.1": {
+  "name": "Dungeon Difficulty",
+  "does": "던전과 구조물이 더 어려워지고, 그만큼 보상도 좋아집니다.",
+  "add": "이제 던전에서 더 강한 몹과 더 좋은 보상을 만납니다.",
+  "del": "이제 던전 난이도와 보상이 원래대로 돌아갑니다.",
+  "lib": false
+ },
  "durability-tooltip": {
   "name": "Durability Tooltip",
   "does": "아이템 설명에 남은 내구도를 숫자로 보여 줍니다.",
@@ -1474,6 +1481,34 @@
   "does": "물속 거품이 수면에 닿으면 톡 터지게 보여 줍니다.",
   "add": "이제 물속 거품이 수면에서 터지는 모습이 보입니다.",
   "del": "이제 물속 거품이 수면에서 그냥 사라집니다.",
+  "lib": false
+ },
+ "makujannu-hud": {
+  "name": "Maku Jannu Dungeon Level HUD",
+  "does": "지금 있는 던전의 난이도 단계를 화면에 보여 줍니다.",
+  "add": "이제 화면에서 던전 난이도 단계를 볼 수 있습니다.",
+  "del": "이제 화면에 던전 난이도 단계가 보이지 않습니다.",
+  "lib": false
+ },
+ "makujannu-hud-1.0.0": {
+  "name": "Maku Jannu Dungeon Level HUD",
+  "does": "지금 있는 던전의 난이도 단계를 화면에 보여 줍니다.",
+  "add": "이제 화면에서 던전 난이도 단계를 볼 수 있습니다.",
+  "del": "이제 화면에 던전 난이도 단계가 보이지 않습니다.",
+  "lib": false
+ },
+ "makujannu-statoverride": {
+  "name": "Maku Jannu Stat Override",
+  "does": "몇몇 무기와 방어구의 공격력·방어력 수치를 서버에 맞게 조정합니다.",
+  "add": "이제 몇몇 장비의 수치가 서버 기준으로 맞춰집니다.",
+  "del": "이제 장비 수치가 모드 원래 값으로 돌아갑니다.",
+  "lib": false
+ },
+ "makujannu-statoverride-1.0.0": {
+  "name": "Maku Jannu Stat Override",
+  "does": "몇몇 무기와 방어구의 공격력·방어력 수치를 서버에 맞게 조정합니다.",
+  "add": "이제 몇몇 장비의 수치가 서버 기준으로 맞춰집니다.",
+  "del": "이제 장비 수치가 모드 원래 값으로 돌아갑니다.",
   "lib": false
  },
  "map-tooltip": {

@@ -274,10 +274,12 @@ $stampWake.Cursor = "Hand"
 $btnRun = New-BigButton "게임 실행" 274 ([System.Drawing.Color]::FromArgb(34, 139, 84))
 $btnRun.Font = New-Object System.Drawing.Font("맑은 고딕", 13, [System.Drawing.FontStyle]::Bold)
 
-# 엘리 전용. 프리즘이 아닌 런처를 쓰면 팩이 자동으로 맞춰지지 않아 직접 맞춰야 한다.
+# 엘리서버 전용(잔누 판에는 없다). 프리즘이 켜질 때 팩을 못 맞추는 경우(실행 전 명령이 막힌 PC,
+# 프리즘이 아닌 런처)에도 여기서 직접 맞출 수 있게 누구에게나 보인다.
+# 팩에 있는 모드만 받고, 직접 까신 모드는 지우지 않는다(같은 모드가 두 벌이면 mods-중복보관 으로 옮길 뿐).
 $btnMods = $null
 $stampMods = $null
-if ($IsAdmin) {
+if ($Server -eq "elly") {
   $btnMods = New-BigButton "서버 모드 맞추기" 336 ([System.Drawing.Color]::FromArgb(70, 96, 130))
   $form.Controls.Add($btnMods)
   $stampMods = New-Stamp
@@ -292,8 +294,8 @@ $stampRun.Add_Click({ $btnRun.PerformClick() })
 $stampRun.Cursor = "Hand"
 
 # 엘리 전용 버튼이 한 줄 더 있으면 아래 것들을 그만큼 내린다.
-$shift = if ($IsAdmin) { 62 } else { 0 }
-if ($IsAdmin) { $form.Size = New-Object System.Drawing.Size((556 + $FeedW), (584 + $shift)) }
+$shift = if ($btnMods) { 62 } else { 0 }
+if ($btnMods) { $form.Size = New-Object System.Drawing.Size((556 + $FeedW), (584 + $shift)) }
 
 # 어디에 깔렸는지 확인하고 바꿀 수 있게. 잘못 고른 사람이 스스로 고칠 길이 필요하다.
 function New-SmallButton($text, $x, $y, $w) {

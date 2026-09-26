@@ -1,6 +1,6 @@
 {
-    "version":  11,
-    "signed_at":  "2026-09-25T19:13:19+09:00",
+    "version":  12,
+    "signed_at":  "2026-09-26T23:47:07+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -24,8 +24,8 @@
                                   "size":  100946
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "1e23a69369dfb37aa8ea4c76101017fb1f466f7a004f9da0540852c3768d8116",
-                                       "size":  115123
+                                       "sha256":  "e4166dd733339cdca016d6e48e7795783c5396c757c7ec9d9fe2b2812b745076",
+                                       "size":  115391
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -36,8 +36,8 @@
                                          "size":  245527
                                      },
                   "jannu-mod-desc.json":  {
-                                              "sha256":  "b55b4726710f5df7afcf24933b7ee601095e8854da5b20a34b3e155b5ba1b40c",
-                                              "size":  106905
+                                              "sha256":  "4e0700d4dea2b374939b5753e18f2a7324aeebb4e5700671240f8b22e8b334d5",
+                                              "size":  108633
                                           },
                   "loader.ps1":  {
                                      "sha256":  "f283973fbc4e799e999d2c8b2ffa49e07afb3f5191cec89c59b06aee033beb6b",
@@ -46,14 +46,14 @@
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "4be6a43df56358d60545db31ed74b8cb2c60c8ed",
-                  "released_at":  "2026-09-25T19:13:19+09:00",
-                  "message":  "Fix Citadel Fabric crash: remove broken team-color mixin (missing refmap)",
-                  "committed_at":  "2026-09-25T07:37:41Z",
+                  "commit":  "c7bc252ee80e6ef9b54b98ad3beac158ad55133e",
+                  "released_at":  "2026-09-26T23:47:07+09:00",
+                  "message":  "Dedupe leftover mod versions by real mod id, not filename guessing",
+                  "committed_at":  "2026-09-26T13:55:02Z",
                   "files":  {
                                 "mod-sync.ps1":  {
-                                                     "sha256":  "da495afb70e83e0a5b4eabbba48c576cd1803a44da59ea91cf0dd81a48da3ae1",
-                                                     "size":  18743
+                                                     "sha256":  "776691ee850bee73d0a8889bd3d6ebe17309c932f844337462b2dd5cc4d100c2",
+                                                     "size":  25285
                                                  },
                                 "update.bat":  {
                                                    "sha256":  "27b38cd387cd09a922fbdd1ddd4dbe5c28d1c8237a11f188503c326f6992ad1c",
