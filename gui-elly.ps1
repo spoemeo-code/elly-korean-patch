@@ -158,220 +158,410 @@ if ($PortableRoot) {
   try { [void][IO.Directory]::CreateDirectory($ptmp); $env:TEMP = $ptmp; $env:TMP = $ptmp } catch { }
 }
 
-# ── 창 ────────────────────────────────────────────────
-$form                 = New-Object System.Windows.Forms.Form
-$form.Text            = $AppName
-# 오른쪽에 서버 소식 칸을 붙인다
-$FeedW = 330
-$form.Size            = New-Object System.Drawing.Size((556 + $FeedW), 584)
-$form.StartPosition   = "CenterScreen"
-$form.FormBorderStyle = "FixedSingle"
-$form.MaximizeBox     = $false
-$form.BackColor       = [System.Drawing.Color]::FromArgb(246, 245, 241)
-$form.Font            = New-Object System.Drawing.Font("맑은 고딕", 9)
+# ── 창 (WPF) ─────────────────────────────────────────
+# 둥근 카드와 도트 그림을 쓰려고 WPF 로 그린다. 동작(설치·실행·켜기)은 예전 그대로이고
+# 겉모습만 바뀌었다. 예전 코드가 쓰던 이름(Text, Enabled, ForeColor, PerformClick)은
+# 아래 "예전 이름 맞춰 주기" 에서 그대로 쓸 수 있게 붙여 둔다.
+Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
+
+function Brush($hex) { return (New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.ColorConverter]::ConvertFromString($hex))) }
+function Brush-Of([System.Drawing.Color]$c) { return (New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb($c.A, $c.R, $c.G, $c.B))) }
+$UiFont = New-Object System.Windows.Media.FontFamily("맑은 고딕")
+
+# 예전 글자색은 어두운 버튼 위에 얹는 밝은 색이었다. 밝은 카드 위에서는 읽히지 않아서 짝을 바꿔 준다.
+$ColorSwap = @{
+  "150,235,140" = "#2F7D3A"   # 최신
+  "255,150,140" = "#B8473B"   # 갱신 필요
+  "210,210,205" = "#7C766A"   # 확인 실패·안내
+  "226,236,214" = "#7C766A"
+}
+function Swap-Color($c) {
+  if ($c -is [System.Drawing.Color]) {
+    $k = "$($c.R),$($c.G),$($c.B)"
+    if ($ColorSwap.ContainsKey($k)) { return (Brush $ColorSwap[$k]) }
+    return (Brush-Of $c)
+  }
+  return $c
+}
+
+# 그림: elly-helper\assets 에 있으면 그걸 쓰고, 없으면 임시 도형을 그린다.
+# 그림을 준비하는 동안 남길 기록. 아래에서 같은 이름으로 다시 정의되지만 경로와 형식은 같다.
+$script:LogPath = Join-Path $env:TEMP ($Server + "-helper-log.txt")
+function Log($t) {
+  try { ((Get-Date -Format "HH:mm:ss") + "  " + $t) | Out-File $script:LogPath -Encoding UTF8 -Append } catch { }
+}
+$AssetDir = Join-Path (Join-Path $env:APPDATA $AppHome) "assets"
+if ($env:ELLY_ASSET_DIR) { $AssetDir = $env:ELLY_ASSET_DIR }
+
+# 그림 묶음(elly-helper-assets.zip)은 서명된 배포 목록에 들어 있다. loader 가 방금 확인해 둔 manifest 로
+# 기대하는 해시를 알고, 가진 묶음이 다르면 받아서 해시가 맞을 때만 푼다.
+# 목록에 없거나, 못 받거나, 해시가 틀리면 그림 없이(단색 카드) 뜬다.
+function Sync-Assets {
+  if ($env:ELLY_ASSET_DIR) { return }
+  try {
+    $cm = Join-Path $RelDir "manifest.json"; $cs = Join-Path $RelDir "manifest.sig"
+    if (-not (Test-Path -LiteralPath $cm) -or -not (Test-Path -LiteralPath $cs)) { return }
+    $bytes = [IO.File]::ReadAllBytes($cm)
+    if (-not (Rel-Verify $bytes ([IO.File]::ReadAllText($cs)))) { Log "  [그림] 확인된 목록의 서명이 맞지 않아 그림 없이 엽니다"; return }
+    $m = [Text.Encoding]::UTF8.GetString($bytes).TrimStart([char]0xFEFF) | ConvertFrom-Json
+    $e = $m.files."elly-helper-assets.zip"
+    if (-not $e) { return }
+    $want = ([string]$e.sha256).ToLower()
+    $mark = Join-Path $AssetDir ".sha256"
+    if ((Test-Path -LiteralPath $mark) -and ([IO.File]::ReadAllText($mark).Trim() -eq $want)) { return }
+    $zip = Join-Path $RelHome "assets-download.zip"
+    # 받는 곳을 바꿔도(시험용) 서명 목록의 해시와 같을 때만 쓴다
+    $ab = if ($env:ELLY_ASSET_BASE) { $env:ELLY_ASSET_BASE } else { $BASE }
+    Get-ReleaseFile $m "elly-helper-assets.zip" "$ab/elly-helper-assets.zip" $zip
+    $new = "$AssetDir.new"
+    if (Test-Path -LiteralPath $new) { [IO.Directory]::Delete($new, $true) }
+    [void][IO.Directory]::CreateDirectory($new)
+    $z = [System.IO.Compression.ZipFile]::OpenRead($zip)
+    try {
+      foreach ($en in $z.Entries) {
+        if (-not $en.Name) { continue }
+        # 그림과 테마 목록만 푼다. 폴더 밖을 가리키는 이름은 건너뛴다
+        $fn = [string]$en.FullName
+        if ($fn.Contains("..") -or $fn.StartsWith("/") -or $fn.StartsWith("\") -or $fn.Contains(":")) { continue }
+        if (-not ($fn.EndsWith(".png") -or $fn.EndsWith(".json"))) { continue }
+        $to = Join-Path $new $fn.Replace("/", "\")
+        [void][IO.Directory]::CreateDirectory((Split-Path $to -Parent))
+        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($en, $to, $true)
+      }
+    } finally { $z.Dispose() }
+    [IO.File]::WriteAllText((Join-Path $new ".sha256"), $want)
+    if (Test-Path -LiteralPath $AssetDir) { [IO.Directory]::Delete($AssetDir, $true) }
+    [IO.Directory]::Move($new, $AssetDir)
+    [IO.File]::Delete($zip)
+    Log "  [그림] 새 그림 묶음을 받았습니다"
+  } catch { Log "  [그림] 그림 묶음을 받지 못해 그림 없이 엽니다 — $($_.Exception.Message)" }
+}
+Sync-Assets
+
+# 이벤트 테마: 묶음 안 themes.json 의 기간(월-일)에 오늘이 들어가면 themes\<이름>\ 의 그림을 먼저 쓴다.
+# 그 폴더에 없는 그림은 기본 그림을 쓴다.
+$ThemeDir = $null
+try {
+  $tj = Join-Path $AssetDir "themes.json"
+  if (Test-Path -LiteralPath $tj) {
+    $today = (Get-Date).ToString("MM-dd")
+    if ($env:ELLY_THEME_DATE) { $today = $env:ELLY_THEME_DATE }
+    foreach ($th in @(([IO.File]::ReadAllText($tj, [Text.Encoding]::UTF8) | ConvertFrom-Json).themes)) {
+      $f = [string]$th.from; $u = [string]$th.to
+      $in = if ($f -le $u) { ($today -ge $f -and $today -le $u) } else { ($today -ge $f -or $today -le $u) }
+      if ($in -and ([string]$th.name) -match '^[a-z0-9_-]+$') {
+        $cand = Join-Path $AssetDir ("themes\" + $th.name)
+        if (Test-Path -LiteralPath $cand) { $ThemeDir = $cand; Log "  [그림] 테마: $($th.name)"; break }
+      }
+    }
+  }
+} catch { }
+function Get-AssetImage($name) {
+  $p = $null
+  if ($ThemeDir) { $tp = Join-Path $ThemeDir ($name + ".png"); if (Test-Path -LiteralPath $tp) { $p = $tp } }
+  if (-not $p) { $p = Join-Path $AssetDir ($name + ".png") }
+  if (-not (Test-Path -LiteralPath $p)) { return $null }
+  try {
+    $bi = New-Object System.Windows.Media.Imaging.BitmapImage
+    $bi.BeginInit(); $bi.CacheOption = "OnLoad"; $bi.UriSource = New-Object System.Uri($p); $bi.EndInit(); $bi.Freeze()
+    return $bi
+  } catch { return $null }
+}
+function New-Pic($name, $size, $fallbackColor, $fallbackText) {
+  $src = Get-AssetImage $name
+  if ($src) {
+    $im = New-Object System.Windows.Controls.Image
+    $im.Source = $src; $im.Width = $size; $im.Height = $size
+    [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($im, "NearestNeighbor")
+    return $im
+  }
+  $b = New-Object System.Windows.Controls.Border
+  $b.Width = $size; $b.Height = $size; $b.CornerRadius = 6
+  $b.Background = Brush $fallbackColor
+  $t = New-Object System.Windows.Controls.TextBlock
+  $t.Text = $fallbackText; $t.Foreground = Brush "#FFFFFF"; $t.FontFamily = $UiFont
+  $t.FontSize = [Math]::Max(9, [int]($size / 3)); $t.FontWeight = "Bold"
+  $t.HorizontalAlignment = "Center"; $t.VerticalAlignment = "Center"
+  $b.Child = $t
+  return $b
+}
+
+# 카드·작은 버튼 모양. 마우스를 올리면 테두리가 짙어지고, 누르면 살짝 눌린다.
+$BtnTemplate = [System.Windows.Markup.XamlReader]::Parse(@'
+<ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" TargetType="Button">
+  <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+          BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="{TemplateBinding Padding}"
+          SnapsToDevicePixels="True">
+    <Border.Effect><DropShadowEffect BlurRadius="6" ShadowDepth="1.5" Opacity="0.18" Direction="270"/></Border.Effect>
+    <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+  </Border>
+  <ControlTemplate.Triggers>
+    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="bd" Property="BorderThickness" Value="2.5"/></Trigger>
+    <Trigger Property="IsPressed" Value="True"><Setter TargetName="bd" Property="RenderTransform"><Setter.Value><TranslateTransform Y="1.5"/></Setter.Value></Setter></Trigger>
+    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="bd" Property="Opacity" Value="0.55"/></Trigger>
+  </ControlTemplate.Triggers>
+</ControlTemplate>
+'@)
+
+function New-Text($text, $size, $color, $bold) {
+  $t = New-Object System.Windows.Controls.TextBlock
+  $t.Text = $text; $t.FontFamily = $UiFont; $t.FontSize = $size
+  $t.Foreground = Brush $color
+  if ($bold) { $t.FontWeight = "Bold" }
+  $t.TextWrapping = "Wrap"
+  return $t
+}
+
+# 예전 이름 맞춰 주기: 글자(TextBlock)에 ForeColor 를 붙인다
+function Add-ForeColor($tb) {
+  Add-Member -InputObject $tb -MemberType ScriptProperty -Name ForeColor -Value { $null } -SecondValue { param($c) $this.Foreground = (Swap-Color $c) } -Force
+  return $tb
+}
+# 예전 이름 맞춰 주기: 버튼에 Text · Enabled · PerformClick 을 붙인다
+function Add-ButtonShim($b, $titleBlock) {
+  $b | Add-Member -NotePropertyName TitleBlock -NotePropertyValue $titleBlock -Force
+  Add-Member -InputObject $b -MemberType ScriptProperty -Name Text -Value { $this.TitleBlock.Text } -SecondValue { param($v) $this.TitleBlock.Text = $v } -Force
+  Add-Member -InputObject $b -MemberType ScriptProperty -Name Enabled -Value { $this.IsEnabled } -SecondValue { param($v) $this.IsEnabled = [bool]$v } -Force
+  Add-Member -InputObject $b -MemberType ScriptMethod -Name PerformClick -Value { $this.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Primitives.ButtonBase]::ClickEvent))) } -Force
+  return $b
+}
+
+# 큰 카드: [그림] 제목 / 한 줄 설명 ………… 오른쪽 작은 글자 >
+$Compact = ($Server -eq "elly")
+function New-Card($title, $bg, $border, $titleColor, $subColor, $picName, $picColor, $picText, $height, $titleSize) {
+  $b = New-Object System.Windows.Controls.Button
+  $b.Template = $BtnTemplate; $b.Background = Brush $bg; $b.BorderBrush = Brush $border
+  $b.BorderThickness = 1.5; $b.Padding = New-Object System.Windows.Thickness(16, 6, 12, 6)
+  $b.Height = $height; $b.Margin = New-Object System.Windows.Thickness(0, 0, 0, $(if ($Compact) { 8 } else { 10 })); $b.Cursor = "Hand"
+  $g = New-Object System.Windows.Controls.Grid
+  foreach ($w in @(64, -1, -2, 26)) {
+    $cd = New-Object System.Windows.Controls.ColumnDefinition
+    if ($w -eq -1) { $cd.Width = New-Object System.Windows.GridLength(1, "Star") } elseif ($w -eq -2) { $cd.Width = [System.Windows.GridLength]::Auto } else { $cd.Width = New-Object System.Windows.GridLength($w) }
+    $g.ColumnDefinitions.Add($cd)
+  }
+  $pic = New-Pic $picName 52 $picColor $picText
+  $pic.VerticalAlignment = "Center"; $pic.HorizontalAlignment = "Left"
+  [System.Windows.Controls.Grid]::SetColumn($pic, 0); [void]$g.Children.Add($pic)
+  $sp = New-Object System.Windows.Controls.StackPanel; $sp.VerticalAlignment = "Center"; $sp.Margin = New-Object System.Windows.Thickness(8, 0, 8, 0)
+  $tt = New-Text $title $titleSize $titleColor $true; $tt.TextWrapping = "NoWrap"
+  $st = New-Text "" $(if ($Compact) { 11.5 } else { 12.5 }) $subColor $false; $st.Margin = New-Object System.Windows.Thickness(0, $(if ($Compact) { 1 } else { 3 }), 0, 0); $st.LineHeight = $(if ($Compact) { 15 } else { 18 }); $st.LineStackingStrategy = "BlockLineHeight"
+  [void]$sp.Children.Add($tt); [void]$sp.Children.Add($st)
+  [System.Windows.Controls.Grid]::SetColumn($sp, 1); [void]$g.Children.Add($sp)
+  $rp = New-Object System.Windows.Controls.StackPanel; $rp.VerticalAlignment = "Center"; $rp.HorizontalAlignment = "Right"; $rp.Margin = New-Object System.Windows.Thickness(0, 0, 8, 0)
+  $rl = New-Text "" 11.5 $subColor $false; $rl.HorizontalAlignment = "Right"; $rl.TextWrapping = "NoWrap"
+  $rv = New-Text "" 13 $subColor $false; $rv.HorizontalAlignment = "Right"; $rv.TextWrapping = "NoWrap"
+  [void]$rp.Children.Add($rl); [void]$rp.Children.Add($rv)
+  [System.Windows.Controls.Grid]::SetColumn($rp, 2); [void]$g.Children.Add($rp)
+  $chev = New-Object System.Windows.Shapes.Path
+  $chev.Data = [System.Windows.Media.Geometry]::Parse("M 0,0 L 7,7 L 0,14"); $chev.Stroke = Brush $titleColor; $chev.StrokeThickness = 2.2
+  $chev.VerticalAlignment = "Center"; $chev.HorizontalAlignment = "Center"
+  [System.Windows.Controls.Grid]::SetColumn($chev, 3); [void]$g.Children.Add($chev)
+  $b.Content = $g
+  $b = Add-ButtonShim $b $tt
+  $b | Add-Member -NotePropertyName SubBlock -NotePropertyValue $st -Force
+  $b | Add-Member -NotePropertyName RightLabel -NotePropertyValue $rl -Force
+  $b | Add-Member -NotePropertyName RightValue -NotePropertyValue $rv -Force
+  return $b
+}
+
+# 카드 오른쪽·아래 글자. 예전에는 버튼 위에 얹은 글자 하나(stamp)였다. 같은 이름으로 받아서
+# "최근 … 날짜" 줄은 오른쪽에, 나머지 설명은 제목 아래에 나눠 놓는다. 문구는 그대로다.
+function New-Stamp($card) {
+  $o = [pscustomobject]@{ Card = $card; Raw = "" }
+  Add-Member -InputObject $o -MemberType ScriptProperty -Name Text -Value { $this.Raw } -SecondValue {
+    param($v)
+    $this.Raw = [string]$v
+    $lines = @(([string]$v) -split "`r?`n" | Where-Object { $_ -ne "" })
+    $c = $this.Card
+    if ($lines.Count -ge 2 -and $lines[0] -like "최근*") {
+      $first = $lines[0]; $i = $first.LastIndexOf(" ")
+      if ($i -gt 0) { $c.RightLabel.Text = $first.Substring(0, $i); $c.RightValue.Text = $first.Substring($i + 1) } else { $c.RightLabel.Text = ""; $c.RightValue.Text = $first }
+      $c.SubBlock.Text = ($lines[1..($lines.Count - 1)] -join "`n")
+    } else {
+      $c.RightLabel.Text = ""; $c.RightValue.Text = ""
+      $c.SubBlock.Text = ($lines -join "`n")
+    }
+  } -Force
+  Add-Member -InputObject $o -MemberType ScriptProperty -Name ForeColor -Value { $null } -SecondValue {
+    param($col) $br = Swap-Color $col; $this.Card.SubBlock.Foreground = $br; $this.Card.RightValue.Foreground = $br
+  } -Force
+  return $o
+}
+
+# 작은 버튼: 선 그림 + 글자
+$SmallIcons = @{
+  folder  = "M 1,4 L 7,4 L 9,6 L 19,6 L 19,17 L 1,17 Z"
+  pin     = "M 10,1 C 5,1 3,5 3,8 C 3,13 10,19 10,19 C 10,19 17,13 17,8 C 17,5 15,1 10,1 Z M 10,5 A 3,3 0 1 1 9.99,5 Z"
+  doc     = "M 4,1 L 13,1 L 17,5 L 17,19 L 4,19 Z M 7,8 L 14,8 M 7,11 L 14,11 M 7,14 L 12,14"
+  box     = "M 2,6 L 10,2 L 18,6 L 18,15 L 10,19 L 2,15 Z M 2,6 L 10,10 L 18,6 M 10,10 L 10,19"
+  gear    = "M 10,6 A 4,4 0 1 1 9.99,6 Z M 10,1 L 10,4 M 10,16 L 10,19 M 1,10 L 4,10 M 16,10 L 19,10 M 3.6,3.6 L 5.8,5.8 M 14.2,14.2 L 16.4,16.4 M 3.6,16.4 L 5.8,14.2 M 14.2,5.8 L 16.4,3.6"
+  person  = "M 10,2 A 4,4 0 1 1 9.99,2 Z M 2,19 C 2,13 18,13 18,19 Z"
+  coin    = "M 10,2 A 8,8 0 1 1 9.99,2 Z M 10,6 L 10,14 M 7.5,8 C 7.5,6 12.5,6 12.5,8 C 12.5,10 7.5,10 7.5,12 C 7.5,14 12.5,14 12.5,12"
+  door    = "M 4,1 L 16,1 L 16,19 L 4,19 Z M 12,10 L 13,10"
+}
+# 작은 선 그림: assets 에 btn_<이름>.png 등이 있으면 그 그림을, 없으면 선으로 그린다
+$IconFile = @{ folder = "btn_folder"; pin = "btn_pin"; doc = "btn_doc"; box = "btn_chest"; gear = "btn_gear"; person = "btn_person"; coin = "btn_coin"; door = "btn_door" }
+function New-LineIcon($icon, $size) {
+  $name = if ($IconFile.ContainsKey($icon)) { $IconFile[$icon] } else { $icon }
+  $src = Get-AssetImage $name
+  if ($src) {
+    $im = New-Object System.Windows.Controls.Image
+    $im.Source = $src; $im.Width = $size; $im.Height = $size; $im.VerticalAlignment = "Center"
+    # 작은 버튼 그림은 부드러운 선이라 도트처럼 확대하지 않고 곱게 줄인다
+    [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($im, "HighQuality")
+    return $im
+  }
+  $p = New-Object System.Windows.Shapes.Path
+  $p.Data = [System.Windows.Media.Geometry]::Parse($SmallIcons[$icon]); $p.Stroke = Brush "#5C5648"; $p.StrokeThickness = 1.6
+  $p.Width = $size; $p.Height = $size; $p.Stretch = "Uniform"; $p.VerticalAlignment = "Center"
+  return $p
+}
+function New-SmallButton($text, $icon) {
+  $b = New-Object System.Windows.Controls.Button
+  $b.Template = $BtnTemplate; $b.Background = Brush "#F6F1E6"; $b.BorderBrush = Brush "#D8CFBD"; $b.BorderThickness = 1.2
+  $b.Height = $(if ($IsAdmin) { 34 } else { 40 }); $b.Margin = New-Object System.Windows.Thickness(0, 0, 8, $(if ($IsAdmin) { 6 } else { 8 })); $b.Padding = New-Object System.Windows.Thickness(12, 0, 8, 0); $b.Cursor = "Hand"
+  $sp = New-Object System.Windows.Controls.StackPanel; $sp.Orientation = "Horizontal"
+  $ic = New-LineIcon $icon 20
+  $tb = New-Text $text 13 "#3D3A33" $false; $tb.TextWrapping = "NoWrap"; $tb.VerticalAlignment = "Center"; $tb.Margin = New-Object System.Windows.Thickness(12, 0, 0, 0)
+  [void]$sp.Children.Add($ic); [void]$sp.Children.Add($tb)
+  $b.Content = $sp
+  return (Add-ButtonShim $b $tb)
+}
+
+$form = New-Object System.Windows.Window
+$form.Title = $AppName
+$form.Width = 1220; $form.Height = 810
+$form.ResizeMode = "CanMinimize"
+$form.WindowStartupLocation = "CenterScreen"
+$form.Background = Brush "#F2ECDF"
+$form.FontFamily = $UiFont
+[System.Windows.Media.TextOptions]::SetTextFormattingMode($form, "Display")
 
 # 창 아이콘. 파일을 따로 받지 않아도 되게 그림을 글자로 바꿔 넣어 뒀다.
+# WPF 창에는 그림으로, 작은 창(윈폼)에는 아이콘으로 쓴다.
 $IconB64 = "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"
+$script:WinIcon = $null
 try {
   $iconMs  = New-Object System.IO.MemoryStream(,[Convert]::FromBase64String($IconB64))
   $iconBmp = New-Object System.Drawing.Bitmap($iconMs)
-  $form.Icon = [System.Drawing.Icon]::FromHandle($iconBmp.GetHicon())
+  $script:WinIcon = [System.Drawing.Icon]::FromHandle($iconBmp.GetHicon())
+  $form.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create((New-Object System.IO.MemoryStream(,[Convert]::FromBase64String($IconB64))))
 } catch { }
+# 작은 창(폴더 고르기·암호 등)이 이 창 위에 뜨도록 주인을 알려 준다
+$script:Owner = New-Object System.Windows.Forms.NativeWindow
+$form.Add_SourceInitialized({ try { $script:Owner.AssignHandle((New-Object System.Windows.Interop.WindowInteropHelper($form)).Handle) } catch { } })
+Add-Member -InputObject $form -MemberType ScriptProperty -Name Handle -Value { (New-Object System.Windows.Interop.WindowInteropHelper($this)).Handle } -Force
 
-$title           = New-Object System.Windows.Forms.Label
-$title.Text      = $AppName
-$title.Font      = New-Object System.Drawing.Font("맑은 고딕", 15, [System.Drawing.FontStyle]::Bold)
-$title.ForeColor = [System.Drawing.Color]::FromArgb(45, 48, 42)
-$title.Location  = New-Object System.Drawing.Point(24, 20)
-$title.Size      = New-Object System.Drawing.Size(270, 30)
-$form.Controls.Add($title)
+$root = New-Object System.Windows.Controls.Grid
+$root.Margin = New-Object System.Windows.Thickness(18, 14, 18, 16)
+$c0 = New-Object System.Windows.Controls.ColumnDefinition; $c0.Width = New-Object System.Windows.GridLength(470)
+$c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = New-Object System.Windows.GridLength(1, "Star")
+$root.ColumnDefinitions.Add($c0); $root.ColumnDefinitions.Add($c1)
+$form.Content = $root
 
-$sub           = New-Object System.Windows.Forms.Label
-$sub.Text      = if ($IsAdmin) { "모드를 맞추기 전에 마인크래프트를 종료해 주세요." } else { "모드는 프리즘 런처가 켜질 때 알아서 맞춰집니다." }
-$sub.ForeColor = [System.Drawing.Color]::FromArgb(110, 114, 105)
-$sub.Location  = New-Object System.Drawing.Point(25, 50)
-$sub.Size      = New-Object System.Drawing.Size(500, 20)
-$form.Controls.Add($sub)
+# ── 왼쪽 ──
+$left = New-Object System.Windows.Controls.DockPanel
+$left.Margin = New-Object System.Windows.Thickness(4, 0, 18, 0); $left.LastChildFill = $false
+[System.Windows.Controls.Grid]::SetColumn($left, 0); [void]$root.Children.Add($left)
 
-# 서버가 지금 켜져 있는지. 주소에 붙어보기만 하면 알 수 있어서 따로 인증이 필요 없다.
-$srvLbl           = New-Object System.Windows.Forms.Label
-$srvLbl.Text      = ""
-$srvLbl.Location  = New-Object System.Drawing.Point(310, 22)
-$srvLbl.Size      = New-Object System.Drawing.Size(206, 24)
-$srvLbl.TextAlign = "MiddleRight"
-$srvLbl.Font      = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
-$srvLbl.ForeColor = [System.Drawing.Color]::FromArgb(150, 153, 145)
-$form.Controls.Add($srvLbl)
+$head = New-Object System.Windows.Controls.Grid
+$head.Margin = New-Object System.Windows.Thickness(0, 4, 0, 14)
+$hc0 = New-Object System.Windows.Controls.ColumnDefinition; $hc0.Width = [System.Windows.GridLength]::Auto
+$hc1 = New-Object System.Windows.Controls.ColumnDefinition; $hc1.Width = New-Object System.Windows.GridLength(1, "Star")
+$hc2 = New-Object System.Windows.Controls.ColumnDefinition; $hc2.Width = [System.Windows.GridLength]::Auto
+$head.ColumnDefinitions.Add($hc0); $head.ColumnDefinitions.Add($hc1); $head.ColumnDefinitions.Add($hc2)
+$hr0 = New-Object System.Windows.Controls.RowDefinition; $hr0.Height = [System.Windows.GridLength]::Auto
+$hr1 = New-Object System.Windows.Controls.RowDefinition; $hr1.Height = [System.Windows.GridLength]::Auto
+$head.RowDefinitions.Add($hr0); $head.RowDefinitions.Add($hr1)
+$logo = New-Pic "title_grass" 50 "#5E9E3F" "잔디"
+$logo.Margin = New-Object System.Windows.Thickness(0, 0, 12, 0); $logo.VerticalAlignment = "Center"; [System.Windows.Controls.Grid]::SetRowSpan($logo, 2)
+[void]$head.Children.Add($logo)
+$tsp = New-Object System.Windows.Controls.StackPanel; $tsp.VerticalAlignment = "Center"
+$title = New-Text $AppName 27 "#2F2D28" $true; $title.TextWrapping = "NoWrap"
+$sub = Add-ForeColor (New-Text "" 12.5 "#6E6A60" $false)
+$sub.Text = if ($IsAdmin) { "모드를 맞추기 전에 마인크래프트를 종료해 주세요." } else { "모드는 프리즘 런처가 켜질 때 알아서 맞춰집니다." }
+[void]$tsp.Children.Add($title)
+$sub.Margin = New-Object System.Windows.Thickness(0, 2, 0, 0)
+[System.Windows.Controls.Grid]::SetRow($sub, 1); [System.Windows.Controls.Grid]::SetColumn($sub, 1); [System.Windows.Controls.Grid]::SetColumnSpan($sub, 2); [void]$head.Children.Add($sub)
+[System.Windows.Controls.Grid]::SetColumn($tsp, 1); [void]$head.Children.Add($tsp)
+# 서버 상태: 점 + 글자가 들어간 알약 모양
+$pill = New-Object System.Windows.Controls.Border
+$pill.CornerRadius = 14; $pill.Background = Brush "#FBF7EE"; $pill.BorderBrush = Brush "#DDD4C2"; $pill.BorderThickness = 1
+$pill.Padding = New-Object System.Windows.Thickness(10, 5, 12, 5); $pill.VerticalAlignment = "Top"; $pill.Margin = New-Object System.Windows.Thickness(8, 6, 0, 0)
+$psp = New-Object System.Windows.Controls.StackPanel; $psp.Orientation = "Horizontal"
+$srvDot = New-Object System.Windows.Shapes.Ellipse; $srvDot.Width = 11; $srvDot.Height = 11; $srvDot.Fill = Brush "#B9B4A8"; $srvDot.Margin = New-Object System.Windows.Thickness(0, 0, 7, 0); $srvDot.VerticalAlignment = "Center"
+$srvLbl = New-Text "" 12.5 "#96918A" $true; $srvLbl.TextWrapping = "NoWrap"; $srvLbl.VerticalAlignment = "Center"
+Add-Member -InputObject $srvLbl -MemberType ScriptProperty -Name ForeColor -Value { $null } -SecondValue { param($c) $br = Swap-Color $c; $this.Foreground = $br; $srvDot.Fill = $br } -Force
+[void]$psp.Children.Add($srvDot); [void]$psp.Children.Add($srvLbl)
+$pill.Child = $psp
+[System.Windows.Controls.Grid]::SetColumn($pill, 2); [void]$head.Children.Add($pill)
+[System.Windows.Controls.DockPanel]::SetDock($head, "Top"); [void]$left.Children.Add($head)
 
-function New-BigButton($text, $y, $color) {
-  $b           = New-Object System.Windows.Forms.Button
-  $b.Text      = $text
-  $b.Location  = New-Object System.Drawing.Point(24, $y)
-  $b.Size      = New-Object System.Drawing.Size(492, 52)
-  $b.FlatStyle = "Flat"
-  $b.BackColor = $color
-  $b.ForeColor = [System.Drawing.Color]::White
-  $b.Font      = New-Object System.Drawing.Font("맑은 고딕", 10, [System.Drawing.FontStyle]::Bold)
-  $b.TextAlign = "MiddleLeft"
-  $b.Padding   = New-Object System.Windows.Forms.Padding(18, 0, 0, 0)
-  $b.FlatAppearance.BorderSize = 0
-  $b.Cursor    = "Hand"
-  # 마우스를 올리면 한 톤 밝아진다. 누를 수 있는 자리라는 표시.
-  $b.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(
-    [Math]::Min(255, [int]$color.R + 28), [Math]::Min(255, [int]$color.G + 28), [Math]::Min(255, [int]$color.B + 28))
-  $b.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(
-    [Math]::Max(0, [int]$color.R - 20), [Math]::Max(0, [int]$color.G - 20), [Math]::Max(0, [int]$color.B - 20))
-  return $b
-}
-
-# 모드가 안 맞으면 아예 못 들어가니 서버 모드를 위에 둔다. 한글패치는 안 해도 들어가진다.
-# 엘리서버는 프리즘으로 들어온다. 프리즘은 켤 때 팩을 스스로 맞추므로
-# 모드 업데이트 버튼은 두지 않는다.
-$btnMods  = $null
-$btnPatch = New-BigButton "한글패치 업데이트" 88 ([System.Drawing.Color]::FromArgb(79, 122, 54))
-$form.Controls.Add($btnPatch)
-
-# 세 번째 칸은 서버마다 다르다. 엘리 서버는 접속 주소, 잔누 서버는 업데이트 내역.
-# 접속 주소는 처음 한 번만 쓰므로 아래 작은 버튼으로 내렸다.
-$btnJoin = $null
-$btnNews = New-BigButton "업데이트 내역 보기" 150 ([System.Drawing.Color]::FromArgb(88, 80, 120))
-$form.Controls.Add($btnNews)
-
-# 버튼 오른쪽에 버전과 최신 여부를 적는다. 색으로 먼저 알아채게 한다.
-function New-Stamp {
-  $l           = New-Object System.Windows.Forms.Label
-  $l.Location  = New-Object System.Drawing.Point(198, 4)
-  $l.Size      = New-Object System.Drawing.Size(286, 44)
-  $l.ForeColor = [System.Drawing.Color]::FromArgb(226, 236, 214)
-  $l.BackColor = [System.Drawing.Color]::Transparent
-  $l.TextAlign = "MiddleRight"
-  $l.Font      = New-Object System.Drawing.Font("맑은 고딕", 8)
-  return $l
-}
-$stampMods  = $null
-$stampPatch = New-Stamp
-$btnPatch.Controls.Add($stampPatch)
-# 글자가 버튼 위에 얹혀 있어서, 그냥 두면 글자를 누른 클릭을 버튼이 못 받는다.
-# "몇 번 눌러야 겨우 되던" 이유였다. 글자 쪽 클릭을 버튼으로 넘겨준다.
-$stampPatch.Add_Click({ $btnPatch.PerformClick() })
-$stampPatch.Cursor = "Hand"
-$stampJoin = $null
-$stampNews = New-Stamp
-$btnNews.Controls.Add($stampNews)
-$stampNews.Add_Click({ $btnNews.PerformClick() })
-$stampNews.Cursor = "Hand"
-
-# 맨 아래는 실행. 업데이트 → 실행 순서로 읽히게 둔다.
-# 디스코드를 켜지 않아도 서버를 켤 수 있게 한다. 암호는 처음 한 번만 묻는다.
-$btnWake = New-BigButton "서버 켜기" 212 ([System.Drawing.Color]::FromArgb(140, 98, 52))
-$form.Controls.Add($btnWake)
-$stampWake = New-Stamp
-$btnWake.Controls.Add($stampWake)
-$stampWake.Add_Click({ $btnWake.PerformClick() })
-$stampWake.Cursor = "Hand"
-
-# 가장 자주 누르는 버튼이라 가장 눈에 띄게 한다(밝은 초록, 큰 글씨). 이름은 런처와 상관없이 "게임 실행".
-$btnRun = New-BigButton "게임 실행" 274 ([System.Drawing.Color]::FromArgb(34, 139, 84))
-$btnRun.Font = New-Object System.Drawing.Font("맑은 고딕", 13, [System.Drawing.FontStyle]::Bold)
-
-# 엘리서버 전용(잔누 판에는 없다). 프리즘이 켜질 때 팩을 못 맞추는 경우(실행 전 명령이 막힌 PC,
-# 프리즘이 아닌 런처)에도 여기서 직접 맞출 수 있게 누구에게나 보인다.
-# 팩에 있는 모드만 받고, 직접 까신 모드는 지우지 않는다(같은 모드가 두 벌이면 mods-중복보관 으로 옮길 뿐).
-$btnMods = $null
-$stampMods = $null
+# 카드. 가장 자주 누르는 "게임 실행" 을 맨 위, 가장 눈에 띄게.
+$cardH = if ($Compact) { 70 } else { 84 }
+$runT = if ($Compact) { 19 } else { 21 }; $cardT = if ($Compact) { 17 } else { 19 }
+$btnRun   = New-Card "게임 실행" "#3E8E47" "#2C6B33" "#FFFFFF" "#E6F3E3" "card_sword" "#2C6B33" "검" $cardH $runT
+$stampRun = New-Stamp $btnRun
+$btnPatch = New-Card "한글패치 업데이트" "#F1E8D8" "#DCCFB7" "#34312A" "#6E685C" "card_grass" "#6C9B45" "잔디" $cardH $cardT
+$stampPatch = New-Stamp $btnPatch
+$btnNews  = New-Card "업데이트 내역 보기" "#E3DAF0" "#CBBCE0" "#34312A" "#6E685C" "card_book" "#7B63A8" "책" $cardH $cardT
+$stampNews = New-Stamp $btnNews
+$btnWake  = New-Card "서버 켜기" "#EEDFCB" "#D9C3A5" "#34312A" "#6E685C" "card_chest" "#8A6236" "상자" $cardH $cardT
+$stampWake = New-Stamp $btnWake
+$btnMods = $null; $stampMods = $null
 if ($Server -eq "elly") {
-  $btnMods = New-BigButton "서버 모드 맞추기" 336 ([System.Drawing.Color]::FromArgb(70, 96, 130))
-  $form.Controls.Add($btnMods)
-  $stampMods = New-Stamp
-  $btnMods.Controls.Add($stampMods)
-  $stampMods.Add_Click({ $btnMods.PerformClick() })
-  $stampMods.Cursor = "Hand"
+  $btnMods = New-Card "서버 모드 맞추기" "#DDE5EE" "#BFCBDA" "#34312A" "#6E685C" "card_mods" "#46607F" "모드" $cardH $cardT
+  $stampMods = New-Stamp $btnMods
 }
-$form.Controls.Add($btnRun)
-$stampRun = New-Stamp
-$btnRun.Controls.Add($stampRun)
-$stampRun.Add_Click({ $btnRun.PerformClick() })
-$stampRun.Cursor = "Hand"
-
-# 엘리 전용 버튼이 한 줄 더 있으면 아래 것들을 그만큼 내린다.
-$shift = if ($btnMods) { 62 } else { 0 }
-if ($btnMods) { $form.Size = New-Object System.Drawing.Size((556 + $FeedW), (584 + $shift)) }
-
-# 어디에 깔렸는지 확인하고 바꿀 수 있게. 잘못 고른 사람이 스스로 고칠 길이 필요하다.
-function New-SmallButton($text, $x, $y, $w) {
-  $b           = New-Object System.Windows.Forms.Button
-  $b.Text      = $text
-  $b.Location  = New-Object System.Drawing.Point($x, $y)
-  $b.Size      = New-Object System.Drawing.Size($w, 26)
-  $b.FlatStyle = "Flat"
-  $b.BackColor = [System.Drawing.Color]::FromArgb(233, 231, 224)
-  $b.ForeColor = [System.Drawing.Color]::FromArgb(70, 73, 67)
-  $b.Font      = New-Object System.Drawing.Font("맑은 고딕", 8)
-  $b.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(205, 202, 192)
-  $b.Cursor    = "Hand"
-  $b.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(221, 218, 209)
-  $b.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(205, 202, 192)
-  return $b
+$btnJoin = $null; $stampJoin = $null
+foreach ($cb in @($btnRun, $btnPatch, $btnNews, $btnWake, $btnMods)) {
+  if ($cb) { [System.Windows.Controls.DockPanel]::SetDock($cb, "Top"); [void]$left.Children.Add($cb) }
 }
+
 # 어디에 설치되는지 늘 보이게 한다. 안 보이면 "어디에 받는다는 거야?"가 된다.
-$pathLbl           = New-Object System.Windows.Forms.Label
-$pathLbl.Location  = New-Object System.Drawing.Point(25, (342 + $shift))
-$pathLbl.Size      = New-Object System.Drawing.Size(492, 22)
-$pathLbl.ForeColor = [System.Drawing.Color]::FromArgb(90, 94, 86)
-$pathLbl.Font      = New-Object System.Drawing.Font("맑은 고딕", 8)
-$form.Controls.Add($pathLbl)
+$pathLbl = Add-ForeColor (New-Text "" 13 "#5A5E56" $false)
+$pathLbl.Margin = New-Object System.Windows.Thickness(2, 6, 0, 8)
+[System.Windows.Controls.DockPanel]::SetDock($pathLbl, "Top"); [void]$left.Children.Add($pathLbl)
 
-$toolY     = 372 + $shift
-$btnOpen   = New-SmallButton "설치된 폴더 열기" 24 $toolY 130
-$btnChange = New-SmallButton "설치 위치 바꾸기" 160 $toolY 130
-$btnLog    = New-SmallButton "기록 보기" 296 $toolY 96
-$btnRestore = New-SmallButton "설정 되돌리기" 24 ($toolY + 32) 140
+$tools = New-Object System.Windows.Controls.Primitives.UniformGrid
+$tools.Columns = 2; $tools.Margin = New-Object System.Windows.Thickness(0, 0, -8, 0)
+$btnOpen    = New-SmallButton "설치된 폴더 열기" "folder"
+$btnChange  = New-SmallButton "설치 위치 바꾸기" "pin"
+$btnLog     = New-SmallButton "기록 보기" "doc"
 # 새 인스턴스를 깔면 단축키가 처음 상태로 돌아간다. 쓰던 곳에서 그것만 옮겨온다.
-$btnKeys   = New-SmallButton "단축키 가져오기" 398 $toolY 124
+$btnKeys    = New-SmallButton "단축키 가져오기" "box"
+$btnRestore = New-SmallButton "설정 되돌리기" "gear"
 $adminLabel = if ($IsAdmin) { "관리자 모드 끄기" } else { "관리자 모드 열기" }
-$btnAdmin  = New-SmallButton $adminLabel 168 ($toolY + 32) 140
-$btnCost   = $null
-if ($IsAdmin) { $btnCost = New-SmallButton "서버 비용 보기" 312 ($toolY + 32) 140 }
-$form.Controls.Add($btnOpen)
-$form.Controls.Add($btnChange)
-$form.Controls.Add($btnLog)
-$form.Controls.Add($btnRestore)
-$form.Controls.Add($btnKeys)
-$form.Controls.Add($btnAdmin)
-if ($btnCost) { $form.Controls.Add($btnCost) }
+$btnAdmin   = New-SmallButton $adminLabel "person"
+$btnCost    = $null
+if ($IsAdmin) { $btnCost = New-SmallButton "서버 비용 보기" "coin" }
 # 휴대용: 이 PC 에서 로그아웃 (USB 에 마이크로소프트 로그인이 남지 않게)
 $btnLogout = $null
-if ($PortableRoot) {
-  $btnLogout = New-SmallButton "이 PC에서 로그아웃" 398 ($toolY + 32) 124
-  $form.Controls.Add($btnLogout)
-}
-
-$logY = 446 + $shift
+if ($PortableRoot) { $btnLogout = New-SmallButton "이 PC에서 로그아웃" "door" }
+foreach ($sb in @($btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore, $btnAdmin, $btnCost, $btnLogout)) { if ($sb) { [void]$tools.Children.Add($sb) } }
+[System.Windows.Controls.DockPanel]::SetDock($tools, "Top"); [void]$left.Children.Add($tools)
 
 # 지금 뭘 하는 중인지 한 줄 + 얼마나 됐는지 막대. 글자가 쏟아지는 것보다 읽기 쉽다.
-$statusLbl           = New-Object System.Windows.Forms.Label
-$statusLbl.Text      = "버튼을 눌러주세요"
-$statusLbl.Location  = New-Object System.Drawing.Point(24, $logY)
-$statusLbl.Size      = New-Object System.Drawing.Size(492, 36)
-$statusLbl.ForeColor = [System.Drawing.Color]::FromArgb(60, 64, 58)
-$statusLbl.Font      = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
-$form.Controls.Add($statusLbl)
+$hint = New-Text "다른 폴더에 설치 하시려면 Shift 버튼을 누른채 위의 버튼을 눌러주세요" 11.5 "#9A958B" $false
+$hint.Margin = New-Object System.Windows.Thickness(2, 6, 0, 0)
+[System.Windows.Controls.DockPanel]::SetDock($hint, "Bottom"); [void]$left.Children.Add($hint)
+$barBox = New-Object System.Windows.Controls.Grid
+$bar = New-Object System.Windows.Controls.ProgressBar
+$bar.Minimum = 0; $bar.Maximum = 100; $bar.Value = 0; $bar.Height = 22
+$bar.Background = Brush "#E4DED2"; $bar.Foreground = Brush "#5FA548"; $bar.BorderBrush = Brush "#CFC7B6"; $bar.BorderThickness = 1
+[void]$barBox.Children.Add($bar)
+$barLogo = New-Pic "title_grass" 26 "#5E9E3F" ""
+$barLogo.HorizontalAlignment = "Left"; $barLogo.Margin = New-Object System.Windows.Thickness(-4, 0, 0, 0)
+[void]$barBox.Children.Add($barLogo)
+[System.Windows.Controls.DockPanel]::SetDock($barBox, "Bottom"); [void]$left.Children.Add($barBox)
+$statusLbl = Add-ForeColor (New-Text "버튼을 눌러주세요" 14 "#3C3F3A" $true)
+$statusLbl.Margin = New-Object System.Windows.Thickness(2, 0, 0, 8)
+[System.Windows.Controls.DockPanel]::SetDock($statusLbl, "Bottom"); [void]$left.Children.Add($statusLbl)
+# 진행 막대: 예전 "Marquee"(계속 도는 막대) 와 "Continuous" 를 그대로 받는다
+function Set-BarStyle($s) { $bar.IsIndeterminate = ($s -eq "Marquee") }
 
-$bar          = New-Object System.Windows.Forms.ProgressBar
-$bar.Location = New-Object System.Drawing.Point(24, ($logY + 38))
-$bar.Size     = New-Object System.Drawing.Size(492, 18)
-$bar.Style    = "Continuous"
-$bar.Minimum  = 0; $bar.Maximum = 100; $bar.Value = 0
-$form.Controls.Add($bar)
 
-$hint           = New-Object System.Windows.Forms.Label
-$hint.Text      = "다른 폴더에 설치 하시려면 Shift 버튼을 누른채 위의 버튼을 눌러주세요"
-$hint.ForeColor = [System.Drawing.Color]::FromArgb(150, 153, 145)
-$hint.Location  = New-Object System.Drawing.Point(25, ($logY + 64))
-$hint.Size      = New-Object System.Drawing.Size(496, 18)
-$form.Controls.Add($hint)
-
-# 무슨 일이 있었는지 파일로 남긴다. 실패했을 때 "왜" 를 볼 수 있어야 한다.
 $script:LogPath = Join-Path $env:TEMP ($Server + "-helper-log.txt")
 function Log($t) {
   try { ((Get-Date -Format "HH:mm:ss") + "  " + $t) | Out-File $script:LogPath -Encoding UTF8 -Append } catch { }
@@ -390,7 +580,7 @@ function Set-Busy($on) {
   foreach ($b in @($btnPatch, $btnNews, $btnRun, $btnWake, $btnMods, $btnOpen, $btnChange, $btnLog, $btnKeys, $btnRestore, $btnAdmin, $btnCost, $btnLogout)) {
     if ($b) { $b.Enabled = -not $on }
   }
-  $form.Cursor = if ($on) { "WaitCursor" } else { "Default" }
+  $form.Cursor = if ($on) { [System.Windows.Input.Cursors]::Wait } else { $null }
   [System.Windows.Forms.Application]::DoEvents()
 }
 
@@ -489,7 +679,7 @@ function Show-FolderPicker($caption) {
       "$env:APPDATA\.minecraft")) {
     if (Test-Path $r) { $fb.SelectedPath = $r; break }
   }
-  if ($fb.ShowDialog($form) -ne [System.Windows.Forms.DialogResult]::OK) { return $null }
+  if ($fb.ShowDialog($script:Owner) -ne [System.Windows.Forms.DialogResult]::OK) { return $null }
 
   # 인스턴스 폴더를 고르시는 분이 많아서, 안쪽 minecraft 폴더까지 한 번 더 본다.
   $p = $fb.SelectedPath
@@ -1019,8 +1209,8 @@ function Refresh-Stamps($keepMessage) {
   Log "상태 확인 시작"
   if (-not $keepMessage) {
     $statusLbl.Text = "불러오는 중입니다..."
-    $bar.Style = "Marquee"
-    $bar.MarqueeAnimationSpeed = 30
+    Set-BarStyle "Marquee"
+    
   }
   [System.Windows.Forms.Application]::DoEvents()
 
@@ -1149,8 +1339,8 @@ function Refresh-Stamps($keepMessage) {
   }
 
   if (-not $keepMessage) {
-    $bar.MarqueeAnimationSpeed = 0
-    $bar.Style = "Continuous"
+    
+    Set-BarStyle "Continuous"
     $bar.Value = 0
     $statusLbl.Text = "버튼을 눌러주세요"
   }
@@ -1267,7 +1457,7 @@ function Restore-Options {
   $dlg.MaximizeBox = $false; $dlg.MinimizeBox = $false
   $dlg.BackColor       = [System.Drawing.Color]::FromArgb(246, 245, 241)
   $dlg.Font            = New-Object System.Drawing.Font("맑은 고딕", 9)
-  $dlg.Icon            = $form.Icon
+  $dlg.Icon            = $script:WinIcon
 
   $lb = New-Object System.Windows.Forms.Label
   $lb.Text = "어느 시점으로 되돌릴까요?"
@@ -1308,7 +1498,7 @@ function Restore-Options {
   $no.Add_Click({ $script:restorePick = $null; $dlg.Close() })
   $dlg.Controls.Add($no)
   $dlg.CancelButton = $no
-  [void]$dlg.ShowDialog($form)
+  [void]$dlg.ShowDialog($script:Owner)
   $dlg.Dispose()
 
   if ($script:restorePick -eq $null) { Say "되돌리지 않았습니다."; return }
@@ -1468,7 +1658,7 @@ function Ask-Secret($winTitle, $line1, $line2) {
   $d.MaximizeBox = $false; $d.MinimizeBox = $false
   $d.BackColor = [System.Drawing.Color]::FromArgb(246, 245, 241)
   $d.Font = New-Object System.Drawing.Font("맑은 고딕", 9)
-  $d.Icon = $form.Icon
+  $d.Icon = $script:WinIcon
 
   $l1 = New-Object System.Windows.Forms.Label
   $l1.Text = $line1
@@ -1503,7 +1693,7 @@ function Ask-Secret($winTitle, $line1, $line2) {
   $no.Add_Click({ $script:keyIn = $null; $d.Close() })
   $d.Controls.Add($no)
   $d.AcceptButton = $ok; $d.CancelButton = $no
-  [void]$d.ShowDialog($form)
+  [void]$d.ShowDialog($script:Owner)
   $d.Dispose()
   return $script:keyIn
 }
@@ -1519,7 +1709,7 @@ function Wake-Server {
     }
     $ep = Get-BotEndpoint
     SetStep "서버를 켜는 중입니다..." 5
-    $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
+    Set-BarStyle "Marquee"; 
 
     $r = $null
     try { $r = (Get-WebText ($ep + "/start?t=" + [uri]::EscapeDataString($key))) | ConvertFrom-Json }
@@ -1544,7 +1734,7 @@ function Wake-Server {
       try {
         $st = (Get-WebText ($ep + "/status?t=" + [uri]::EscapeDataString($key))) | ConvertFrom-Json
         if ($st.ok -and $st.ready) {
-          $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+          Set-BarStyle "Continuous"
           SetStep "서버가 켜졌습니다. 들어가셔도 됩니다. ($el 초 걸림)" 100
           Update-ServerState
           return
@@ -1555,7 +1745,7 @@ function Wake-Server {
   } catch {
     SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0
   } finally {
-    $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+    Set-BarStyle "Continuous"
     Set-Busy $false
   }
 }
@@ -1664,14 +1854,14 @@ if ($btnCost) {
       if (Test-Path $KeyFile) { $key = (Get-Content $KeyFile -Encoding UTF8 | Select-Object -First 1) }
       if (-not $key) { $key = Ask-Key; if (-not $key) { SetStep "취소되었습니다." 0; return } }
       SetStep "서버 비용을 불러오는 중입니다..." 0
-      $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
+      Set-BarStyle "Marquee"; 
       $txt = Get-WebText ((Get-BotEndpoint) + "/cost?t=" + [uri]::EscapeDataString($key))
-      $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+      Set-BarStyle "Continuous"
       try { $key | Set-Content $KeyFile -Encoding UTF8 } catch { }
       Show-TextWindow "서버 비용" $txt
       SetStep "버튼을 눌러주세요" 0
     } catch {
-      $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+      Set-BarStyle "Continuous"
       SetStep "비용을 불러오지 못했습니다 — $($_.Exception.Message)" 0
     } finally { Set-Busy $false }
   })
@@ -1734,7 +1924,7 @@ function Show-TextWindow($winTitle, $text) {
   $w.Size = New-Object System.Drawing.Size(620, 520)
   $w.StartPosition = "CenterParent"
   $w.BackColor = [System.Drawing.Color]::FromArgb(246, 245, 241)
-  $w.Icon = $form.Icon
+  $w.Icon = $script:WinIcon
   $w.MinimizeBox = $false
   $box = New-Object System.Windows.Forms.TextBox
   # 표가 줄바꿈 없이 이어 붙지 않도록 자동 줄바꿈을 끄고 가로 스크롤을 준다
@@ -1756,7 +1946,7 @@ function Show-TextWindow($winTitle, $text) {
   $c.Size = New-Object System.Drawing.Size(100, 32); $c.FlatStyle = "Flat"
   $c.Add_Click({ $w.Close() })
   $w.Controls.Add($c); $w.CancelButton = $c
-  [void]$w.ShowDialog($form)
+  [void]$w.ShowDialog($script:Owner)
   $w.Dispose()
 }
 
@@ -1764,16 +1954,16 @@ function Show-Updates {
   Set-Busy $true
   try {
     SetStep "업데이트 내역을 불러오고 있습니다..." 0
-    $bar.Style = "Marquee"; $bar.MarqueeAnimationSpeed = 30
+    Set-BarStyle "Marquee"; 
     $raw = Get-WebText "$BASE/updates.json"
     $items = @(($raw | ConvertFrom-Json) | ForEach-Object { $_ })
   } catch {
-    $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+    Set-BarStyle "Continuous"
     SetStep "업데이트 내역을 불러오지 못했습니다." 0
     Set-Busy $false
     return
   }
-  $bar.MarqueeAnimationSpeed = 0; $bar.Style = "Continuous"
+  Set-BarStyle "Continuous"
   SetStep "버튼을 눌러주세요" 0
   Set-Busy $false
 
@@ -1783,7 +1973,7 @@ function Show-Updates {
   $w.StartPosition   = "CenterParent"
   $w.BackColor       = [System.Drawing.Color]::FromArgb(246, 245, 241)
   $w.Font            = New-Object System.Drawing.Font("맑은 고딕", 9)
-  $w.Icon            = $form.Icon
+  $w.Icon            = $script:WinIcon
   $w.MinimizeBox     = $false
 
   $box               = New-Object System.Windows.Forms.TextBox
@@ -1817,7 +2007,7 @@ function Show-Updates {
   $close.Add_Click({ $w.Close() })
   $w.Controls.Add($close)
   $w.CancelButton = $close
-  [void]$w.ShowDialog($form)
+  [void]$w.ShowDialog($script:Owner)
   $w.Dispose()
 }
 
@@ -1911,42 +2101,157 @@ $btnChange.Add_Click({
   Refresh-Stamps $true
 })
 
-# 창을 켜 둔 채로도 서버 상태가 따라오게 한다
-# ── 서버 소식 (창 오른쪽 칸) ──────────────────────────
+# ── 오른쪽 (WPF) ─────────────────────────────────────
+# 위: 섬 지도 + 지금 누가 어디에 있는지. 아래: 서버 소식 · 진행도 | 접속자 현황.
+# 좌표나 공략은 쓰지 않는다. 장소는 서버가 알려 주는 공개 장소 이름만 쓴다.
+$right = New-Object System.Windows.Controls.Grid
+[System.Windows.Controls.Grid]::SetColumn($right, 1); [void]$root.Children.Add($right)
+$r0 = New-Object System.Windows.Controls.RowDefinition; $r0.Height = New-Object System.Windows.GridLength(392)
+$r1 = New-Object System.Windows.Controls.RowDefinition; $r1.Height = New-Object System.Windows.GridLength(1, "Star")
+$right.RowDefinitions.Add($r0); $right.RowDefinitions.Add($r1)
+
+function New-Panel {
+  $p = New-Object System.Windows.Controls.Border
+  $p.CornerRadius = 14; $p.Background = Brush "#FBF8F1"; $p.BorderBrush = Brush "#E1D8C6"; $p.BorderThickness = 1
+  $p.Effect = New-Object System.Windows.Media.Effects.DropShadowEffect -Property @{ BlurRadius = 8; ShadowDepth = 1.5; Opacity = 0.15; Direction = 270 }
+  return $p
+}
+
+# 지도
+$mapBox = New-Object System.Windows.Controls.Border
+$mapBox.CornerRadius = 16; $mapBox.ClipToBounds = $true; $mapBox.Margin = New-Object System.Windows.Thickness(0, 4, 0, 12)
+$mapGrid = New-Object System.Windows.Controls.Grid
+$mapBox.Child = $mapGrid
+$mapSrc = Get-AssetImage "map"
+if ($mapSrc) {
+  $mapImg = New-Object System.Windows.Controls.Image
+  $mapImg.Source = $mapSrc; $mapImg.Stretch = "UniformToFill"
+  [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($mapImg, "NearestNeighbor")
+  [void]$mapGrid.Children.Add($mapImg)
+} else {
+  # 그림이 오기 전 임시 바다와 섬
+  $sea = New-Object System.Windows.Controls.Border
+  $sea.Background = New-Object System.Windows.Media.LinearGradientBrush ([System.Windows.Media.ColorConverter]::ConvertFromString("#5DB2E8")), ([System.Windows.Media.ColorConverter]::ConvertFromString("#2F7FC4")), 90
+  [void]$mapGrid.Children.Add($sea)
+  $isl = New-Object System.Windows.Shapes.Ellipse
+  $isl.Fill = Brush "#6DB54A"; $isl.Stroke = Brush "#E3CF8E"; $isl.StrokeThickness = 8
+  $isl.Margin = New-Object System.Windows.Thickness(110, 110, 90, 30)
+  [void]$mapGrid.Children.Add($isl)
+  $ph = New-Text "섬 지도 자리 (그림이 오면 바뀝니다)" 13 "#FFFFFF" $true
+  $ph.HorizontalAlignment = "Center"; $ph.VerticalAlignment = "Bottom"; $ph.Margin = New-Object System.Windows.Thickness(0, 0, 0, 12); $ph.Opacity = 0.8
+  [void]$mapGrid.Children.Add($ph)
+}
+$mapLayer = New-Object System.Windows.Controls.Canvas
+[void]$mapGrid.Children.Add($mapLayer)
+# 다른 차원(네더·엔드 등)에 있는 친구는 지도 왼쪽 아래 칸에 모은다
+$dimBox = New-Object System.Windows.Controls.StackPanel
+$dimBox.Orientation = "Horizontal"; $dimBox.HorizontalAlignment = "Left"; $dimBox.VerticalAlignment = "Bottom"
+$dimBox.Margin = New-Object System.Windows.Thickness(14, 0, 0, 12)
+[void]$mapGrid.Children.Add($dimBox)
+$shadow = New-Object System.Windows.Media.Effects.DropShadowEffect -Property @{ BlurRadius = 4; ShadowDepth = 1.5; Opacity = 0.75; Color = [System.Windows.Media.Colors]::Black }
+$mapTitle = New-Text "지금 엘리서버에서는…" 30 "#FFFFFF" $true
+$mapTitle.Effect = $shadow; $mapTitle.TextWrapping = "NoWrap"
+$mapLine = New-Text "" 15 "#FFFFFF" $true
+$mapLine.TextWrapping = "NoWrap"; $mapLine.TextTrimming = "CharacterEllipsis"
+$mapLine.Effect = $shadow.Clone()
+# 제목과 문장은 반투명 띠 위에 둔다. 지도 위 머리·이름표는 이 띠 아래에만 놓아서 글자와 겹치지 않게 한다.
+$mapBand = New-Object System.Windows.Controls.Border
+$mapBand.VerticalAlignment = "Top"
+$bandBrush = New-Object System.Windows.Media.LinearGradientBrush
+$bandBrush.StartPoint = New-Object System.Windows.Point(0, 0); $bandBrush.EndPoint = New-Object System.Windows.Point(0, 1)
+$bandBrush.GradientStops.Add((New-Object System.Windows.Media.GradientStop ([System.Windows.Media.Color]::FromArgb(150, 16, 32, 52)), 0))
+$bandBrush.GradientStops.Add((New-Object System.Windows.Media.GradientStop ([System.Windows.Media.Color]::FromArgb(110, 16, 32, 52)), 0.8))
+$bandBrush.GradientStops.Add((New-Object System.Windows.Media.GradientStop ([System.Windows.Media.Color]::FromArgb(0, 16, 32, 52)), 1))
+$mapBand.Background = $bandBrush
+$mapHead = New-Object System.Windows.Controls.StackPanel
+$mapHead.Margin = New-Object System.Windows.Thickness(24, 14, 190, 18); $mapHead.HorizontalAlignment = "Left"
+[void]$mapHead.Children.Add($mapTitle); [void]$mapHead.Children.Add($mapLine)
+$mapBand.Child = $mapHead
+[void]$mapGrid.Children.Add($mapBand)
+$mapPill = New-Object System.Windows.Controls.Border
+$mapPill.CornerRadius = 8; $mapPill.Background = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(200, 24, 44, 68))
+$mapPill.Padding = New-Object System.Windows.Thickness(12, 5, 12, 5); $mapPill.Margin = New-Object System.Windows.Thickness(0, 18, 18, 0)
+$mapPill.HorizontalAlignment = "Right"; $mapPill.VerticalAlignment = "Top"
+$mapCount = New-Text "" 13.5 "#FFFFFF" $false; $mapCount.TextWrapping = "NoWrap"
+$mapPill.Child = $mapCount
+[void]$mapGrid.Children.Add($mapPill)
+[System.Windows.Controls.Grid]::SetRow($mapBox, 0); [void]$right.Children.Add($mapBox)
+
+# 아래 두 칸
+$lower = New-Object System.Windows.Controls.Grid
+$l0 = New-Object System.Windows.Controls.ColumnDefinition; $l0.Width = New-Object System.Windows.GridLength(1.15, "Star")
+$l1 = New-Object System.Windows.Controls.ColumnDefinition; $l1.Width = New-Object System.Windows.GridLength(1, "Star")
+$lower.ColumnDefinitions.Add($l0); $lower.ColumnDefinitions.Add($l1)
+[System.Windows.Controls.Grid]::SetRow($lower, 1); [void]$right.Children.Add($lower)
+
+# 서버 소식 · 진행도
+$newsPanel = New-Panel; $newsPanel.Margin = New-Object System.Windows.Thickness(0, 0, 12, 0)
+[System.Windows.Controls.Grid]::SetColumn($newsPanel, 0); [void]$lower.Children.Add($newsPanel)
+$newsDock = New-Object System.Windows.Controls.DockPanel; $newsDock.Margin = New-Object System.Windows.Thickness(16, 12, 10, 10)
+$newsPanel.Child = $newsDock
+$newsHead = New-Object System.Windows.Controls.DockPanel; $newsHead.Margin = New-Object System.Windows.Thickness(0, 0, 0, 8)
+$megaphone = New-Object System.Windows.Shapes.Path
+$megaphone.Data = [System.Windows.Media.Geometry]::Parse("M 1,7 L 5,7 L 15,2 L 15,18 L 5,13 L 1,13 Z M 5,13 L 7,19 L 10,19 L 8,14")
+$megaphone.Stroke = Brush "#4A463D"; $megaphone.StrokeThickness = 1.6; $megaphone.Fill = Brush "#E8C07A"; $megaphone.Width = 22; $megaphone.Height = 22; $megaphone.Stretch = "Uniform"
+$megaphone.Margin = New-Object System.Windows.Thickness(0, 0, 10, 0)
+$mgImg = Get-AssetImage "megaphone"
+if ($mgImg) { $megaphone = New-Object System.Windows.Controls.Image; $megaphone.Source = $mgImg; $megaphone.Width = 22; $megaphone.Height = 22; $megaphone.Margin = New-Object System.Windows.Thickness(0, 0, 10, 0); [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($megaphone, "HighQuality") }
+[void]$newsHead.Children.Add($megaphone)
+$newsTitle = New-Text "서버 소식" 17 "#2F2D28" $true; $newsTitle.TextWrapping = "NoWrap"; $newsTitle.VerticalAlignment = "Center"
+[void]$newsHead.Children.Add($newsTitle)
+$tabs = New-Object System.Windows.Controls.StackPanel; $tabs.Orientation = "Horizontal"; $tabs.HorizontalAlignment = "Right"
+function New-Tab($text) {
+  $b = New-Object System.Windows.Controls.Border
+  $b.Padding = New-Object System.Windows.Thickness(12, 4, 12, 5); $b.Cursor = "Hand"; $b.BorderThickness = New-Object System.Windows.Thickness(0, 0, 0, 3); $b.Background = [System.Windows.Media.Brushes]::Transparent
+  $t = New-Text $text 13 "#3B6F3E" $true; $t.TextWrapping = "NoWrap"
+  $b.Child = $t
+  return $b
+}
+$tabNews = New-Tab "서버 소식"; $tabProg = New-Tab "진행도"
+[void]$tabs.Children.Add($tabNews); [void]$tabs.Children.Add($tabProg)
+[System.Windows.Controls.DockPanel]::SetDock($tabs, "Right"); $newsHead.Children.Insert(0, $tabs)
+[System.Windows.Controls.DockPanel]::SetDock($newsHead, "Top"); [void]$newsDock.Children.Add($newsHead)
+$feedScroll = New-Object System.Windows.Controls.ScrollViewer; $feedScroll.VerticalScrollBarVisibility = "Auto"
+$feedNews = New-Object System.Windows.Controls.StackPanel
+$feedProg = New-Object System.Windows.Controls.StackPanel
+$feedScroll.Content = $feedNews
+[void]$newsDock.Children.Add($feedScroll)
+function Select-Tab($which) {
+  foreach ($p in @(@($tabNews, "news"), @($tabProg, "prog"))) {
+    $on = ($p[1] -eq $which)
+    $p[0].BorderBrush = if ($on) { Brush "#3B8A45" } else { [System.Windows.Media.Brushes]::Transparent }
+    $p[0].Child.Foreground = if ($on) { Brush "#2F7D3A" } else { Brush "#8A857B" }
+  }
+  $feedScroll.Content = if ($which -eq "news") { $feedNews } else { $feedProg }
+  $feedScroll.ScrollToTop()
+}
+$tabNews.Add_MouseLeftButtonUp({ Select-Tab "news" })
+$tabProg.Add_MouseLeftButtonUp({ Select-Tab "prog" })
+Select-Tab "news"
+
+# 접속자 현황
+$onPanel = New-Panel
+[System.Windows.Controls.Grid]::SetColumn($onPanel, 1); [void]$lower.Children.Add($onPanel)
+$onDock = New-Object System.Windows.Controls.DockPanel; $onDock.Margin = New-Object System.Windows.Thickness(16, 12, 12, 10)
+$onPanel.Child = $onDock
+$onHead = New-Object System.Windows.Controls.StackPanel; $onHead.Orientation = "Horizontal"; $onHead.Margin = New-Object System.Windows.Thickness(0, 0, 0, 10)
+$people = New-Object System.Windows.Shapes.Path
+$people.Data = [System.Windows.Media.Geometry]::Parse($SmallIcons.person); $people.Stroke = Brush "#4A463D"; $people.StrokeThickness = 1.6; $people.Width = 22; $people.Height = 22; $people.Stretch = "Uniform"
+$people.Margin = New-Object System.Windows.Thickness(0, 0, 10, 0)
+$opImg = Get-AssetImage "online_person"
+if ($opImg) { $people = New-Object System.Windows.Controls.Image; $people.Source = $opImg; $people.Width = 22; $people.Height = 22; $people.Margin = New-Object System.Windows.Thickness(0, 0, 10, 0); [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($people, "HighQuality") }
+[void]$onHead.Children.Add($people)
+$onTitle = New-Text "접속자 현황" 17 "#2F2D28" $true; $onTitle.TextWrapping = "NoWrap"
+[void]$onHead.Children.Add($onTitle)
+[System.Windows.Controls.DockPanel]::SetDock($onHead, "Top"); [void]$onDock.Children.Add($onHead)
+$onScroll = New-Object System.Windows.Controls.ScrollViewer; $onScroll.VerticalScrollBarVisibility = "Auto"
+$onList = New-Object System.Windows.Controls.StackPanel
+$onScroll.Content = $onList
+[void]$onDock.Children.Add($onScroll)
+
+# ── 서버 소식 (카드 목록) ────────────────────────────
 # 봇이 모아 둔 소식과 친구들 진행도를 보여준다. 서버가 꺼져 있어도 봇은 켜져 있어서
 # 지난 소식이 그대로 보인다. 좌표나 공략은 봇 쪽 문장에 애초에 넣지 않는다.
-$feedTabs          = New-Object System.Windows.Forms.TabControl
-$feedTabs.Location = New-Object System.Drawing.Point(540, 20)
-$feedTabs.Size     = New-Object System.Drawing.Size(($FeedW - 36), ($form.ClientSize.Height - 36))
-$feedTabs.Font     = New-Object System.Drawing.Font("맑은 고딕", 9, [System.Drawing.FontStyle]::Bold)
-$form.Controls.Add($feedTabs)
-
-function New-FeedBox($tabTitle) {
-  $pg = New-Object System.Windows.Forms.TabPage
-  $pg.Text = $tabTitle
-  $pg.BackColor = [System.Drawing.Color]::White
-  $pg.Padding = New-Object System.Windows.Forms.Padding(8)
-  $rb = New-Object System.Windows.Forms.RichTextBox
-  $rb.Dock = "Fill"; $rb.ReadOnly = $true; $rb.BorderStyle = "None"
-  $rb.BackColor = [System.Drawing.Color]::White
-  $rb.Font = New-Object System.Drawing.Font("맑은 고딕", 9)
-  $rb.DetectUrls = $false; $rb.ScrollBars = "Vertical"; $rb.Cursor = "Arrow"
-  $pg.Controls.Add($rb)
-  $feedTabs.TabPages.Add($pg)
-  return $rb
-}
-$feedNews = New-FeedBox "서버 소식"
-$feedProg = New-FeedBox "진행도"
-
-function Feed-Add($box, $text, $color, $bold, $size) {
-  if (-not $size) { $size = 9 }
-  $style = if ($bold) { [System.Drawing.FontStyle]::Bold } else { [System.Drawing.FontStyle]::Regular }
-  $box.SelectionStart = $box.TextLength; $box.SelectionLength = 0
-  $box.SelectionFont  = New-Object System.Drawing.Font("맑은 고딕", $size, $style)
-  $box.SelectionColor = if ($color) { $color } else { [System.Drawing.Color]::FromArgb(45, 48, 42) }
-  $box.AppendText($text)
-}
-
 # "방금 / 12분 전 / 3시간 전 / 어제 / 9월 23일"
 function Format-Ago($iso) {
   try {
@@ -1961,64 +2266,90 @@ function Format-Ago($iso) {
 }
 
 $FeedColors = @{
-  jackpot   = [System.Drawing.Color]::FromArgb(196, 140, 20)
-  shiny     = [System.Drawing.Color]::FromArgb(150, 80, 190)
-  myth_pull = [System.Drawing.Color]::FromArgb(200, 70, 60)
-  myth_all  = [System.Drawing.Color]::FromArgb(200, 70, 60)
-  dex_tier  = [System.Drawing.Color]::FromArgb(58, 110, 150)
+  jackpot   = "#C48C14"
+  shiny     = "#9650BE"
+  myth_pull = "#C8463C"
+  myth_all  = "#C8463C"
+  dex_tier  = "#3A6E96"
 }
-$FeedDim = [System.Drawing.Color]::FromArgb(150, 153, 145)
+$FeedDim = "#96918A"
+
+# 소식 한 칸: 왼쪽 점과 세로줄, 오른쪽에 시각·본문
+function Add-FeedItem($box, $when, $text, $color, $dot, $bold, $extra) {
+  $g = New-Object System.Windows.Controls.Grid
+  $a = New-Object System.Windows.Controls.ColumnDefinition; $a.Width = New-Object System.Windows.GridLength(22)
+  $b = New-Object System.Windows.Controls.ColumnDefinition; $b.Width = New-Object System.Windows.GridLength(1, "Star")
+  $g.ColumnDefinitions.Add($a); $g.ColumnDefinitions.Add($b)
+  $line = New-Object System.Windows.Shapes.Rectangle; $line.Width = 2; $line.Fill = Brush "#E3DCCD"; $line.HorizontalAlignment = "Center"
+  [void]$g.Children.Add($line)
+  $d = New-Object System.Windows.Shapes.Ellipse; $d.Width = 11; $d.Height = 11; $d.Fill = Brush $dot; $d.VerticalAlignment = "Top"; $d.Margin = New-Object System.Windows.Thickness(0, 4, 0, 0)
+  [void]$g.Children.Add($d)
+  $sp = New-Object System.Windows.Controls.StackPanel; $sp.Margin = New-Object System.Windows.Thickness(6, 0, 6, 12)
+  if ($when) { [void]$sp.Children.Add((New-Text $when 11 $FeedDim $false)) }
+  $tb = New-Text $text 13 $color $bold; $tb.Margin = New-Object System.Windows.Thickness(0, 2, 0, 0)
+  [void]$sp.Children.Add($tb)
+  if ($extra) { [void]$sp.Children.Add((New-Text $extra 12 $FeedDim $false)) }
+  [System.Windows.Controls.Grid]::SetColumn($sp, 1); [void]$g.Children.Add($sp)
+  [void]$box.Children.Add($g)
+}
+function Add-FeedNote($box, $text) { $t = New-Text $text 13 $FeedDim $false; $t.Margin = New-Object System.Windows.Thickness(4, 6, 4, 6); [void]$box.Children.Add($t) }
 
 function Show-Feed($feed, $notice) {
-  $feedNews.Clear()
+  $feedNews.Children.Clear()
   if ($notice) {
-    Feed-Add $feedNews ("새 소식 · " + $notice.title + "`n") ([System.Drawing.Color]::FromArgb(79, 122, 54)) $true 9.5
-    Feed-Add $feedNews (($notice.body -split "`n")[0] + "`n") $FeedDim $false 8.5
-    Feed-Add $feedNews ("────────────────────`n") $FeedDim $false 8
+    Add-FeedItem $feedNews "$($notice.date)" ("새 소식 · " + $notice.title) "#3F7A36" "#4FA84A" $true (($notice.body -split "`n")[0])
   }
   $ev = @()
   if ($feed -and $feed.events) { $ev = @($feed.events | Sort-Object { $_.at } -Descending | Select-Object -First 20) }
   if ($ev.Count -eq 0) {
-    Feed-Add $feedNews "아직 소식이 없습니다.`n" $FeedDim $false
+    Add-FeedNote $feedNews "아직 소식이 없습니다."
   } else {
     foreach ($e in $ev) {
       $c = $FeedColors[[string]$e.type]
-      Feed-Add $feedNews ((Format-Ago $e.at) + "`n") $FeedDim $false 8
-      Feed-Add $feedNews ($e.text + "`n`n") $c ([bool]$c) 9.5
+      $ago = Format-Ago $e.at
+      $dot = if ($ago -like "*분 전" -or $ago -like "*시간 전" -or $ago -eq "방금") { "#E8923A" } else { "#8A857B" }
+      Add-FeedItem $feedNews $ago $e.text $(if ($c) { $c } else { "#34312A" }) $dot ([bool]$c) $null
     }
   }
-  $feedNews.SelectionStart = 0; $feedNews.ScrollToCaret()
 
-  $feedProg.Clear()
+  $feedProg.Children.Clear()
   $ps = @()
   if ($feed -and $feed.players) { $ps = @($feed.players | Where-Object { [int]$_.dex -gt 0 } | Sort-Object { [int]$_.dex } -Descending) }
   if ($ps.Count -eq 0) {
-    Feed-Add $feedProg "아직 진행도가 없습니다.`n" $FeedDim $false
+    Add-FeedNote $feedProg "아직 진행도가 없습니다."
   } else {
     foreach ($p in $ps) {
-      Feed-Add $feedProg ($p.name) $null $true 10.5
-      if ($p.title) { Feed-Add $feedProg ("  「" + $p.title + "」") ([System.Drawing.Color]::FromArgb(200, 70, 60)) $true 9 }
-      Feed-Add $feedProg "`n" $null $false
-      Feed-Add $feedProg ("도감 {0:N0}칸 · 등급 점수 {1:N0}점 · 신화 {2}/150`n" -f [int]$p.dex, [int]$p.points, [int]$p.myth) $null $false 9
-      if ($p.bonus) { Feed-Add $feedProg ("받는 능력치: " + $p.bonus + "`n") $FeedDim $false 8.5 }
+      $sp = New-Object System.Windows.Controls.StackPanel; $sp.Margin = New-Object System.Windows.Thickness(4, 0, 4, 12)
+      $nm = New-Object System.Windows.Controls.TextBlock; $nm.FontFamily = $UiFont; $nm.TextWrapping = "Wrap"
+      $r1 = New-Object System.Windows.Documents.Run($p.name); $r1.FontSize = 14.5; $r1.FontWeight = "Bold"; $r1.Foreground = Brush "#2F2D28"
+      [void]$nm.Inlines.Add($r1)
+      if ($p.title) { $r2 = New-Object System.Windows.Documents.Run("  「" + $p.title + "」"); $r2.FontSize = 12.5; $r2.FontWeight = "Bold"; $r2.Foreground = Brush "#C8463C"; [void]$nm.Inlines.Add($r2) }
+      [void]$sp.Children.Add($nm)
+      [void]$sp.Children.Add((New-Text ("도감 {0:N0}칸 · 등급 점수 {1:N0}점 · 신화 {2}/150" -f [int]$p.dex, [int]$p.points, [int]$p.myth) 12.5 "#34312A" $false))
+      if ($p.bonus) { [void]$sp.Children.Add((New-Text ("받는 능력치: " + $p.bonus) 12 $FeedDim $false)) }
       # 카이 홀덤 전적. 한 판도 안 했으면 줄을 만들지 않는다.
       if ($p.kai -and [int]$p.kai.hands -gt 0) {
         $kh = [int]$p.kai.hands; $kw = [int]$p.kai.wins; $kn = [long]$p.kai.net
         $sign = if ($kn -gt 0) { "+" } elseif ($kn -lt 0) { "-" } else { "" }
-        $kc = if ($kn -gt 0) { [System.Drawing.Color]::FromArgb(79, 122, 54) } elseif ($kn -lt 0) { [System.Drawing.Color]::FromArgb(200, 70, 60) } else { $FeedDim }
-        Feed-Add $feedProg ("카이 전적 {0}판 {1}승 · 승률 {2}% · " -f $kh, $kw, [int][Math]::Round(100.0 * $kw / $kh)) $null $false 8.5
-        Feed-Add $feedProg ($sign + ("{0:N0}" -f [Math]::Abs($kn)) + "`n") $kc $true 8.5
+        $kc = if ($kn -gt 0) { "#4F7A36" } elseif ($kn -lt 0) { "#C8463C" } else { $FeedDim }
+        $kt = New-Object System.Windows.Controls.TextBlock; $kt.FontFamily = $UiFont; $kt.FontSize = 12
+        $k1 = New-Object System.Windows.Documents.Run(("카이 전적 {0}판 {1}승 · 승률 {2}% · " -f $kh, $kw, [int][Math]::Round(100.0 * $kw / $kh))); $k1.Foreground = Brush "#34312A"
+        $k2 = New-Object System.Windows.Documents.Run(($sign + ("{0:N0}" -f [Math]::Abs($kn)))); $k2.Foreground = Brush $kc; $k2.FontWeight = "Bold"
+        [void]$kt.Inlines.Add($k1); [void]$kt.Inlines.Add($k2)
+        [void]$sp.Children.Add($kt)
       }
-      Feed-Add $feedProg "`n" $null $false 6
+      [void]$feedProg.Children.Add($sp)
     }
-    if ($feed.updated) { Feed-Add $feedProg ("기준: " + (Format-Ago $feed.updated) + "`n") $FeedDim $false 8 }
+    if ($feed.updated) { Add-FeedNote $feedProg ("기준: " + (Format-Ago $feed.updated)) }
   }
-  $feedProg.SelectionStart = 0; $feedProg.ScrollToCaret()
+  $script:lastFeed = $feed
+  Show-Online
 }
 
 # 봇 주소는 한 번만 물어보고 기억한다. 받는 중에 타이머가 또 부르면 건너뛴다.
 $script:feedBusy = $false
 $script:feedEp = $null
+$script:lastFeed = $null
 function Refresh-Feed {
   if ($script:feedBusy) { return }
   $script:feedBusy = $true
@@ -2037,22 +2368,295 @@ function Refresh-Feed {
     } catch { Log "  [소식 불러오기 실패] $($_.Exception.Message)" }
     Show-Feed $feed $notice
     if (-not $feed) {
-      $feedNews.Clear(); $feedProg.Clear()
-      Feed-Add $feedNews "소식을 불러오지 못했습니다.`n잠시 뒤 다시 불러옵니다.`n" $FeedDim $false
-      Feed-Add $feedProg "진행도를 불러오지 못했습니다.`n" $FeedDim $false
+      $feedNews.Children.Clear(); $feedProg.Children.Clear()
+      Add-FeedNote $feedNews "소식을 불러오지 못했습니다.`n잠시 뒤 다시 불러옵니다."
+      Add-FeedNote $feedProg "진행도를 불러오지 못했습니다."
     }
   } finally { $script:feedBusy = $false }
 }
+
+# ── 접속자 ────────────────────────────────────────────
+# 누가 들어와 있는지는 마크 서버에 직접 물어본다(서버 목록 화면이 쓰는 방법과 같다).
+# 어느 장소에 있는지는 서버가 소식(feed.online)에 공개 장소 이름으로만 실어 줄 때 보여 준다.
+function Ping-Players {
+  $c = New-Object System.Net.Sockets.TcpClient
+  try {
+    $ar = $c.BeginConnect($PingHost, $PingPort, $null, $null)
+    if (-not ($ar.AsyncWaitHandle.WaitOne(1500, $false) -and $c.Connected)) { return $null }
+    $s = $c.GetStream(); $s.ReadTimeout = 2000
+    function VarInt([int]$v) { $o = New-Object System.Collections.Generic.List[byte]; do { $b = $v -band 0x7F; $v = $v -shr 7; if ($v -ne 0) { $b = $b -bor 0x80 }; $o.Add([byte]$b) } while ($v -ne 0); return ,$o.ToArray() }
+    $hb = [Text.Encoding]::UTF8.GetBytes($PingHost)
+    $body = New-Object System.Collections.Generic.List[byte]
+    $body.AddRange((VarInt 0)); $body.AddRange((VarInt 767)); $body.AddRange((VarInt $hb.Length)); $body.AddRange($hb)
+    $body.Add([byte](($PingPort -shr 8) -band 0xFF)); $body.Add([byte]($PingPort -band 0xFF)); $body.AddRange((VarInt 1))
+    $pk = New-Object System.Collections.Generic.List[byte]
+    $pk.AddRange((VarInt $body.Count)); $pk.AddRange($body.ToArray()); $pk.AddRange((VarInt 1)); $pk.Add(0)
+    $s.Write($pk.ToArray(), 0, $pk.Count)
+    function ReadVarInt($st) { $n = 0; $sh = 0; do { $b = $st.ReadByte(); if ($b -lt 0) { throw "끊김" }; $n = $n -bor (($b -band 0x7F) -shl $sh); $sh += 7 } while ($b -band 0x80); return $n }
+    [void](ReadVarInt $s); [void](ReadVarInt $s); $len = ReadVarInt $s
+    $buf = New-Object byte[] $len; $got = 0
+    while ($got -lt $len) { $n = $s.Read($buf, $got, $len - $got); if ($n -le 0) { break }; $got += $n }
+    $j = [Text.Encoding]::UTF8.GetString($buf, 0, $got) | ConvertFrom-Json
+    $names = @(); if ($j.players.sample) { $names = @($j.players.sample | ForEach-Object { [string]$_.name } | Where-Object { $_ -and $_ -notmatch '^§' }) }
+    return [pscustomobject]@{ Online = [int]$j.players.online; Max = [int]$j.players.max; Names = $names }
+  } catch { return $null } finally { $c.Close() }
+}
+
+# 공개 장소: 이름 → 지도 위 자리(0~1 비율)와 그림. 지도 그림이 오면 자리를 맞춘다(지금은 임시).
+# X·Y 는 섬 지도 그림(map.png) 안의 자리(0~1). 그림이 없을 때는 임시 섬 위의 자리로 쓴다.
+# 이름은 서버(feed_cron)가 보내는 공개 장소 이름과 같아야 한다. 자리는 섬 지도 그림에 맞춘 임시값.
+$Places = [ordered]@{
+  "카지노"       = @{ X = 0.81; Y = 0.55; Icon = "place_sign"; Color = "#C8463C"; Mark = "???" }
+  "부두"         = @{ X = 0.64; Y = 0.57; Icon = "place_rod"; Color = "#3A7FC4"; Mark = "부" }
+  "마을 광장"    = @{ X = 0.38; Y = 0.55; Icon = "place_rabbit"; Color = "#D98BB0"; Mark = "광" }
+  "마을"         = @{ X = 0.40; Y = 0.38; Icon = "place_carrot"; Color = "#E8823A"; Mark = "마" }
+  "언덕 마을"    = @{ X = 0.62; Y = 0.30; Icon = "place_hill"; Color = "#6C9B45"; Mark = "언" }
+  "옛 카지노 섬" = @{ X = 0.14; Y = 0.25; Icon = "place_islet"; Color = "#8A6236"; Mark = "섬" }
+}
+# 다른 차원: 지도 위가 아니라 지도 왼쪽 아래 칸에 모아 보여 준다
+$Dims = [ordered]@{
+  "네더"      = @{ Icon = "dim_nether"; Color = "#8E2A1E"; Mark = "네" }
+  "엔드"      = @{ Icon = "dim_end"; Color = "#4A3470"; Mark = "엔" }
+  "에테르"    = @{ Icon = "dim_aether"; Color = "#4F8FC0"; Mark = "에" }
+  "다른 세계" = @{ Icon = "dim_other"; Color = "#5A5A5A"; Mark = "?" }
+}
+# 그림 안의 자리 → 지도 칸 위의 자리. 그림은 칸을 꽉 채우도록(UniformToFill) 가운데 기준으로 잘린다.
+function Map-Point($pl, $w, $h) {
+  if ($mapSrc) {
+    $iw = $mapSrc.PixelWidth; $ih = $mapSrc.PixelHeight
+    $sc = [Math]::Max($w / $iw, $h / $ih)
+    return @((($w - $iw * $sc) / 2 + $pl.X * $iw * $sc), (($h - $ih * $sc) / 2 + $pl.Y * $ih * $sc))
+  }
+  return @(($w * $pl.X), ($h * $pl.Y))
+}
+
+# 친구 머리: 모장 공식 경로로 스킨을 받아 얼굴(8×8)과 모자층을 겹친다. 하루 한 번만 받는다.
+$HeadDir = Join-Path (Join-Path $env:APPDATA $AppHome) "heads"
+function Get-SteveFace {
+  $px = @("2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D",
+          "2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D","2B1E0D",
+          "2B1E0D","B4846D","B4846D","B4846D","B4846D","B4846D","B4846D","2B1E0D",
+          "B4846D","B4846D","B4846D","B4846D","B4846D","B4846D","B4846D","B4846D",
+          "B4846D","FFFFFF","523D89","B4846D","B4846D","523D89","FFFFFF","B4846D",
+          "AA7D66","B4846D","B4846D","6A4030","6A4030","B4846D","B4846D","AA7D66",
+          "AA7D66","AA7D66","6A4030","B4846D","B4846D","6A4030","AA7D66","AA7D66",
+          "AA7D66","AA7D66","6A4030","6A4030","6A4030","6A4030","AA7D66","AA7D66")
+  $bmp = New-Object System.Drawing.Bitmap(8, 8)
+  for ($i = 0; $i -lt 64; $i++) { $bmp.SetPixel($i % 8, [Math]::Floor($i / 8), [System.Drawing.ColorTranslator]::FromHtml("#" + $px[$i])) }
+  return $bmp
+}
+function To-ImageSource([System.Drawing.Bitmap]$bmp) {
+  $ms = New-Object System.IO.MemoryStream
+  $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); $ms.Position = 0
+  $bi = New-Object System.Windows.Media.Imaging.BitmapImage
+  $bi.BeginInit(); $bi.CacheOption = "OnLoad"; $bi.StreamSource = $ms; $bi.EndInit(); $bi.Freeze()
+  return $bi
+}
+$script:headMem = @{}
+function Get-Head($name) {
+  if ($script:headMem.ContainsKey($name)) { return $script:headMem[$name] }
+  $face = $null
+  try {
+    [void][IO.Directory]::CreateDirectory($HeadDir)
+    $safe = ($name -replace '[^A-Za-z0-9_]', '_')
+    $cache = Join-Path $HeadDir ($safe + ".png"); $miss = Join-Path $HeadDir ($safe + ".none")
+    $fresh = { param($p) (Test-Path -LiteralPath $p) -and (((Get-Date) - (Get-Item -LiteralPath $p).LastWriteTime).TotalHours -lt 24) }
+    if (& $fresh $cache) { $face = New-Object System.Drawing.Bitmap((New-Object System.Drawing.Bitmap($cache))) }
+    elseif (-not (& $fresh $miss)) {
+      try {
+        $id = ((Get-WebText ("https://api.mojang.com/users/profiles/minecraft/" + [uri]::EscapeDataString($name))) | ConvertFrom-Json).id
+        $prof = (Get-WebText ("https://sessionserver.mojang.com/session/minecraft/profile/" + $id)) | ConvertFrom-Json
+        $tex = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String((@($prof.properties) | Where-Object { $_.name -eq "textures" } | Select-Object -First 1).value)) | ConvertFrom-Json
+        $url = [string]$tex.textures.SKIN.url
+        if ($url -notmatch '^https?://textures\.minecraft\.net/') { throw "스킨 주소가 공식 주소가 아닙니다" }
+        $tmp = Join-Path $env:TEMP ("skin-" + [guid]::NewGuid().ToString("N") + ".png")
+        Get-Web ($url -replace '^http:', 'https:') $tmp
+        $skin = New-Object System.Drawing.Bitmap($tmp)
+        $face = New-Object System.Drawing.Bitmap(8, 8)
+        $g = [System.Drawing.Graphics]::FromImage($face)
+        $g.InterpolationMode = "NearestNeighbor"; $g.PixelOffsetMode = "Half"
+        $g.DrawImage($skin, (New-Object System.Drawing.Rectangle(0, 0, 8, 8)), (New-Object System.Drawing.Rectangle(8, 8, 8, 8)), "Pixel")
+        # 옛 스킨은 모자층이 불투명한 검정으로 채워져 있기도 하다. 마크처럼 전부 불투명하면 모자층을 쓰지 않는다
+        $hatSolid = $true
+        for ($hy = 8; $hy -lt 16 -and $hatSolid; $hy++) { for ($hx = 40; $hx -lt 48; $hx++) { if ($skin.GetPixel($hx, $hy).A -lt 255) { $hatSolid = $false; break } } }
+        if (-not $hatSolid) { $g.DrawImage($skin, (New-Object System.Drawing.Rectangle(0, 0, 8, 8)), (New-Object System.Drawing.Rectangle(40, 8, 8, 8)), "Pixel") }
+        $g.Dispose(); $skin.Dispose(); Remove-Item -LiteralPath $tmp -ErrorAction SilentlyContinue
+        $face.Save($cache, [System.Drawing.Imaging.ImageFormat]::Png)
+      } catch {
+        Log "  [머리 받기 실패] $name — $($_.Exception.Message)"
+        try { [IO.File]::WriteAllText($miss, "") } catch { }
+      }
+    }
+  } catch { }
+  if (-not $face) { $face = Get-SteveFace }
+  $src = To-ImageSource $face; $face.Dispose()
+  $script:headMem[$name] = $src
+  return $src
+}
+function New-HeadImage($name, $size) {
+  $im = New-Object System.Windows.Controls.Image
+  $im.Source = Get-Head $name; $im.Width = $size; $im.Height = $size
+  [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($im, "NearestNeighbor")
+  return $im
+}
+
+$script:lastPing = $null
+$script:pingAt = $null
+function Update-Online {
+  $script:lastPing = Ping-Players
+  $script:pingAt = Get-Date
+  Show-Online
+}
+function Show-Online {
+  $p = $script:lastPing
+  $placeOf = @{}
+  # 위치는 서버가 소식(feed.online)에 공개 장소 이름을 실어 줄 때만, 그것도 15분 안의 것만 쓴다.
+  # 서버 쪽이 아직 없으면 이름과 머리만 보이고, 지도 위 머리와 장소 칸은 뜨지 않는다.
+  try {
+    $on = if ($script:lastFeed) { $script:lastFeed.online } else { $null }
+    $fresh = $false
+    if ($on -and $on.at) { try { $fresh = (((Get-Date) - [DateTimeOffset]::Parse([string]$on.at).LocalDateTime).TotalMinutes -lt 15) } catch { } }
+    if ($fresh -and $on.list) { foreach ($o in @($on.list)) { if ($o.name) { $placeOf[[string]$o.name] = [string]$o.place } } }
+  } catch { }
+  $script:placeOf = $placeOf
+  $when = if ($script:pingAt) { $script:pingAt.ToString("tt h:mm", [Globalization.CultureInfo]::GetCultureInfo("ko-KR")) } else { "" }
+  $onList.Children.Clear(); $mapLayer.Children.Clear(); $dimBox.Children.Clear()
+  if (-not $p) {
+    $mapCount.Text = "서버 꺼짐 · $when"
+    $mapLine.Text = "지금은 서버가 꺼져 있습니다. [서버 켜기] 를 누르시면 켤 수 있습니다."
+    Add-FeedNote $onList "서버가 꺼져 있습니다."
+    return
+  }
+  $mapCount.Text = "접속 $($p.Online)명 · $when"
+  if ($p.Online -eq 0) {
+    $mapLine.Text = "지금은 접속한 사람이 없습니다."
+    Add-FeedNote $onList "지금은 접속한 사람이 없습니다."
+    return
+  }
+  $tags = @(); $byPlace = [ordered]@{}; $byDim = [ordered]@{}
+  foreach ($n in $p.Names) {
+    $place = $placeOf[$n]
+    # 목록 한 줄: 초록 점 · 머리 · 이름 · 장소 그림 · 장소 이름
+    $row = New-Object System.Windows.Controls.Grid; $row.Margin = New-Object System.Windows.Thickness(0, 0, 12, 10)
+    foreach ($w in @(18, 40, -1, 34, -2)) {
+      $cd = New-Object System.Windows.Controls.ColumnDefinition
+      if ($w -eq -1) { $cd.Width = New-Object System.Windows.GridLength(1, "Star") } elseif ($w -eq -2) { $cd.Width = [System.Windows.GridLength]::Auto } else { $cd.Width = New-Object System.Windows.GridLength($w) }
+      $row.ColumnDefinitions.Add($cd)
+    }
+    $dot = New-Object System.Windows.Shapes.Ellipse; $dot.Width = 9; $dot.Height = 9; $dot.Fill = Brush "#3FAE4A"; $dot.VerticalAlignment = "Center"
+    [void]$row.Children.Add($dot)
+    $hd = New-HeadImage $n 32; [System.Windows.Controls.Grid]::SetColumn($hd, 1); [void]$row.Children.Add($hd)
+    $nt = New-Text $n 13.5 "#2F2D28" $false; $nt.TextWrapping = "NoWrap"; $nt.VerticalAlignment = "Center"; $nt.Margin = New-Object System.Windows.Thickness(4, 0, 4, 0)
+    [System.Windows.Controls.Grid]::SetColumn($nt, 2); [void]$row.Children.Add($nt)
+    if ($place -and $Places.Contains($place)) {
+      $pl = $Places[$place]
+      $pi = New-Pic $pl.Icon 26 $pl.Color $pl.Mark; $pi.VerticalAlignment = "Center"
+      [System.Windows.Controls.Grid]::SetColumn($pi, 3); [void]$row.Children.Add($pi)
+      $pn = New-Text $place 12.5 "#4A463D" $false; $pn.TextWrapping = "NoWrap"; $pn.VerticalAlignment = "Center"
+      [System.Windows.Controls.Grid]::SetColumn($pn, 4); [void]$row.Children.Add($pn)
+      if (-not $byPlace.Contains($place)) { $byPlace[$place] = @() }
+      $byPlace[$place] += $n
+    } elseif ($place -and $Dims.Contains($place)) {
+      $dm = $Dims[$place]
+      $pi = New-Pic $dm.Icon 26 $dm.Color $dm.Mark; $pi.VerticalAlignment = "Center"
+      [System.Windows.Controls.Grid]::SetColumn($pi, 3); [void]$row.Children.Add($pi)
+      $pn = New-Text $place 12.5 "#4A463D" $false; $pn.TextWrapping = "NoWrap"; $pn.VerticalAlignment = "Center"
+      [System.Windows.Controls.Grid]::SetColumn($pn, 4); [void]$row.Children.Add($pn)
+      if (-not $byDim.Contains($place)) { $byDim[$place] = @() }
+      $byDim[$place] += $n
+    } elseif ($placeOf.ContainsKey($n)) {
+      # 서버가 위치를 알려 줬지만 공개 장소 밖(빈 값)인 경우. 지도에는 띄우지 않는다.
+      $pn = New-Text "섬 어딘가" 12.5 "#8A857B" $false; $pn.TextWrapping = "NoWrap"; $pn.VerticalAlignment = "Center"
+      [System.Windows.Controls.Grid]::SetColumn($pn, 4); [void]$row.Children.Add($pn)
+    }
+    [void]$onList.Children.Add($row)
+  }
+  if ($p.Online -gt $p.Names.Count) { Add-FeedNote $onList ("외 {0}명" -f ($p.Online - $p.Names.Count)) }
+  # 지도 밑 문장은 한 줄. 대표 한 명을 몇 초마다 돌려 가며 보여 준다(모두 한 번씩 차례가 간다).
+  $script:rotNames = @($p.Names); $script:rotOnline = $p.Online
+  if ($script:rotIdx -ge $script:rotNames.Count) { $script:rotIdx = 0 }
+  Set-MapLine
+  # 지도 위: 장소마다 이름표 하나(같은 곳에 여럿이면 이름을 묶고 머리를 나란히)
+  foreach ($place in $byPlace.Keys) {
+    $who = @($byPlace[$place]); $pl = $Places[$place]
+    $tag = New-Object System.Windows.Controls.StackPanel
+    $bub = New-Object System.Windows.Controls.Border; $bub.CornerRadius = 4; $bub.Background = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(215, 30, 30, 30)); $bub.Padding = New-Object System.Windows.Thickness(6, 1, 6, 2); $bub.HorizontalAlignment = "Center"
+    $label = if ($who.Count -le 2) { $who -join " · " } else { ($who[0..1] -join " · ") + (" 외 {0}명" -f ($who.Count - 2)) }
+    $bt = New-Text $label 12 "#FFFFFF" $true; $bt.TextWrapping = "NoWrap"; $bub.Child = $bt
+    [void]$tag.Children.Add($bub)
+    $heads = New-Object System.Windows.Controls.StackPanel; $heads.Orientation = "Horizontal"; $heads.HorizontalAlignment = "Center"; $heads.Margin = New-Object System.Windows.Thickness(0, 3, 0, 0)
+    foreach ($n in @($who | Select-Object -First 4)) { $mh = New-HeadImage $n 26; $mh.Margin = New-Object System.Windows.Thickness(1, 0, 1, 0); [void]$heads.Children.Add($mh) }
+    [void]$tag.Children.Add($heads)
+    $tags += ,@($tag, $pl)
+    [void]$mapLayer.Children.Add($tag)
+  }
+  # 다른 차원 칸: 지도 왼쪽 아래에 차원마다 한 칸(이름·인원·머리)
+  foreach ($dn in $byDim.Keys) {
+    $who = @($byDim[$dn]); $dm = $Dims[$dn]
+    $cell = New-Object System.Windows.Controls.Border
+    $cell.CornerRadius = 8; $cell.Padding = New-Object System.Windows.Thickness(8, 4, 8, 5); $cell.Margin = New-Object System.Windows.Thickness(0, 0, 8, 0)
+    $bc = [System.Windows.Media.ColorConverter]::ConvertFromString($dm.Color)
+    $cell.Background = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(225, $bc.R, $bc.G, $bc.B))
+    $cs = New-Object System.Windows.Controls.StackPanel
+    $top = New-Object System.Windows.Controls.StackPanel; $top.Orientation = "Horizontal"
+    $di = New-Pic $dm.Icon 18 $dm.Color $dm.Mark; $di.Margin = New-Object System.Windows.Thickness(0, 0, 5, 0); [void]$top.Children.Add($di)
+    $dt = New-Text ("{0} · {1}명" -f $dn, $who.Count) 12 "#FFFFFF" $true; $dt.TextWrapping = "NoWrap"; $dt.VerticalAlignment = "Center"; [void]$top.Children.Add($dt)
+    [void]$cs.Children.Add($top)
+    $hs = New-Object System.Windows.Controls.StackPanel; $hs.Orientation = "Horizontal"; $hs.Margin = New-Object System.Windows.Thickness(0, 3, 0, 0)
+    foreach ($n in @($who | Select-Object -First 5)) { $mh = New-HeadImage $n 22; $mh.Margin = New-Object System.Windows.Thickness(0, 0, 2, 0); $mh.ToolTip = $n; [void]$hs.Children.Add($mh) }
+    [void]$cs.Children.Add($hs)
+    $cell.Child = $cs
+    [void]$dimBox.Children.Add($cell)
+  }
+  # 문장 줄 수가 늘어도 띠 아래로만: 띠 높이를 잰 뒤 머리·이름표 자리를 정한다
+  $mapGrid.UpdateLayout()
+  $w = $mapGrid.ActualWidth; $h = $mapGrid.ActualHeight; $floor = $mapBand.ActualHeight + 4; $placed = @()
+  foreach ($t in $tags) {
+    $tag = $t[0]; $pl = $t[1]; $tag.UpdateLayout()
+    $tw = [Math]::Max(60, $tag.ActualWidth); $th = [Math]::Max(52, $tag.ActualHeight)
+    $pt = Map-Point $pl $w $h
+    $x = [Math]::Min([Math]::Max(4, $pt[0] - $tw / 2), $w - $tw - 4)
+    $y = [Math]::Min([Math]::Max($floor, $pt[1] - $th), $h - $th - 4)
+    # 다른 장소 이름표와 겹치면 겹치지 않을 때까지 아래로 조금씩 내린다
+    $bump = 0
+    while ($bump -lt 60) {
+      $hit = $false
+      foreach ($q in $placed) { if ($x -lt $q.R -and ($x + $tw) -gt $q.L -and $y -lt $q.B -and ($y + $th) -gt $q.T) { $hit = $true; break } }
+      if (-not $hit) { break }
+      $y = [Math]::Min($y + 6, $h - $th - 4); $bump++
+      if ($y -ge $h - $th - 4) { $x = [Math]::Min($x + 8, $w - $tw - 4) }
+    }
+    $placed += [pscustomobject]@{ L = $x; T = $y; R = $x + $tw; B = $y + $th }
+    [System.Windows.Controls.Canvas]::SetLeft($tag, $x); [System.Windows.Controls.Canvas]::SetTop($tag, $y)
+  }
+}
+
+$script:rotNames = @(); $script:rotIdx = 0; $script:rotOnline = 0; $script:placeOf = @{}
+function Set-MapLine {
+  if ($script:rotNames.Count -eq 0) { return }
+  $n = $script:rotNames[$script:rotIdx % $script:rotNames.Count]
+  if ($script:rotOnline -le 1) {
+    $pl = $script:placeOf[$n]
+    $mapLine.Text = if ($pl -and ($Places.Contains($pl) -or $Dims.Contains($pl))) { "${n}님이 ${pl}에 있습니다!" } else { "${n}님이 접속해 계십니다!" }
+  } else {
+    $mapLine.Text = "${n}님 외 $($script:rotOnline - 1)명이 함께 놀고 있습니다!"
+  }
+}
+$rotTimer = New-Object System.Windows.Forms.Timer
+$rotTimer.Interval = 4000
+$rotTimer.Add_Tick({ if ($script:rotNames.Count -gt 1) { $script:rotIdx = ($script:rotIdx + 1) % $script:rotNames.Count; Set-MapLine } })
+
 $feedTimer = New-Object System.Windows.Forms.Timer
 $feedTimer.Interval = 60000
 $feedTimer.Add_Tick({ Refresh-Feed })
 
 $srvTimer = New-Object System.Windows.Forms.Timer
 $srvTimer.Interval = 15000
-$srvTimer.Add_Tick({ Update-ServerState })
-$form.Add_Shown({ Tend-Launcher; Refresh-Stamps $false; $srvTimer.Start(); Refresh-Feed; $feedTimer.Start(); if ($Notice) { Say $Notice } })
-$form.Add_FormClosed({
-  $srvTimer.Stop(); $srvTimer.Dispose(); $feedTimer.Stop(); $feedTimer.Dispose()
+$srvTimer.Add_Tick({ Update-ServerState; Update-Online })
+$form.Add_ContentRendered({ Tend-Launcher; Refresh-Stamps $false; Update-ServerState; Update-Online; $srvTimer.Start(); Refresh-Feed; $feedTimer.Start(); $rotTimer.Start(); if ($Notice) { Say $Notice } })
+$form.Add_Closed({
+  $srvTimer.Stop(); $srvTimer.Dispose(); $feedTimer.Stop(); $feedTimer.Dispose(); $rotTimer.Stop(); $rotTimer.Dispose()
+  try { $script:Owner.ReleaseHandle() } catch { }
   # 휴대용: keep-login.txt 가 없으면 USB 에 로그인을 남기지 않는다. 프리즘이 아직 켜져 있으면 꺼질 때까지 기다렸다가 지운다.
   if ($PortableRoot -and -not (Test-Path -LiteralPath (Join-Path $PortableRoot "keep-login.txt"))) {
     $acc = Join-Path $PortableRoot "prism\accounts.json"

@@ -1,6 +1,6 @@
 {
-    "version":  12,
-    "signed_at":  "2026-09-26T23:47:07+09:00",
+    "version":  13,
+    "signed_at":  "2026-09-27T19:47:50+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -10,6 +10,10 @@
                                           "sha256":  "a35995cf744e89760b49f456d69c6b296f31e7e852abeb830a8720524da282e2",
                                           "size":  1135
                                       },
+                  "elly-helper-assets.zip":  {
+                                                 "sha256":  "afb535aa4b9fa5641808533669e866885f1f5619880caabcede017a99f78de87",
+                                                 "size":  2414599
+                                             },
                   "elly-icon.ico":  {
                                         "sha256":  "a10a1f2fc4f78390c074a21ec14b900440aa7e9334a238b88c1d4b7acc701669",
                                         "size":  170604
@@ -24,8 +28,8 @@
                                   "size":  100946
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "e4166dd733339cdca016d6e48e7795783c5396c757c7ec9d9fe2b2812b745076",
-                                       "size":  115391
+                                       "sha256":  "e05f9e5fa651c2ba7b584c701275708bc728ddebacdeb494584381f2884c5dcb",
+                                       "size":  161454
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -46,10 +50,10 @@
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "c7bc252ee80e6ef9b54b98ad3beac158ad55133e",
-                  "released_at":  "2026-09-26T23:47:07+09:00",
-                  "message":  "Dedupe leftover mod versions by real mod id, not filename guessing",
-                  "committed_at":  "2026-09-26T13:55:02Z",
+                  "commit":  "267aa9c3e45c9b5ae8343446c01d2f474059ced4",
+                  "released_at":  "2026-09-27T19:47:50+09:00",
+                  "message":  "Add Stoutheart effect icon fix for Let\u0027s Do: Brewery",
+                  "committed_at":  "2026-09-27T10:23:54Z",
                   "files":  {
                                 "mod-sync.ps1":  {
                                                      "sha256":  "776691ee850bee73d0a8889bd3d6ebe17309c932f844337462b2dd5cc4d100c2",
