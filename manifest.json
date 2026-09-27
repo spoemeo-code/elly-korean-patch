@@ -1,6 +1,6 @@
 {
-    "version":  13,
-    "signed_at":  "2026-09-27T19:47:50+09:00",
+    "version":  14,
+    "signed_at":  "2026-09-28T03:44:54+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -19,9 +19,9 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "421f4b1d5e5102b89245caeaaa28be96600df457bae1867b8fdcd8fe28567cf2",
-                                                "size":  2120919,
-                                                "sha1":  "b3bd4bd48f0ef108375cb673500e05481373534b"
+                                                "sha256":  "c359ed9e13c8b7dda07a1a132bd442c49c8814d6090639215091ed9d1b631646",
+                                                "size":  2192651,
+                                                "sha1":  "2d781984e6c386f46b5ad4c42530d6f59480413a"
                                             },
                   "gui.ps1":  {
                                   "sha256":  "dffe7526e92f53b562538665fa26bf68c76955d18b7b4f321f82e6091307e147",
@@ -50,10 +50,10 @@
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "267aa9c3e45c9b5ae8343446c01d2f474059ced4",
-                  "released_at":  "2026-09-27T19:47:50+09:00",
-                  "message":  "Add Stoutheart effect icon fix for Let\u0027s Do: Brewery",
-                  "committed_at":  "2026-09-27T10:23:54Z",
+                  "commit":  "447df37fc06209d2d9f490c284138baac88ee236",
+                  "released_at":  "2026-09-28T03:44:54+09:00",
+                  "message":  "Add Korean structure-name resource pack for the Nether dungeon-difficulty HUD",
+                  "committed_at":  "2026-09-27T16:12:16Z",
                   "files":  {
                                 "mod-sync.ps1":  {
                                                      "sha256":  "776691ee850bee73d0a8889bd3d6ebe17309c932f844337462b2dd5cc4d100c2",
