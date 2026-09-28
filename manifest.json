@@ -1,6 +1,6 @@
 {
-    "version":  17,
-    "signed_at":  "2026-09-29T02:10:35+09:00",
+    "version":  18,
+    "signed_at":  "2026-09-29T07:48:11+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -19,9 +19,9 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "beb6eae296aadc5dde967bb6cb9f08f2b6cb200a2de1709660bdbf746d52d59c",
-                                                "size":  2192650,
-                                                "sha1":  "2edf209bafcc719d2d1b7b69d9e0896ee40c5d22"
+                                                "sha256":  "fb1a18f512c83e9478b4fb783d8ba5402bccd3ef6c8f27c2d94b7b1d22cdbb6f",
+                                                "size":  2191357,
+                                                "sha1":  "0d4b0222e3ff48fe1f5390e29340a44fc1ffec6f"
                                             },
                   "gui.ps1":  {
                                   "sha256":  "dffe7526e92f53b562538665fa26bf68c76955d18b7b4f321f82e6091307e147",
@@ -50,10 +50,10 @@
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "42ceb63f3e8d200ab8e50ae9fa7002f614c7100b",
-                  "released_at":  "2026-09-29T02:10:35+09:00",
-                  "message":  "Add knockback resistance support, rework Aquamirae Abyssal armor set",
-                  "committed_at":  "2026-09-28T17:02:22Z",
+                  "commit":  "5b7ee4a717fc1fbd42c99ab073de1ffe638d7d8e",
+                  "released_at":  "2026-09-29T07:48:11+09:00",
+                  "message":  "Restore Aquamirae Depths Resilience on Abyssal armor, add cross-mod attribute support",
+                  "committed_at":  "2026-09-28T17:21:20Z",
                   "files":  {
                                 "mod-sync.ps1":  {
                                                      "sha256":  "776691ee850bee73d0a8889bd3d6ebe17309c932f844337462b2dd5cc4d100c2",
