@@ -1,6 +1,6 @@
 {
-    "version":  15,
-    "signed_at":  "2026-09-29T00:36:38+09:00",
+    "version":  16,
+    "signed_at":  "2026-09-29T00:43:37+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -28,8 +28,8 @@
                                   "size":  100946
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "e05f9e5fa651c2ba7b584c701275708bc728ddebacdeb494584381f2884c5dcb",
-                                       "size":  161454
+                                       "sha256":  "ab7004a50a3a527bb08b7f8fcfe6d0e74b1f42a7d8ceca836e7b21ca0d64623a",
+                                       "size":  167712
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -51,7 +51,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "95f8e2d62f3476ace6a4967bcd7aaca85f744f67",
-                  "released_at":  "2026-09-29T00:36:38+09:00",
+                  "released_at":  "2026-09-29T00:43:37+09:00",
                   "message":  "Add Alex\u0027s Caves ecosystem, End Remastered, and several new content mods",
                   "committed_at":  "2026-09-28T14:33:01Z",
                   "files":  {

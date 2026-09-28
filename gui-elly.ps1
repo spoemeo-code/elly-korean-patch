@@ -1232,7 +1232,10 @@ function Refresh-Stamps($keepMessage) {
     $myZip = if ($t) { Join-Path $t "resourcepacks\$PatchName" } else { $null }
     if ($myZip -and (Test-Path $myZip)) { $mine = Get-ZipPackDate $myZip }
 
-    $srvSha = (Get-WebText "$BASE/Elly-Korean-Patch.zip.sha1").Trim()
+    # 서명된 manifest 의 sha1 을 쓴다. 예전에는 별도 .sha1 파일을 읽었는데, 그 파일은
+    # 서명 때 자동으로 갱신되지 않아서 배포할 때마다 낡은 값이 남아 "최신 버전이 아닙니다"로
+    # 잘못 떴다(2026-09-29).
+    $srvSha = [string](Get-Rel).files."Elly-Korean-Patch.zip".sha1
     $same = $false
     if ($myZip -and (Test-Path $myZip)) {
       $same = ((Get-FileHash $myZip -Algorithm SHA1).Hash.ToLower() -eq $srvSha.ToLower())
@@ -2197,7 +2200,7 @@ $megaphone.Margin = New-Object System.Windows.Thickness(0, 0, 10, 0)
 $mgImg = Get-AssetImage "megaphone"
 if ($mgImg) { $megaphone = New-Object System.Windows.Controls.Image; $megaphone.Source = $mgImg; $megaphone.Width = 22; $megaphone.Height = 22; $megaphone.Margin = New-Object System.Windows.Thickness(0, 0, 10, 0); [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($megaphone, "HighQuality") }
 [void]$newsHead.Children.Add($megaphone)
-$newsTitle = New-Text "서버 소식" 17 "#2F2D28" $true; $newsTitle.TextWrapping = "NoWrap"; $newsTitle.VerticalAlignment = "Center"
+$newsTitle = New-Text "소식" 17 "#2F2D28" $true; $newsTitle.TextWrapping = "NoWrap"; $newsTitle.VerticalAlignment = "Center"
 [void]$newsHead.Children.Add($newsTitle)
 $tabs = New-Object System.Windows.Controls.StackPanel; $tabs.Orientation = "Horizontal"; $tabs.HorizontalAlignment = "Right"
 function New-Tab($text) {
@@ -2207,27 +2210,105 @@ function New-Tab($text) {
   $b.Child = $t
   return $b
 }
-$tabNews = New-Tab "서버 소식"; $tabProg = New-Tab "진행도"
-[void]$tabs.Children.Add($tabNews); [void]$tabs.Children.Add($tabProg)
+$tabNotice = New-Tab "공지사항"; $tabNews = New-Tab "서버 소식"; $tabProg = New-Tab "진행도"
+[void]$tabs.Children.Add($tabNotice); [void]$tabs.Children.Add($tabNews); [void]$tabs.Children.Add($tabProg)
 [System.Windows.Controls.DockPanel]::SetDock($tabs, "Right"); $newsHead.Children.Insert(0, $tabs)
 [System.Windows.Controls.DockPanel]::SetDock($newsHead, "Top"); [void]$newsDock.Children.Add($newsHead)
 $feedScroll = New-Object System.Windows.Controls.ScrollViewer; $feedScroll.VerticalScrollBarVisibility = "Auto"
+$feedNotice = New-Object System.Windows.Controls.StackPanel
 $feedNews = New-Object System.Windows.Controls.StackPanel
 $feedProg = New-Object System.Windows.Controls.StackPanel
 $feedScroll.Content = $feedNews
 [void]$newsDock.Children.Add($feedScroll)
 function Select-Tab($which) {
-  foreach ($p in @(@($tabNews, "news"), @($tabProg, "prog"))) {
+  foreach ($p in @(@($tabNotice, "notice"), @($tabNews, "news"), @($tabProg, "prog"))) {
     $on = ($p[1] -eq $which)
     $p[0].BorderBrush = if ($on) { Brush "#3B8A45" } else { [System.Windows.Media.Brushes]::Transparent }
     $p[0].Child.Foreground = if ($on) { Brush "#2F7D3A" } else { Brush "#8A857B" }
   }
-  $feedScroll.Content = if ($which -eq "news") { $feedNews } else { $feedProg }
+  $feedScroll.Content = switch ($which) { "notice" { $feedNotice } "news" { $feedNews } default { $feedProg } }
   $feedScroll.ScrollToTop()
 }
+$tabNotice.Add_MouseLeftButtonUp({ Select-Tab "notice" })
 $tabNews.Add_MouseLeftButtonUp({ Select-Tab "news" })
 $tabProg.Add_MouseLeftButtonUp({ Select-Tab "prog" })
-Select-Tab "news"
+Select-Tab "notice"
+
+# ── 공지사항 ─────────────────────────────────────────
+# 봇이 디스코드 엘리서버 #공지사항 글을 소식(feed.notices)에 실어 준다: [{ at, title, body }] 최근 것부터.
+# 목록 한 줄: 점 · 제목 · NEW(3일 안) · 날짜(MM.DD). 줄을 누르면 본문, [더보기] 는 전체 목록 창.
+function Get-Notices($feed) {
+  $list = @()
+  try { if ($feed -and $feed.notices) { $list = @($feed.notices | Where-Object { $_.title } | Sort-Object { [string]$_.at } -Descending) } } catch { }
+  return $list
+}
+function Notice-Date($n) { try { return ([DateTimeOffset]::Parse([string]$n.at).LocalDateTime).ToString("MM.dd") } catch { return "" } }
+function Notice-IsNew($n) { try { return (((Get-Date) - [DateTimeOffset]::Parse([string]$n.at).LocalDateTime).TotalDays -lt 3) } catch { return $false } }
+function New-NoticeRow($n, $onClick) {
+  $row = New-Object System.Windows.Controls.Grid; $row.Margin = New-Object System.Windows.Thickness(2, 0, 6, 9); $row.Cursor = "Hand"; $row.Background = [System.Windows.Media.Brushes]::Transparent
+  foreach ($w in @(16, -1, -2, 46)) {
+    $cd = New-Object System.Windows.Controls.ColumnDefinition
+    if ($w -eq -1) { $cd.Width = New-Object System.Windows.GridLength(1, "Star") } elseif ($w -eq -2) { $cd.Width = [System.Windows.GridLength]::Auto } else { $cd.Width = New-Object System.Windows.GridLength($w) }
+    $row.ColumnDefinitions.Add($cd)
+  }
+  $isNew = Notice-IsNew $n
+  $dot = New-Object System.Windows.Shapes.Rectangle; $dot.Width = 8; $dot.Height = 8; $dot.RadiusX = 2; $dot.RadiusY = 2; $dot.VerticalAlignment = "Center"
+  $dot.Fill = if ($isNew) { Brush "#E8736B" } else { Brush "#C9C2B4" }
+  [void]$row.Children.Add($dot)
+  $tt = New-Text ([string]$n.title) 13 "#2F2D28" $false; $tt.TextWrapping = "NoWrap"; $tt.TextTrimming = "CharacterEllipsis"; $tt.VerticalAlignment = "Center"
+  [System.Windows.Controls.Grid]::SetColumn($tt, 1); [void]$row.Children.Add($tt)
+  if ($isNew) {
+    $nb = New-Object System.Windows.Controls.Border; $nb.CornerRadius = 4; $nb.Background = Brush "#F2B233"; $nb.Padding = New-Object System.Windows.Thickness(5, 0, 5, 1); $nb.Margin = New-Object System.Windows.Thickness(6, 0, 0, 0); $nb.VerticalAlignment = "Center"
+    $nt = New-Text "NEW" 10 "#FFFFFF" $true; $nt.TextWrapping = "NoWrap"; $nb.Child = $nt
+    [System.Windows.Controls.Grid]::SetColumn($nb, 2); [void]$row.Children.Add($nb)
+  }
+  $dt = New-Text (Notice-Date $n) 11.5 "#8A857B" $false; $dt.TextWrapping = "NoWrap"; $dt.HorizontalAlignment = "Right"; $dt.VerticalAlignment = "Center"
+  [System.Windows.Controls.Grid]::SetColumn($dt, 3); [void]$row.Children.Add($dt)
+  $row.Tag = $n
+  $row.Add_MouseLeftButtonUp($onClick)
+  return $row
+}
+# 공지 창: 왼쪽 목록, 오른쪽 본문
+function Show-NoticeBody($n) {
+  $body = $script:nwBody; $body.Children.Clear()
+  $h = New-Text ([string]$n.title) 17 "#2F2D28" $true; [void]$body.Children.Add($h)
+  $dd = New-Text ((Notice-Date $n) + $(if (Notice-IsNew $n) { "  ·  NEW" } else { "" })) 11.5 "#8A857B" $false; $dd.Margin = New-Object System.Windows.Thickness(0, 3, 0, 12); [void]$body.Children.Add($dd)
+  $tx = New-Text ([string]$n.body) 13.5 "#34312A" $false; $tx.LineHeight = 21; [void]$body.Children.Add($tx)
+  $script:nwScroll.ScrollToTop()
+}
+function Show-NoticeWindow($pick) {
+  $all = Get-Notices $script:lastFeed
+  if ($all.Count -eq 0) { return }
+  $w = New-Object System.Windows.Window
+  $w.Title = "공지사항"; $w.Width = 760; $w.Height = 520; $w.WindowStartupLocation = "CenterOwner"; $w.Owner = $form
+  $w.Background = Brush "#F2ECDF"; $w.FontFamily = $UiFont; $w.ResizeMode = "CanResize"; $w.Icon = $form.Icon
+  $g = New-Object System.Windows.Controls.Grid; $g.Margin = New-Object System.Windows.Thickness(14)
+  $c0 = New-Object System.Windows.Controls.ColumnDefinition; $c0.Width = New-Object System.Windows.GridLength(270)
+  $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = New-Object System.Windows.GridLength(1, "Star")
+  $g.ColumnDefinitions.Add($c0); $g.ColumnDefinitions.Add($c1)
+  $lp = New-Panel; $lp.Margin = New-Object System.Windows.Thickness(0, 0, 12, 0)
+  $ls = New-Object System.Windows.Controls.ScrollViewer; $ls.VerticalScrollBarVisibility = "Auto"; $ls.Margin = New-Object System.Windows.Thickness(10)
+  $lst = New-Object System.Windows.Controls.StackPanel; $ls.Content = $lst; $lp.Child = $ls
+  [void]$g.Children.Add($lp)
+  $rp = New-Panel; [System.Windows.Controls.Grid]::SetColumn($rp, 1)
+  $rs = New-Object System.Windows.Controls.ScrollViewer; $rs.VerticalScrollBarVisibility = "Auto"; $rs.Margin = New-Object System.Windows.Thickness(18, 14, 14, 14)
+  $body = New-Object System.Windows.Controls.StackPanel; $rs.Content = $body; $rp.Child = $rs
+  [void]$g.Children.Add($rp)
+  $script:nwBody = $body; $script:nwScroll = $rs
+  foreach ($n in $all) { [void]$lst.Children.Add((New-NoticeRow $n { param($s, $e) Show-NoticeBody $s.Tag })) }
+  Show-NoticeBody $(if ($pick) { $pick } else { $all[0] })
+  $w.Content = $g
+  [void]$w.ShowDialog()
+}
+function Show-Notices($feed) {
+  $feedNotice.Children.Clear()
+  $all = Get-Notices $feed
+  if ($all.Count -eq 0) { Add-FeedNote $feedNotice "아직 공지가 없습니다."; return }
+  foreach ($n in @($all | Select-Object -First 6)) { [void]$feedNotice.Children.Add((New-NoticeRow $n { param($s, $e) Show-NoticeWindow $s.Tag })) }
+  $more = New-Text "더보기 >" 12 "#3B6F3E" $true; $more.HorizontalAlignment = "Right"; $more.Cursor = "Hand"; $more.Margin = New-Object System.Windows.Thickness(0, 2, 8, 0)
+  $more.Add_MouseLeftButtonUp({ Show-NoticeWindow $null })
+  [void]$feedNotice.Children.Add($more)
+}
 
 # 접속자 현황
 $onPanel = New-Panel
@@ -2343,6 +2424,7 @@ function Show-Feed($feed, $notice) {
     if ($feed.updated) { Add-FeedNote $feedProg ("기준: " + (Format-Ago $feed.updated)) }
   }
   $script:lastFeed = $feed
+  Show-Notices $feed
   Show-Online
 }
 
