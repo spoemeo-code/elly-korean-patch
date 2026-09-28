@@ -1,6 +1,6 @@
 {
-    "version":  14,
-    "signed_at":  "2026-09-28T03:44:54+09:00",
+    "version":  15,
+    "signed_at":  "2026-09-29T00:36:38+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -44,16 +44,16 @@
                                               "size":  108633
                                           },
                   "loader.ps1":  {
-                                     "sha256":  "f283973fbc4e799e999d2c8b2ffa49e07afb3f5191cec89c59b06aee033beb6b",
-                                     "size":  7378
+                                     "sha256":  "114e3e9538c9abf276b1890be264a97f965a89b9bae832aa0fee565e2a631fd3",
+                                     "size":  8870
                                  }
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "447df37fc06209d2d9f490c284138baac88ee236",
-                  "released_at":  "2026-09-28T03:44:54+09:00",
-                  "message":  "Add Korean structure-name resource pack for the Nether dungeon-difficulty HUD",
-                  "committed_at":  "2026-09-27T16:12:16Z",
+                  "commit":  "95f8e2d62f3476ace6a4967bcd7aaca85f744f67",
+                  "released_at":  "2026-09-29T00:36:38+09:00",
+                  "message":  "Add Alex\u0027s Caves ecosystem, End Remastered, and several new content mods",
+                  "committed_at":  "2026-09-28T14:33:01Z",
                   "files":  {
                                 "mod-sync.ps1":  {
                                                      "sha256":  "776691ee850bee73d0a8889bd3d6ebe17309c932f844337462b2dd5cc4d100c2",

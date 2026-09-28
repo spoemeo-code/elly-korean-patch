@@ -19,6 +19,7 @@ $AppName = if ($Server -eq "elly") { "엘리 마크 도우미" } else { "잔누 
 $ReleasePubKey = '<RSAKeyValue><Modulus>uTUYzFZRiZNplu/l4TAOk/zWBNs8vsiHsA8RCicdwyHtezCk2++NsLi6TrfQL942dbTRmQiASXOEa3xqG8Gth6jMt024PlV9/mEGcyq079I8O+Uow9pPPsxe1OzidLex4ehen9G6eAAHpdqWFSjJ/CcbXqp3sLTMox5TqX/ALjyErO7xfeWASHmm9oA1PNP0O6mn06O/vpwvQkNKHPtbhqmoMl+YS6Kc9wL5XG0ob3NuQS2RylkPG0vdwmMB4cU+Pkw2Gus2ieC7nO6GcdxCmoltfUeYosOG+cJnU1OBIRuPLSN5c9PE7uxoQxJwDowNCh0JcxMIa0Mvr/1Sa0eT6/KyarWgguSzkp490od1p0UcP9qnpoRMokN359r7tQtrL4ABayCKq5jxbjA0RUoVpmIgWU0DIR3BoAQ3NE5wJc23OsTjRx8/L1R15eWDY/rjk7N3KUWVH9mHmU9rqlU6fbOJDB1GL/8few4bNy51trjsmzMThsiPdL5jSVqcshGF</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>'
 $RelHome = Join-Path $env:APPDATA $AppHome
 $RelDir  = Join-Path $RelHome "verified"
+$FailCountFile = Join-Path $RelHome "fail-count.txt"
 function Rel-Fetch($url, $dest) {
   $wc = New-Object System.Net.WebClient
   $wc.Headers.Add("User-Agent", "elly-helper")
@@ -93,8 +94,17 @@ try {
   $me = $PSCommandPath
   $le = $m.files."loader.ps1"
   if ($me -and $le -and (Rel-Sha256 $me) -ne ([string]$le.sha256).ToLower()) {
-    try { Get-ReleaseFile $m "loader.ps1" "$BASE/loader.ps1" $me } catch { }
+    try { Get-ReleaseFile $m "loader.ps1" "$BASE/loader.ps1" $me }
+    catch {
+      try {
+        [void][IO.Directory]::CreateDirectory($RelHome)
+        ((Get-Date -Format "yyyy-MM-dd HH:mm:ss") + "  [자기 갱신 실패] " + $_.Exception.Message) |
+          Out-File (Join-Path $RelHome "loader-log.txt") -Encoding UTF8 -Append
+      } catch { }
+    }
   }
+  # 여기까지 예외 없이 왔으면 확인이 성공한 것이니 이어지던 실패 횟수를 지운다
+  Remove-Item -LiteralPath $FailCountFile -ErrorAction SilentlyContinue
 } catch {
   $why = $_.Exception.Message
   $notice = if ($why -like "연결:*") { "배포 서버에 연결하지 못해 이전 버전으로 실행합니다." }
@@ -103,6 +113,21 @@ try {
     [void][IO.Directory]::CreateDirectory($RelHome)
     ((Get-Date -Format "yyyy-MM-dd HH:mm:ss") + "  [확인 실패] " + $why) |
       Out-File (Join-Path $RelHome "loader-log.txt") -Encoding UTF8 -Append
+  } catch { }
+  # 여러 번 계속 실패하면(오래된 사본이 계속 걸리는 등) 받아둔 사본을 통째로 지워서
+  # 다음 실행이 완전히 새로 받게 한다. elly PC 서명 없이는 아무것도 실행되지 않으니 안전하다.
+  try {
+    $fails = 0
+    if (Test-Path -LiteralPath $FailCountFile) { try { $fails = [int]([IO.File]::ReadAllText($FailCountFile).Trim()) } catch { $fails = 0 } }
+    $fails += 1
+    if ($fails -ge 3) {
+      if (Test-Path -LiteralPath $RelDir) { [IO.Directory]::Delete($RelDir, $true) }
+      Remove-Item -LiteralPath $FailCountFile -ErrorAction SilentlyContinue
+      ((Get-Date -Format "yyyy-MM-dd HH:mm:ss") + "  [자동 초기화] 확인이 $fails 번 연속 실패해 받아둔 사본을 지웠습니다. 다음 실행부터 새로 받습니다.") |
+        Out-File (Join-Path $RelHome "loader-log.txt") -Encoding UTF8 -Append
+    } else {
+      [IO.File]::WriteAllText($FailCountFile, [string]$fails)
+    }
   } catch { }
 }
 
