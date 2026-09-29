@@ -1,6 +1,6 @@
 {
-    "version":  23,
-    "signed_at":  "2026-09-29T23:52:16+09:00",
+    "version":  24,
+    "signed_at":  "2026-09-30T03:52:38+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -19,22 +19,22 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "452cfd26419bb863f4efc8c03ade9cec35382a45d09b777321e9c62b60526da2",
-                                                "size":  2352541,
-                                                "sha1":  "5d5fcf51b7b220ee877cfb90eb601f6853c0e101"
+                                                "sha256":  "9b60bc2ea0cb3209b880f66e59ce118459dc6f5a9a574283adb833719fad87da",
+                                                "size":  2352474,
+                                                "sha1":  "07a1462b9940753beebd2e2ec9f0f12def2c156d"
                                             },
                   "Elly-Korean-Patch-NoFont.zip":  {
-                                                       "sha256":  "6cfc4aab141a41cbcbe46993904baced8aca740d24fbd0719e9e9e93e0eed0cf",
-                                                       "size":  1589557,
-                                                       "sha1":  "450260e83313f01b60ea52cad1420efdd637affc"
+                                                       "sha256":  "3374be3c08f3431d0106e9fa2ab982f10732392ea282fe158eef2e8b234cafec",
+                                                       "size":  1589490,
+                                                       "sha1":  "2006bf8edd963de5ff9152d790dd99f5351c1c8e"
                                                    },
                   "gui.ps1":  {
                                   "sha256":  "bf31a2be70ce76d5d3ba61d6b923e6050edf52d2a69a08d46870d9934498e56b",
                                   "size":  101149
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "889fb1076f1d87ceb435a64b61950a046c272dea4f34b68729fcf7aa00a72df1",
-                                       "size":  168815
+                                       "sha256":  "50e9cec509785b46655eb90a3f6122d1947bcaacd960177f55534465cb130f8c",
+                                       "size":  170019
                                    },
                   "install-jannu-kopatch.bat":  {
                                                     "sha256":  "ff59a30c48716710d94f5ab759718540f2fcae52e768a84dd376ac384b2c03e4",
@@ -64,7 +64,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "f04229e7da62c8e46d9a0aa1d3786223c739655f",
-                  "released_at":  "2026-09-29T23:52:16+09:00",
+                  "released_at":  "2026-09-30T03:52:38+09:00",
                   "message":  "Set CodxLib to side=both, bump fabric loader to 0.19.5",
                   "committed_at":  "2026-09-29T13:06:24Z",
                   "files":  {

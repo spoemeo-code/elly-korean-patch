@@ -719,6 +719,21 @@ function Save-Target($p) {
   foreach ($f in @($MainRemember, $PackRemember)) {
     try { $p | Set-Content (Join-Path $env:APPDATA $f) -Encoding UTF8 } catch { }
   }
+  Update-SubText
+}
+
+# 고른 폴더가 커스포지 프로필(커스포지 Instances 폴더 아래)인가
+function Test-CurseForgeTarget($target) {
+  if (-not $target) { return $false }
+  return ("$target" -like "*\curseforge\minecraft\Instances\*")
+}
+
+# 창 위쪽 안내 한 줄. 커스포지 프로필은 켤 때 저절로 맞춰지지 않으므로 버튼을 알려드린다.
+function Update-SubText {
+  if (-not $sub) { return }
+  $sub.Text = if ($IsAdmin) { "모드를 맞추기 전에 마인크래프트를 종료해 주세요." }
+              elseif (Test-CurseForgeTarget (Get-SavedTarget)) { "모드는 [서버 모드 맞추기]를 누르면 맞춰집니다." }
+              else { "모드는 프리즘 런처가 켜질 때 알아서 맞춰집니다." }
 }
 
 function Get-Target($caption, $force) {
@@ -1386,6 +1401,12 @@ function Find-Prism {
 
 function Find-Launcher($target) {
   $t = "$target".ToLower()
+  # 커스포지 zip 으로 가져온 프로필은 커스포지로 켠다(새로 오신 친구분들은 이 길로 들어오신다).
+  if (Test-CurseForgeTarget $target) {
+    $e = "$env:LOCALAPPDATA\Programs\CurseForge Windows\CurseForge.exe"
+    if (Test-Path $e) { return @{ Kind = "app"; Exe = $e; Name = "CurseForge" } }
+    return @{ Kind = "app"; Exe = "curseforge://"; Name = "CurseForge" }
+  }
   # 프리즘이 깔려 있으면 무조건 프리즘으로 켠다.
   $prism = Find-Prism
   if ($prism) { return @{ Kind = "prism"; Exe = $prism; Name = "프리즘 런처" } }
@@ -2759,4 +2780,5 @@ $form.Add_Closed({
     }
   }
 })
+Update-SubText
 [void]$form.ShowDialog()
