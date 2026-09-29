@@ -1,6 +1,6 @@
 {
-    "version":  18,
-    "signed_at":  "2026-09-29T07:48:11+09:00",
+    "version":  19,
+    "signed_at":  "2026-09-29T20:11:09+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -11,8 +11,8 @@
                                           "size":  1135
                                       },
                   "elly-helper-assets.zip":  {
-                                                 "sha256":  "afb535aa4b9fa5641808533669e866885f1f5619880caabcede017a99f78de87",
-                                                 "size":  2414599
+                                                 "sha256":  "1ccf5ca7428b8d38e4e9bb6ed323beadbed0d01285c43b308511539b845e4d65",
+                                                 "size":  2419367
                                              },
                   "elly-icon.ico":  {
                                         "sha256":  "a10a1f2fc4f78390c074a21ec14b900440aa7e9334a238b88c1d4b7acc701669",
@@ -28,8 +28,8 @@
                                   "size":  100946
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "ab7004a50a3a527bb08b7f8fcfe6d0e74b1f42a7d8ceca836e7b21ca0d64623a",
-                                       "size":  167712
+                                       "sha256":  "889fb1076f1d87ceb435a64b61950a046c272dea4f34b68729fcf7aa00a72df1",
+                                       "size":  168815
                                    },
                   "jannu-helper.bat":  {
                                            "sha256":  "5f35f833c0c11a8c679a1c22c62e116602449683f0e3d32f532a9b0912d4ad14",
@@ -50,10 +50,10 @@
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "5b7ee4a717fc1fbd42c99ab073de1ffe638d7d8e",
-                  "released_at":  "2026-09-29T07:48:11+09:00",
-                  "message":  "Restore Aquamirae Depths Resilience on Abyssal armor, add cross-mod attribute support",
-                  "committed_at":  "2026-09-28T17:21:20Z",
+                  "commit":  "9ea4562ff0532bd36afbb9732fba389e088c6f4a",
+                  "released_at":  "2026-09-29T20:11:09+09:00",
+                  "message":  "Fix client crash from invalid Identifier when adding cross-mod attributes",
+                  "committed_at":  "2026-09-28T23:21:22Z",
                   "files":  {
                                 "mod-sync.ps1":  {
                                                      "sha256":  "776691ee850bee73d0a8889bd3d6ebe17309c932f844337462b2dd5cc4d100c2",

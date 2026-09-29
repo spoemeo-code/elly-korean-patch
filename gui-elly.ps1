@@ -2128,7 +2128,7 @@ $mapBox.Child = $mapGrid
 $mapSrc = Get-AssetImage "map"
 if ($mapSrc) {
   $mapImg = New-Object System.Windows.Controls.Image
-  $mapImg.Source = $mapSrc; $mapImg.Stretch = "UniformToFill"
+  $mapImg.Source = $mapSrc; $mapImg.Stretch = "UniformToFill"; $mapImg.VerticalAlignment = "Center"; $mapImg.HorizontalAlignment = "Center" # Map-Point assumes a centred crop (9/29: it was top-aligned, dots sat ~57px high)
   [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($mapImg, "NearestNeighbor")
   [void]$mapGrid.Children.Add($mapImg)
 } else {
@@ -2149,7 +2149,7 @@ $mapLayer = New-Object System.Windows.Controls.Canvas
 # 다른 차원(네더·엔드 등)에 있는 친구는 지도 왼쪽 아래 칸에 모은다
 $dimBox = New-Object System.Windows.Controls.StackPanel
 $dimBox.Orientation = "Horizontal"; $dimBox.HorizontalAlignment = "Left"; $dimBox.VerticalAlignment = "Bottom"
-$dimBox.Margin = New-Object System.Windows.Thickness(14, 0, 0, 12)
+$dimBox.Margin = New-Object System.Windows.Thickness(14, 0, 0, 6)
 [void]$mapGrid.Children.Add($dimBox)
 $shadow = New-Object System.Windows.Media.Effects.DropShadowEffect -Property @{ BlurRadius = 4; ShadowDepth = 1.5; Opacity = 0.75; Color = [System.Windows.Media.Colors]::Black }
 $mapTitle = New-Text "지금 엘리서버에서는…" 30 "#FFFFFF" $true
@@ -2494,6 +2494,11 @@ $Places = [ordered]@{
   "마을"         = @{ X = 0.40; Y = 0.38; Icon = "place_carrot"; Color = "#E8823A"; Mark = "마" }
   "언덕 마을"    = @{ X = 0.62; Y = 0.30; Icon = "place_hill"; Color = "#6C9B45"; Mark = "언" }
   "옛 카지노 섬" = @{ X = 0.14; Y = 0.25; Icon = "place_islet"; Color = "#8A6236"; Mark = "섬" }
+  # (9/29 b3 지도 A안) 새 자리 — GPT 검수 review-helper-map-spots·v2 뒤 elly가 고름(호수 쉼터 섬=왼쪽 아래 작은 섬, 호수 다리=위쪽 잔교)
+  "호수 쉼터 섬" = @{ X = 0.13; Y = 0.72; Icon = "place_lakeislet"; Color = "#4E9A8A"; Mark = "쉼" }
+  "호수 다리"    = @{ X = 0.58; Y = 0.42; Icon = "place_bridge"; Color = "#9A7040"; Mark = "다" }
+  "식당 거리"    = @{ X = 0.48; Y = 0.42; Icon = "place_diner"; Color = "#D9A13A"; Mark = "식" }
+  "광산"         = @{ X = 0.52; Y = 0.73; Icon = "place_mine"; Color = "#6E6A64"; Mark = "산" }
 }
 # 다른 차원: 지도 위가 아니라 지도 왼쪽 아래 칸에 모아 보여 준다
 $Dims = [ordered]@{
@@ -2501,6 +2506,10 @@ $Dims = [ordered]@{
   "엔드"      = @{ Icon = "dim_end"; Color = "#4A3470"; Mark = "엔" }
   "에테르"    = @{ Icon = "dim_aether"; Color = "#4F8FC0"; Mark = "에" }
   "다른 세계" = @{ Icon = "dim_other"; Color = "#5A5A5A"; Mark = "?" }
+  # 정해진 자리가 없는 곳도 같은 칸에(GPT 검수: 지도 위 점 없음)
+  "섬 어딘가" = @{ Icon = "place_somewhere"; Color = "#4F6B3A"; Mark = "?" }
+  "섬 지하"   = @{ Icon = "place_under"; Color = "#5A4A3A"; Mark = "굴" }
+  "먼 곳"     = @{ Icon = "place_far"; Color = "#4A7AA0"; Mark = "먼" }
 }
 # 그림 안의 자리 → 지도 칸 위의 자리. 그림은 칸을 꽉 채우도록(UniformToFill) 가운데 기준으로 잘린다.
 function Map-Point($pl, $w, $h) {
@@ -2592,12 +2601,12 @@ function Update-Online {
 function Show-Online {
   $p = $script:lastPing
   $placeOf = @{}
-  # 위치는 서버가 소식(feed.online)에 공개 장소 이름을 실어 줄 때만, 그것도 15분 안의 것만 쓴다.
+  # 위치는 서버가 소식(feed.online)에 공개 장소 이름을 실어 줄 때만, 그것도 3분 안의 것만 쓴다(서버가 1분마다 갱신 — b3 9/29).
   # 서버 쪽이 아직 없으면 이름과 머리만 보이고, 지도 위 머리와 장소 칸은 뜨지 않는다.
   try {
     $on = if ($script:lastFeed) { $script:lastFeed.online } else { $null }
     $fresh = $false
-    if ($on -and $on.at) { try { $fresh = (((Get-Date) - [DateTimeOffset]::Parse([string]$on.at).LocalDateTime).TotalMinutes -lt 15) } catch { } }
+    if ($on -and $on.at) { try { $fresh = (((Get-Date) - [DateTimeOffset]::Parse([string]$on.at).LocalDateTime).TotalMinutes -lt 3) } catch { } }
     if ($fresh -and $on.list) { foreach ($o in @($on.list)) { if ($o.name) { $placeOf[[string]$o.name] = [string]$o.place } } }
   } catch { }
   $script:placeOf = $placeOf
@@ -2676,7 +2685,7 @@ function Show-Online {
   foreach ($dn in $byDim.Keys) {
     $who = @($byDim[$dn]); $dm = $Dims[$dn]
     $cell = New-Object System.Windows.Controls.Border
-    $cell.CornerRadius = 8; $cell.Padding = New-Object System.Windows.Thickness(8, 4, 8, 5); $cell.Margin = New-Object System.Windows.Thickness(0, 0, 8, 0)
+    $cell.CornerRadius = 8; $cell.Padding = New-Object System.Windows.Thickness(8, 3, 8, 4); $cell.Margin = New-Object System.Windows.Thickness(0, 0, 8, 0)
     $bc = [System.Windows.Media.ColorConverter]::ConvertFromString($dm.Color)
     $cell.Background = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromArgb(225, $bc.R, $bc.G, $bc.B))
     $cs = New-Object System.Windows.Controls.StackPanel
@@ -2685,7 +2694,7 @@ function Show-Online {
     $dt = New-Text ("{0} · {1}명" -f $dn, $who.Count) 12 "#FFFFFF" $true; $dt.TextWrapping = "NoWrap"; $dt.VerticalAlignment = "Center"; [void]$top.Children.Add($dt)
     [void]$cs.Children.Add($top)
     $hs = New-Object System.Windows.Controls.StackPanel; $hs.Orientation = "Horizontal"; $hs.Margin = New-Object System.Windows.Thickness(0, 3, 0, 0)
-    foreach ($n in @($who | Select-Object -First 5)) { $mh = New-HeadImage $n 22; $mh.Margin = New-Object System.Windows.Thickness(0, 0, 2, 0); $mh.ToolTip = $n; [void]$hs.Children.Add($mh) }
+    foreach ($n in @($who | Select-Object -First 5)) { $mh = New-HeadImage $n 18; $mh.Margin = New-Object System.Windows.Thickness(0, 0, 2, 0); $mh.ToolTip = $n; [void]$hs.Children.Add($mh) }
     [void]$cs.Children.Add($hs)
     $cell.Child = $cs
     [void]$dimBox.Children.Add($cell)
