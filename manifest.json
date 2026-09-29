@@ -1,6 +1,6 @@
 {
-    "version":  22,
-    "signed_at":  "2026-09-29T23:22:32+09:00",
+    "version":  23,
+    "signed_at":  "2026-09-29T23:52:16+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -19,14 +19,14 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "915164cdb73ee53499f65311d1228826b46839d328b0048b9a665283551f105e",
-                                                "size":  2255571,
-                                                "sha1":  "68177c0a5d05b8f3727a9d079dd9f3d88f63896b"
+                                                "sha256":  "452cfd26419bb863f4efc8c03ade9cec35382a45d09b777321e9c62b60526da2",
+                                                "size":  2352541,
+                                                "sha1":  "5d5fcf51b7b220ee877cfb90eb601f6853c0e101"
                                             },
                   "Elly-Korean-Patch-NoFont.zip":  {
-                                                       "sha256":  "dcca229ad1f35ddee130309dab8dbca9f8cad0bb57270687d5a805ee1a2e3fa0",
-                                                       "size":  1492587,
-                                                       "sha1":  "9a21358e4f9d973a44e6c2e2b3270cdb4c312f93"
+                                                       "sha256":  "6cfc4aab141a41cbcbe46993904baced8aca740d24fbd0719e9e9e93e0eed0cf",
+                                                       "size":  1589557,
+                                                       "sha1":  "450260e83313f01b60ea52cad1420efdd637affc"
                                                    },
                   "gui.ps1":  {
                                   "sha256":  "bf31a2be70ce76d5d3ba61d6b923e6050edf52d2a69a08d46870d9934498e56b",
@@ -64,7 +64,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "f04229e7da62c8e46d9a0aa1d3786223c739655f",
-                  "released_at":  "2026-09-29T23:22:32+09:00",
+                  "released_at":  "2026-09-29T23:52:16+09:00",
                   "message":  "Set CodxLib to side=both, bump fabric loader to 0.19.5",
                   "committed_at":  "2026-09-29T13:06:24Z",
                   "files":  {
