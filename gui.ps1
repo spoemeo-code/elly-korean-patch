@@ -31,8 +31,9 @@ $AppHome      = "jannu-helper"
 $IconFile     = "jannu-icon.ico"
 $LauncherFile = "jannu-helper.bat"
 $GuiFileName  = "gui.ps1"
-$PatchUrl  = "$BASE/Elly-Korean-Patch.zip"
-$PatchName = "Elly-Korean-Patch.zip"
+# 잔누판은 글꼴 재정의가 없는 판을 받는다(9/30, 잔누서버 전체 글꼴이 바뀌는 문제 때문)
+$PatchUrl  = "$BASE/Elly-Korean-Patch-NoFont.zip"
+$PatchName = "Elly-Korean-Patch-NoFont.zip"
 # 설치 위치는 한글패치·모드가 같은 폴더다. 따로 기억했더니 한쪽만 아는 상태가 생겼다.
 $PatchRemember = "elly-korean-patch-target.txt"   # 예전 판에서 쓰던 파일 (읽기만)
 # 설치 위치와 설치 기록은 배포본마다 따로 둔다. 같이 쓰면 서버를 둘 다 하시는 분이
@@ -505,7 +506,8 @@ function Set-PatchOnTop([string]$line, [string]$patchName) {
   $keep = @(); $dropped = @()
   foreach ($n in $items) {
     if ($n -eq $mine) { continue }
-    if ($n -match '^file/Elly-Korean-Patch[-_ ].*\.zip$') { $dropped += $n; continue }
+    # 옛 판(대문자 이름 그대로, -v12 등 번호판, 글꼴 있는 예전 기본판 포함) 은 전부 뺀다
+    if ($n -match '^file/Elly-Korean-Patch([-_ ].*)?\.zip$') { $dropped += $n; continue }
     $keep += $n
   }
   if ($dropped.Count -gt 0) { Log ("  예전 한글패치를 켜진 목록에서 뺌: " + ($dropped -join ", ")) }
@@ -529,12 +531,12 @@ function Install-Patch {
     Remove-Item $tmp -ErrorAction SilentlyContinue
     # 서명 목록에 적힌 해시로 주소를 바꿔 raw 캐시(최대 5분)의 옛 zip 을 피한다
     $pv = ""
-    try { $pv = "?v=" + ([string](Get-Rel).files."Elly-Korean-Patch.zip".sha256).Substring(0, 12) } catch { }
+    try { $pv = "?v=" + ([string](Get-Rel).files.$PatchName.sha256).Substring(0, 12) } catch { }
     Get-Web ($PatchUrl + $pv) $tmp
 
     # 서명된 배포 목록의 해시와 같을 때만 넣는다
     $pe = $null
-    try { $pe = (Get-Rel).files."Elly-Korean-Patch.zip" } catch { Log "  [배포 목록 확인 실패] $($_.Exception.Message)" }
+    try { $pe = (Get-Rel).files.$PatchName } catch { Log "  [배포 목록 확인 실패] $($_.Exception.Message)" }
     if (-not $pe -or (Rel-Sha256 $tmp) -ne ([string]$pe.sha256).ToLower()) {
       Remove-Item $tmp -ErrorAction SilentlyContinue
       SetStep "배포되지 않은 한글패치라 받지 않았습니다." 0
@@ -993,7 +995,7 @@ function Refresh-Stamps($keepMessage) {
     $myZip = if ($t) { Join-Path $t "resourcepacks\$PatchName" } else { $null }
     if ($myZip -and (Test-Path $myZip)) { $mine = Get-ZipPackDate $myZip }
 
-    $srvSha = (Get-WebText "$BASE/Elly-Korean-Patch.zip.sha1").Trim()
+    $srvSha = [string](Get-Rel).files.$PatchName.sha1
     $same = $false
     if ($myZip -and (Test-Path $myZip)) {
       $same = ((Get-FileHash $myZip -Algorithm SHA1).Hash.ToLower() -eq $srvSha.ToLower())
@@ -1604,7 +1606,7 @@ function Refresh-JannuNews {
     $items += [pscustomobject]@{ At = [string]$m.signed_at; Kind = "patch"; Lines = , @("한글패치가 갱신되었습니다 (배포 번호 $($m.version))", "main"); Pending = $false; Pinned = $false }
     # 한글패치 이전 갱신 날짜(저장소 기록)
     try {
-      $pc = (Get-WebText "https://api.github.com/repos/spoemeo-code/elly-korean-patch/commits?path=Elly-Korean-Patch.zip&per_page=4") | ConvertFrom-Json | ForEach-Object { $_ }
+      $pc = (Get-WebText "https://api.github.com/repos/spoemeo-code/elly-korean-patch/commits?path=$PatchName&per_page=4") | ConvertFrom-Json | ForEach-Object { $_ }
       foreach ($c in @($pc | Select-Object -Skip 1)) { $items += [pscustomobject]@{ At = [string]$c.commit.committer.date; Kind = "patch"; Lines = , @("한글패치가 갱신되었습니다", "main"); Pending = $false; Pinned = $false } }
     } catch { }
   } catch {
