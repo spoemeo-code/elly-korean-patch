@@ -1,6 +1,6 @@
 {
-    "version":  20,
-    "signed_at":  "2026-09-29T22:55:23+09:00",
+    "version":  21,
+    "signed_at":  "2026-09-29T23:14:16+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -19,9 +19,9 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "8f632dd2ffc8769e4c87f20b2b702120087c804d7a5f63ce5a6e98134bc2bd1a",
-                                                "size":  2254817,
-                                                "sha1":  "c598ba5c3ccb95733de0590771cda7dc28ab1979"
+                                                "sha256":  "915164cdb73ee53499f65311d1228826b46839d328b0048b9a665283551f105e",
+                                                "size":  2255571,
+                                                "sha1":  "68177c0a5d05b8f3727a9d079dd9f3d88f63896b"
                                             },
                   "gui.ps1":  {
                                   "sha256":  "dffe7526e92f53b562538665fa26bf68c76955d18b7b4f321f82e6091307e147",
@@ -51,7 +51,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "f04229e7da62c8e46d9a0aa1d3786223c739655f",
-                  "released_at":  "2026-09-29T22:55:23+09:00",
+                  "released_at":  "2026-09-29T23:14:16+09:00",
                   "message":  "Set CodxLib to side=both, bump fabric loader to 0.19.5",
                   "committed_at":  "2026-09-29T13:06:24Z",
                   "files":  {
