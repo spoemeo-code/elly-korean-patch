@@ -1499,6 +1499,17 @@ function Start-Minecraft {
     try { Start-Process "https://prismlauncher.org/download/windows/" } catch { }
     return
   }
+  # 패브릭 로더도 서버 버전에 맞춰 둔다. 모드 버튼을 따로 안 누르고 바로 실행만
+  # 누르는 분들이 있어서, 여기서도 확인한다(Sync-Loader는 모드 버튼 쪽에도 있음).
+  # pack.toml만 가볍게 받아서 버전만 확인 — 전체 모드 목록은 안 받는다.
+  if (-not $script:packLoader) {
+    try {
+      $pt = Get-WebText "https://raw.githubusercontent.com/$PackRepo/main/pack.toml"
+      $m = [regex]::Match($pt, '(?m)^\s*fabric\s*=\s*"([^"]+)"')
+      if ($m.Success) { $script:packLoader = $m.Groups[1].Value }
+    } catch { Log "실행 전 로더 확인용 pack.toml 못 받음: $($_.Exception.Message)" }
+  }
+  if (-not (Sync-Loader $target)) { return }
   # 들어갈 서버를 목록에 미리 넣어둔다. 주소를 손으로 적을 일이 없게.
   $added = Add-ServerEntry $target "엘리서버" $ServerAddr
   Log "서버 목록: $added"

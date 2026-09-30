@@ -1,6 +1,6 @@
 {
-    "version":  26,
-    "signed_at":  "2026-09-30T22:37:58+09:00",
+    "version":  27,
+    "signed_at":  "2026-09-30T22:43:56+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -33,8 +33,8 @@
                                   "size":  101149
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "5b9ec2a30283b46b26a88cc669fc58d86084dcd5b47dc3d63d313c4763d55c7f",
-                                       "size":  173730
+                                       "sha256":  "b7c59fc2cda1853a4a54d5b498fb7db6ba87733a984223e9cf3a0b18c823f1b3",
+                                       "size":  174462
                                    },
                   "install-jannu-kopatch.bat":  {
                                                     "sha256":  "ff59a30c48716710d94f5ab759718540f2fcae52e768a84dd376ac384b2c03e4",
@@ -64,7 +64,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "e5f48afde1ffd93cf8e9e97e60069ba9873ad98b",
-                  "released_at":  "2026-09-30T22:37:58+09:00",
+                  "released_at":  "2026-09-30T22:43:56+09:00",
                   "message":  "Force TLS 1.2 in mod-sync.ps1/update.bat to fix \"can\u0027t reach repository\" failures",
                   "committed_at":  "2026-09-30T13:20:23Z",
                   "files":  {
