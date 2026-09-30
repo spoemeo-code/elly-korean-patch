@@ -1,6 +1,6 @@
 {
-    "version":  25,
-    "signed_at":  "2026-09-30T21:31:48+09:00",
+    "version":  26,
+    "signed_at":  "2026-09-30T22:37:58+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -63,18 +63,18 @@
               },
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
-                  "commit":  "f04229e7da62c8e46d9a0aa1d3786223c739655f",
-                  "released_at":  "2026-09-30T21:31:48+09:00",
-                  "message":  "Set CodxLib to side=both, bump fabric loader to 0.19.5",
-                  "committed_at":  "2026-09-29T13:06:24Z",
+                  "commit":  "e5f48afde1ffd93cf8e9e97e60069ba9873ad98b",
+                  "released_at":  "2026-09-30T22:37:58+09:00",
+                  "message":  "Force TLS 1.2 in mod-sync.ps1/update.bat to fix \"can\u0027t reach repository\" failures",
+                  "committed_at":  "2026-09-30T13:20:23Z",
                   "files":  {
                                 "mod-sync.ps1":  {
-                                                     "sha256":  "776691ee850bee73d0a8889bd3d6ebe17309c932f844337462b2dd5cc4d100c2",
-                                                     "size":  25285
+                                                     "sha256":  "e8f43c3202a90b8b7b577efe977fb41ab54417e7a429f09c2623c08e1ce65a66",
+                                                     "size":  25885
                                                  },
                                 "update.bat":  {
-                                                   "sha256":  "27b38cd387cd09a922fbdd1ddd4dbe5c28d1c8237a11f188503c326f6992ad1c",
-                                                   "size":  2591
+                                                   "sha256":  "4204654a2460f8a4b195b55d1464e20d54eb15378e098d214a8ac184e37cb9c7",
+                                                   "size":  2738
                                                }
                             }
               }
