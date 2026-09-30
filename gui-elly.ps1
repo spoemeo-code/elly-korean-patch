@@ -933,6 +933,11 @@ function Get-PackWanted($refresh) {
     Get-Web "https://codeload.github.com/$PackRepo/zip/$($script:packRef)" $packZip
     [System.IO.Compression.ZipFile]::ExtractToDirectory($packZip, $work)
 
+    # 서버가 쓰는 패브릭 로더 버전(pack.toml). 모드가 요구하는 로더보다 낮으면 마크가 켜지지 않는다.
+    $script:packLoader = $null
+    $pt = Get-ChildItem $work -Directory | ForEach-Object { Join-Path $_.FullName "pack.toml" } | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($pt) { $script:packLoader = [regex]::Match((Get-Content $pt -Raw -Encoding UTF8), '(?m)^\s*fabric\s*=\s*"([^"]+)"').Groups[1].Value }
+
     $modsSrc = Get-ChildItem $work -Directory | ForEach-Object { Join-Path $_.FullName "mods" } |
                Where-Object { Test-Path $_ } | Select-Object -First 1
     if (-not $modsSrc) { return $null }
@@ -1073,8 +1078,63 @@ function Install-Configs($target) {
   return $res
 }
 
+# 모드만 맞추고 로더(패브릭)가 옛 버전이면 새 모드가 "로더를 올려 달라"며 켜지지 않는다.
+# 프리즘은 인스턴스 설정(mmc-pack.json)을 백업해 두고 서버 버전으로 맞춘다.
+# 커스포지는 앱이 설정을 직접 관리해서 건드리지 않고, 바꾸는 방법을 알려드린다.
+# 계속 진행해도 되면 $true, 멈춰야 하면 $false.
+function Sync-Loader($target) {
+  $want = $script:packLoader
+  if (-not $want) { return $true }
+  try { $wantV = [version]$want } catch { return $true }
+  $inst = Split-Path $target -Parent
+  $leaf = Split-Path $target -Leaf
+  if ($leaf -ne ".minecraft" -and $leaf -ne "minecraft") { $inst = $target }
+
+  $mmc = Join-Path $inst "mmc-pack.json"
+  if (Test-Path -LiteralPath $mmc) {
+    $j = Get-Content -LiteralPath $mmc -Raw -Encoding UTF8 | ConvertFrom-Json
+    $c = @($j.components | Where-Object { $_.uid -eq "net.fabricmc.fabric-loader" }) | Select-Object -First 1
+    if (-not $c) { return $true }
+    $have = [string]$(if ($c.version) { $c.version } else { $c.cachedVersion })
+    try { if ([version]$have -ge $wantV) { return $true } } catch { }
+    if (Get-Process -Name "prismlauncher" -ErrorAction SilentlyContinue) {
+      SetStep "프리즘 런처의 패브릭 버전을 올려야 합니다. 프리즘 런처를 닫은 뒤 다시 눌러주세요." 0
+      return $false
+    }
+    $bak = "$mmc.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    [IO.File]::Copy($mmc, $bak, $true)
+    $c.version = $want
+    if ($c.PSObject.Properties["cachedVersion"]) { $c.cachedVersion = $want }
+    [IO.File]::WriteAllText($mmc, ($j | ConvertTo-Json -Depth 20), (New-Object Text.UTF8Encoding($false)))
+    Log "로더: $have → $want (백업 $bak)"
+    $script:loaderNote = " · 패브릭 $have → $want"
+    return $true
+  }
+
+  $cfj = Join-Path $inst "minecraftinstance.json"
+  if (Test-Path -LiteralPath $cfj) {
+    $t = Get-Content -LiteralPath $cfj -Raw -Encoding UTF8
+    $m = [regex]::Match($t, '"baseModLoader"\s*:\s*\{[^{}]*?"name"\s*:\s*"fabric-([0-9.]+)-')
+    if (-not $m.Success) { return $true }
+    $have = $m.Groups[1].Value
+    try { if ([version]$have -ge $wantV) { return $true } } catch { return $true }
+    Log "로더(커스포지): $have, 서버 $want — 안내만"
+    [void][System.Windows.Forms.MessageBox]::Show($script:Owner,
+      "패브릭 버전이 서버와 다릅니다. (이 프로필 $have · 서버 $want)" + [Environment]::NewLine +
+      "이대로는 마인크래프트가 켜지지 않습니다." + [Environment]::NewLine + [Environment]::NewLine +
+      "커스포지 앱에서 이 프로필의 [⋯] 버튼 → [프로필 편집]을 누르시고," + [Environment]::NewLine +
+      "모드 로더 버전을 $want 로 바꿔 주세요." + [Environment]::NewLine + [Environment]::NewLine +
+      "모드는 지금 이어서 맞춰 드리겠습니다.",
+      "패브릭 버전 확인", "OK", "Information")
+    $script:loaderNote = " · 커스포지에서 패브릭을 $want 로 바꿔 주세요"
+    return $true
+  }
+  return $true
+}
+
 function Install-Mods {
   $force = Test-ShiftHeld
+  $script:loaderNote = ""
   Set-Busy $true
   try {
     if (Test-MinecraftRunning) {
@@ -1096,6 +1156,7 @@ function Install-Mods {
     SetStep "서버 모드 목록을 받고 있습니다..." 8
     $want = Get-PackWanted $true
     if (-not $want) { SetStep "서버 모드 목록을 읽지 못했습니다. 잠시 뒤 다시 눌러주세요." 0; return }
+    if (-not (Sync-Loader $target)) { return }
 
     $have = @{}
     Get-ChildItem $modsDir -Filter "*.jar" -File -ErrorAction SilentlyContinue | ForEach-Object { $have[$_.Name] = $true }
@@ -1118,7 +1179,7 @@ function Install-Mods {
       $dup = Resolve-DuplicateMods $target $want $oldMap
       $cfg = Install-Configs $target
       Save-ModMap $mapFile $want
-      SetStep ("이미 최신입니다. 바로 들어가시면 됩니다. (서버 모드 $($want.Count)개" + (Get-ModsNote $dup $cfg) + ")") 100
+      SetStep ("이미 최신입니다. 바로 들어가시면 됩니다. (서버 모드 $($want.Count)개" + (Get-ModsNote $dup $cfg) + $script:loaderNote + ")") 100
       return
     }
 
@@ -1169,7 +1230,7 @@ function Install-Mods {
     if ($fail -gt 0) {
       SetStep "$PackLabel 모드 $ok 개 완료 · $fail 개 실패 — $firstWhy`r`n($($failNames[0])) 다시 누르시면 못 받은 것만 받습니다." 100
     } else {
-      SetStep "$PackLabel 모드 업데이트가 완료되었습니다. ($ok 개$cleanNote)" 100
+      SetStep "$PackLabel 모드 업데이트가 완료되었습니다. ($ok 개$cleanNote$($script:loaderNote))" 100
     }
   } catch {
     SetStep "문제가 생겼습니다 — $($_.Exception.Message)" 0; Log "  [오류] $($_.ScriptStackTrace)"

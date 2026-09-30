@@ -1,6 +1,6 @@
 {
-    "version":  24,
-    "signed_at":  "2026-09-30T03:52:38+09:00",
+    "version":  25,
+    "signed_at":  "2026-09-30T21:31:48+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -33,8 +33,8 @@
                                   "size":  101149
                               },
                   "gui-elly.ps1":  {
-                                       "sha256":  "50e9cec509785b46655eb90a3f6122d1947bcaacd960177f55534465cb130f8c",
-                                       "size":  170019
+                                       "sha256":  "5b9ec2a30283b46b26a88cc669fc58d86084dcd5b47dc3d63d313c4763d55c7f",
+                                       "size":  173730
                                    },
                   "install-jannu-kopatch.bat":  {
                                                     "sha256":  "ff59a30c48716710d94f5ab759718540f2fcae52e768a84dd376ac384b2c03e4",
@@ -64,7 +64,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "f04229e7da62c8e46d9a0aa1d3786223c739655f",
-                  "released_at":  "2026-09-30T03:52:38+09:00",
+                  "released_at":  "2026-09-30T21:31:48+09:00",
                   "message":  "Set CodxLib to side=both, bump fabric loader to 0.19.5",
                   "committed_at":  "2026-09-29T13:06:24Z",
                   "files":  {
