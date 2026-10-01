@@ -1,6 +1,6 @@
 {
-    "version":  28,
-    "signed_at":  "2026-10-02T04:17:27+09:00",
+    "version":  29,
+    "signed_at":  "2026-10-02T07:19:43+09:00",
     "files":  {
                   "bot-endpoint.txt":  {
                                            "sha256":  "0210792b26a8ad44de9ea4efbf0ebf1043d0eac09359d4268061faee3f8bc471",
@@ -19,14 +19,14 @@
                                         "size":  170604
                                     },
                   "Elly-Korean-Patch.zip":  {
-                                                "sha256":  "bfa06f59f752f5d55f6f0114bdd2d443cdecece25dff6d77716de43044aeec17",
-                                                "size":  2357878,
-                                                "sha1":  "9b290f25de2e6ddb489632532f0ffd5598fb8bbe"
+                                                "sha256":  "5e586ac5b5c1a9a76f6151297a87a483d52d54eda401af6bd81ad892d6a88e6d",
+                                                "size":  2286755,
+                                                "sha1":  "d4288c30b5b9b660606c2f8362238545b6ead727"
                                             },
                   "Elly-Korean-Patch-NoFont.zip":  {
-                                                       "sha256":  "55f5062671493253d66c85a22545190a1c74360bf6c987f6fb36fbc6eb5a3339",
-                                                       "size":  1594894,
-                                                       "sha1":  "3646acb3f8b6a79419e95a29e18995207479d02d"
+                                                       "sha256":  "ec56675de2820d5a6d9c26d6396793ffa6ba8bf01b0992ff5e1afac0a3dc432b",
+                                                       "size":  1523771,
+                                                       "sha1":  "c27f85888469b843bd51def5c665ede40566f853"
                                                    },
                   "gui.ps1":  {
                                   "sha256":  "bf31a2be70ce76d5d3ba61d6b923e6050edf52d2a69a08d46870d9934498e56b",
@@ -64,7 +64,7 @@
     "jannu":  {
                   "repo":  "JannuH2/Jannu-maku-dudutown",
                   "commit":  "e5f48afde1ffd93cf8e9e97e60069ba9873ad98b",
-                  "released_at":  "2026-10-02T04:17:27+09:00",
+                  "released_at":  "2026-10-02T07:19:43+09:00",
                   "message":  "Force TLS 1.2 in mod-sync.ps1/update.bat to fix \"can\u0027t reach repository\" failures",
                   "committed_at":  "2026-09-30T13:20:23Z",
                   "files":  {
