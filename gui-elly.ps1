@@ -963,12 +963,28 @@ function Get-PackWanted($refresh) {
     if ($want.Count -eq 0) { return $null }
 
     # 팩에 들어 있는 설정 파일(config/). 작아서 내용째 들고 있다가 Install-Configs 가 쓴다.
+    # config 아래의 .pw.toml 은 "이 파일을 여기에 받아 두라"는 쪽지다(예: config\paxi\resourcepacks 의 리소스팩).
+    # 주소·파일명·해시를 들고 있다가 Install-Configs 가 그 폴더에 받는다.
     $script:packConfig = @()
+    $script:packConfigGet = @()
     $cfgSrc = Get-ChildItem $work -Directory | ForEach-Object { Join-Path $_.FullName "config" } |
               Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($cfgSrc) {
       foreach ($f in Get-ChildItem $cfgSrc -File -Recurse) {
-        if ($f.Name -like "*.pw.toml") { continue }
+        if ($f.Name -like "*.pw.toml") {
+          $t = Get-Content $f.FullName -Raw -Encoding UTF8
+          $fn   = [regex]::Match($t, '(?m)^\s*filename\s*=\s*"(.+)"').Groups[1].Value
+          $url  = [regex]::Match($t, '(?m)^\s*url\s*=\s*"(.+)"').Groups[1].Value
+          $side = [regex]::Match($t, '(?m)^\s*side\s*=\s*"(.+)"').Groups[1].Value
+          $hf   = [regex]::Match($t, '(?m)^\s*hash-format\s*=\s*"(.+)"').Groups[1].Value
+          $hv   = [regex]::Match($t, '(?m)^\s*hash\s*=\s*"([0-9a-fA-F]+)"').Groups[1].Value
+          $relDir = (Split-Path $f.FullName -Parent).Substring($cfgSrc.Length).TrimStart('\')
+          # 받을 주소는 https 만, 파일 이름에 폴더 기호가 없어야 하고, 해시(sha256·sha512·sha1)가 적혀 있어야 한다
+          if ($side -ne "server" -and $url -match '^https://' -and $fn -match '^[^\\/:*?"<>|]+$' -and $fn -notmatch '^\.+$' -and $relDir -notmatch '\.\.' -and $hv -and $hf -match '^(sha256|sha512|sha1)$') {
+            $script:packConfigGet += [pscustomobject]@{ Rel = $(if ($relDir) { Join-Path $relDir $fn } else { $fn }); Url = $url; HashFormat = $hf; Hash = $hv.ToLower() }
+          }
+          continue
+        }
         $rel = $f.FullName.Substring($cfgSrc.Length).TrimStart('\')
         $b = [IO.File]::ReadAllBytes($f.FullName)
         $h = [BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($b)).Replace("-", "").ToLower()
@@ -1045,13 +1061,49 @@ function Get-ModsNote($dup, $cfg) {
   return $n
 }
 
+# 모드가 첫 실행 때 스스로 써 두는 설정 파일(빈 {} 나 기본값 전체)은 "이미 있음"으로 보여서 팩 설정이 들어가지 못했다.
+# 아래 파일들은 팩이 정한 값만 한 번 끼워 넣는다(다른 값은 그대로 둔다). 그 뒤에 직접 바꾸신 값은 다시 건드리지 않는다.
+$ConfigMergeOnce = @("dynamic_fps.json", "cobblenav\client-config.json")
+function Merge-JsonObject($into, $from) {
+  foreach ($p in $from.PSObject.Properties) {
+    $have = $into.PSObject.Properties[$p.Name]
+    if ($have -and $have.Value -is [pscustomobject] -and $p.Value -is [pscustomobject]) { Merge-JsonObject $have.Value $p.Value }
+    elseif ($have) { $have.Value = $p.Value }
+    else { $into | Add-Member -NotePropertyName $p.Name -NotePropertyValue $p.Value }
+  }
+}
+# 되면 $true. 지금 파일을 읽을 수 없거나 json 이 아니면 아무것도 바꾸지 않고 $false.
+function Merge-PackConfig($dest, $packBytes) {
+  try {
+    $utf8 = New-Object Text.UTF8Encoding($false)
+    $curText = [IO.File]::ReadAllText($dest, [Text.Encoding]::UTF8).TrimStart([char]0xFEFF)
+    if (($curText -replace '\s', '') -in @('', '{}')) { [IO.File]::WriteAllBytes($dest, $packBytes); return $true }
+    $a = $curText | ConvertFrom-Json
+    $b = $utf8.GetString($packBytes).TrimStart([char]0xFEFF) | ConvertFrom-Json
+    if ($a -isnot [pscustomobject] -or $b -isnot [pscustomobject]) { return $false }
+    Merge-JsonObject $a $b
+    $outText = $a | ConvertTo-Json -Depth 32
+    [void]($outText | ConvertFrom-Json)
+    [IO.File]::Copy($dest, "$dest.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss"), $true)
+    [IO.File]::WriteAllText($dest, $outText, $utf8)
+    return $true
+  } catch { return $false }
+}
+function Get-FileHashHex($path, $format) {
+  $alg = switch ($format) { "sha512" { "SHA512" } "sha1" { "SHA1" } default { "SHA256" } }
+  return (Get-FileHash -LiteralPath $path -Algorithm $alg).Hash.ToLower()
+}
+
 function Install-Configs($target) {
   $res = [pscustomobject]@{ Added = 0; Updated = 0 }
-  if (-not $script:packConfig -or $script:packConfig.Count -eq 0) { return $res }
+  $hasFiles = ($script:packConfig -and $script:packConfig.Count -gt 0)
+  $hasGets = ($script:packConfigGet -and $script:packConfigGet.Count -gt 0)
   $mapFile = Join-Path $env:APPDATA ($ModMapName -replace 'modmap', 'configmap')
+  if (-not $hasFiles -and -not $hasGets -and -not (Test-Path $mapFile)) { return $res }
   $map = @{}
   try { if (Test-Path $mapFile) { $j = Get-Content $mapFile -Raw -Encoding UTF8 | ConvertFrom-Json; foreach ($pp in $j.PSObject.Properties) { $map[$pp.Name] = [string]$pp.Value } } } catch { }
-  foreach ($c in $script:packConfig) {
+  foreach ($c in @($script:packConfig)) {
+    if (-not $c) { continue }
     if ($c.Rel -match '(?i)key|bind|control|options') { Log "  설정 건너뜀(단축키·조작): $($c.Rel)"; continue }
     $dest = Join-Path (Join-Path $target "config") $c.Rel
     $dir = Split-Path $dest -Parent
@@ -1064,6 +1116,14 @@ function Install-Configs($target) {
     }
     $cur = (Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLower()
     if ($cur -eq $c.Sha) { $map[$c.Rel] = $c.Sha; continue }
+    $mk = "merged:" + $c.Rel
+    if (($ConfigMergeOnce -contains $c.Rel) -and $map[$mk] -ne $c.Sha) {
+      if (Merge-PackConfig $dest $c.Bytes) {
+        $map[$mk] = $c.Sha; $map[$c.Rel] = $c.Sha; $res.Updated++
+        Log "  설정에 팩 값을 넣음: $($c.Rel)"
+        continue
+      }
+    }
     if ($rec -and $rec -ne $c.Sha) {
       if ($cur -ne $rec) { [IO.File]::Copy($dest, "$dest.bak-" + (Get-Date -Format "yyyyMMdd-HHmmss"), $true) }
       [IO.File]::WriteAllBytes($dest, $c.Bytes); $map[$c.Rel] = $c.Sha; $res.Updated++
@@ -1073,6 +1133,46 @@ function Install-Configs($target) {
       $map[$c.Rel] = $c.Sha
       Log "  설정 그대로 둠(이미 있음): $($c.Rel)"
     }
+  }
+
+  # 팩이 "받아 두라"고 한 파일(config 아래 .pw.toml). 해시가 맞는 파일이 이미 있으면 그대로 두고,
+  # 없거나 우리가 전에 받아 둔 것과 달라졌으면 새로 받는다. 직접 넣어 두신 다른 파일은 건드리지 않는다.
+  $wantGet = @{}
+  foreach ($g in @($script:packConfigGet)) {
+    if (-not $g) { continue }
+    if ($g.Rel -match '(?i)key|bind|control|options') { continue }
+    $gk = "get:" + $g.Rel; $wantGet[$gk] = $true
+    $dest = Join-Path (Join-Path $target "config") $g.Rel
+    try {
+      if (Test-Path -LiteralPath $dest) {
+        if ((Get-FileHashHex $dest $g.HashFormat) -eq $g.Hash) { $map[$gk] = $g.Hash; continue }
+        if (-not $map[$gk]) { Log "  받아 둘 파일이 이미 다르게 있어 그대로 둠: $($g.Rel)"; continue }
+      }
+      $dir = Split-Path $dest -Parent
+      if (-not (Test-Path -LiteralPath $dir)) { [void][IO.Directory]::CreateDirectory($dir) }
+      $part = "$dest.part"
+      if (Test-Path -LiteralPath $part) { [IO.File]::Delete($part) }
+      Get-Web $g.Url $part
+      if ((Get-FileHashHex $part $g.HashFormat) -ne $g.Hash) { [IO.File]::Delete($part); Log "  [실패] 받은 파일이 팩에 적힌 것과 달라 넣지 않음: $($g.Rel)"; continue }
+      if (Test-Path -LiteralPath $dest) { [IO.File]::Delete($dest) }
+      [IO.File]::Move($part, $dest); $map[$gk] = $g.Hash; $res.Added++
+      Log "  설정 폴더에 받아 둠: $($g.Rel)"
+    } catch {
+      try { if (Test-Path -LiteralPath "$dest.part") { [IO.File]::Delete("$dest.part") } } catch { }
+      Log "  [실패] $($g.Rel) — $($_.Exception.Message)"
+    }
+  }
+  # 팩에서 빠진 것은, 우리가 받아 둔 그대로일 때만 치운다
+  foreach ($k in @($map.Keys)) {
+    if ($k -notlike "get:*" -or $wantGet.ContainsKey($k)) { continue }
+    $old = Join-Path (Join-Path $target "config") $k.Substring(4)
+    try {
+      if (Test-Path -LiteralPath $old) {
+        $fmt = switch ($map[$k].Length) { 128 { "sha512" } 40 { "sha1" } default { "sha256" } }
+        if ((Get-FileHashHex $old $fmt) -eq $map[$k]) { [IO.File]::Delete($old); Log "  팩에서 빠져 치움: $($k.Substring(4))" }
+      }
+    } catch { }
+    $map.Remove($k)
   }
   try { ($map | ConvertTo-Json -Compress) | Set-Content $mapFile -Encoding UTF8 } catch { }
   return $res
@@ -2328,8 +2428,11 @@ $tabProg.Add_MouseLeftButtonUp({ Select-Tab "prog" })
 Select-Tab "notice"
 
 # ── 공지사항 ─────────────────────────────────────────
-# 봇이 디스코드 엘리서버 #공지사항 글을 소식(feed.notices)에 실어 준다: [{ at, title, body }] 최근 것부터.
+# 봇이 디스코드 엘리서버 #공지사항 글(또는 공지 쓰기 도구의 글)을 소식(feed.notices)에 실어 준다: [{ at, title, body, … }] 최근 것부터.
 # 목록 한 줄: 점 · 제목 · NEW(3일 안) · 날짜(MM.DD). 줄을 누르면 본문, [더보기] 는 전체 목록 창.
+# 2판(2026-10): 덧붙는 값은 전부 선택이고, 없으면 예전과 똑같이 그린다.
+#   title_e / body_e : 이모지가 든 글(있으면 이쪽을 보여 줌)   color : 제목 색 이름   image : { file, sha256, w, h, pos }
+# 소식은 서명 없이 오는 글이라, 여기서는 "글자와 그림으로 그리기"만 한다(실행·링크 열기 없음).
 function Get-Notices($feed) {
   $list = @()
   try { if ($feed -and $feed.notices) { $list = @($feed.notices | Where-Object { $_.title } | Sort-Object { [string]$_.at } -Descending) } } catch { }
@@ -2337,6 +2440,180 @@ function Get-Notices($feed) {
 }
 function Notice-Date($n) { try { return ([DateTimeOffset]::Parse([string]$n.at).LocalDateTime).ToString("MM.dd") } catch { return "" } }
 function Notice-IsNew($n) { try { return (((Get-Date) - [DateTimeOffset]::Parse([string]$n.at).LocalDateTime).TotalDays -lt 3) } catch { return $false } }
+
+# 제목 색: 정해진 이름만 받는다(모르는 이름은 기본색). 바탕 위에서 읽히는 색으로 골라 둔 것.
+$NoticeTitleColors = @{ accent = "#B8473B"; event = "#6B5598"; info = "#2F7D3A"; warn = "#8A5D14" }
+function Notice-Color($n) {
+  $k = ""; try { $k = [string]$n.color } catch { }
+  if ($k -and $NoticeTitleColors.ContainsKey($k)) { return $NoticeTitleColors[$k] }
+  return "#2F2D28"
+}
+
+# 이모지는 윈도우 그림문자 글꼴(Segoe UI Emoji)의 흑백 글리프로 그려진다(WPF 는 색 글꼴을 못 그림).
+# 그 글꼴에 없는 그림문자는 네모로 나오니 빼고, 피부색·묶음·숫자 단추·국기의 꾸밈 부분도 뺀다.
+# 공지 쓰기 도구(notice-core.ps1 Format-NoticeEmoji)의 미리 보기와 같은 규칙 — 한쪽을 바꾸면 다른 쪽도 바꾼다.
+$script:noticeEmojiSet = $null
+function Format-NoticeEmoji([string]$s) {
+  if ($null -eq $script:noticeEmojiSet) {
+    $script:noticeEmojiSet = New-Object 'System.Collections.Generic.HashSet[int]'
+    try {
+      $gt = New-Object System.Windows.Media.GlyphTypeface((New-Object System.Uri((Join-Path $env:WINDIR "Fonts\seguiemj.ttf"))))
+      foreach ($k in $gt.CharacterToGlyphMap.Keys) { [void]$script:noticeEmojiSet.Add($k) }
+    } catch { }
+  }
+  $sb = New-Object System.Text.StringBuilder
+  $i = 0
+  while ($i -lt $s.Length) {
+    $cp = 0xFFFD; $len = 1
+    try { $cp = [char]::ConvertToUtf32($s, $i); if ($cp -gt 0xFFFF) { $len = 2 } } catch { }
+    $ch = $s.Substring($i, $len); $i += $len
+    if ($cp -eq 0xFFFD -or $cp -eq 0xFE0F -or $cp -eq 0x200D -or $cp -eq 0x20E3 -or ($cp -ge 0x1F3FB -and $cp -le 0x1F3FF)) { continue }
+    if ($cp -ge 0x1F1E6 -and $cp -le 0x1F1FF) { continue }
+    if ($cp -ge 0x1F000 -and -not $script:noticeEmojiSet.Contains($cp)) { continue }
+    [void]$sb.Append($ch)
+  }
+  $lines = @($sb.ToString().Split("`n") | ForEach-Object { [regex]::Replace([regex]::Replace($_, '[ \t]{2,}', " "), '^[ \t]+|[ \t]+$', "") })
+  return ([string]::Join("`n", [string[]]$lines)).Trim()
+}
+function Notice-Text($n, $name) {
+  $plain = [string]$n.$name
+  try {
+    $e = [string]$n.($name + "_e")
+    if ($e) { $t = Format-NoticeEmoji $e; if ($t) { return $t } }
+  } catch { }
+  return $plain
+}
+
+# ── 공지 그림 ──
+# 그림은 봇 주소(서명된 bot-endpoint.txt 에서 읽은 것)의 /img/<파일> 에서만 받는다. 소식에 적힌 다른 주소는 쓰지 않는다.
+# 받기·확인·풀기는 뒤에서 하고(창이 멈추지 않게), 무엇이든 어긋나면 그림 없이 글만 보여 준다.
+#   파일 이름 모양 확인 → 1.5MB 넘으면 끊음 → sha256 이 소식에 적힌 값과 같은지 → PNG/JPG 머리말 → 한 변 4096·800만 화소까지 → 풀기
+$script:noticeImgDone = @{}     # sha256 -> 그림(BitmapSource) 또는 $false(실패)
+$script:noticeImgJobs = @{}     # sha256 -> @{ ps; handle }
+$script:noticeImgWant = ""      # 지금 공지 창이 기다리는 그림
+$script:noticeImgSlot = $null   # 그 그림이 들어갈 자리
+function Get-NoticeImgDir { return (Join-Path (Join-Path $env:APPDATA $AppHome) "notice-img") }
+function Get-NoticeImage($n) {
+  try {
+    $im = $n.image
+    if (-not $im) { return $null }
+    $file = [string]$im.file; $sha = ([string]$im.sha256).ToLower()
+    if ($file -notmatch '^[A-Za-z0-9_-]{1,80}\.(png|jpg)$' -or $sha -notmatch '^[0-9a-f]{64}$') { return $null }
+    $base = [string]$script:feedEp
+    if ($base -notmatch '^https?://[A-Za-z0-9\.\-]+(:\d+)?$') { return $null }
+    return @{ url = ($base + "/img/" + $file); sha = $sha; ext = $file.Substring($file.Length - 3); top = ([string]$im.pos -eq "top") }
+  } catch { return $null }
+}
+$script:NoticeImgWorker = {
+  param($url, $cacheFile, $sha, $maxBytes)
+  try {
+    Add-Type -AssemblyName PresentationCore, WindowsBase
+    $bytes = $null; $fresh = $false
+    if (Test-Path -LiteralPath $cacheFile) { $bytes = [System.IO.File]::ReadAllBytes($cacheFile) }
+    if (-not $bytes) {
+      $rq = [System.Net.HttpWebRequest]::Create($url)
+      $rq.Timeout = 8000; $rq.ReadWriteTimeout = 8000; $rq.UserAgent = "elly-helper"; $rq.AllowAutoRedirect = $false
+      $rs = $rq.GetResponse()
+      try {
+        if ([int]$rs.StatusCode -ne 200 -or $rs.ContentLength -gt $maxBytes) { return $null }
+        $st = $rs.GetResponseStream(); $ms = New-Object System.IO.MemoryStream; $buf = New-Object byte[] 16384
+        while (($k = $st.Read($buf, 0, $buf.Length)) -gt 0) { $ms.Write($buf, 0, $k); if ($ms.Length -gt $maxBytes) { return $null } }
+        $bytes = $ms.ToArray(); $fresh = $true
+      } finally { $rs.Close() }
+    }
+    if (-not $bytes -or $bytes.Length -lt 24 -or $bytes.Length -gt $maxBytes) { return $null }
+    $h = [System.Security.Cryptography.SHA256]::Create()
+    $got = (($h.ComputeHash($bytes) | ForEach-Object { $_.ToString("x2") }) -join ""); $h.Dispose()
+    if ($got -ne $sha) { if (-not $fresh) { Remove-Item -LiteralPath $cacheFile -Force -ErrorAction SilentlyContinue }; return $null }
+    # 머리말에서 종류와 크기를 읽는다(풀기 전에)
+    $w = 0; $ht = 0
+    if ($bytes[0] -eq 0x89 -and $bytes[1] -eq 0x50 -and $bytes[2] -eq 0x4E -and $bytes[3] -eq 0x47 -and $bytes[12] -eq 0x49 -and $bytes[13] -eq 0x48 -and $bytes[14] -eq 0x44 -and $bytes[15] -eq 0x52) {
+      $w = ([int64]$bytes[16] -shl 24) -bor ([int64]$bytes[17] -shl 16) -bor ([int64]$bytes[18] -shl 8) -bor [int64]$bytes[19]
+      $ht = ([int64]$bytes[20] -shl 24) -bor ([int64]$bytes[21] -shl 16) -bor ([int64]$bytes[22] -shl 8) -bor [int64]$bytes[23]
+    } elseif ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xD8) {
+      $p = 2
+      while ($p + 9 -lt $bytes.Length) {
+        if ($bytes[$p] -ne 0xFF) { break }
+        $mk = $bytes[$p + 1]
+        if ($mk -eq 0xFF) { $p++; continue }
+        if ($mk -ge 0xD0 -and $mk -le 0xD9) { $p += 2; continue }
+        $len = ([int]$bytes[$p + 2] -shl 8) -bor [int]$bytes[$p + 3]
+        if ($len -lt 2) { break }
+        if ($mk -ge 0xC0 -and $mk -le 0xCF -and $mk -ne 0xC4 -and $mk -ne 0xC8 -and $mk -ne 0xCC) {
+          $ht = ([int]$bytes[$p + 5] -shl 8) -bor [int]$bytes[$p + 6]; $w = ([int]$bytes[$p + 7] -shl 8) -bor [int]$bytes[$p + 8]; break
+        }
+        $p += 2 + $len
+      }
+    }
+    if ($w -lt 1 -or $ht -lt 1 -or $w -gt 4096 -or $ht -gt 4096 -or ($w * $ht) -gt 8000000) { return $null }
+    if ($fresh) {
+      $dir = Split-Path -Parent $cacheFile
+      if (-not (Test-Path -LiteralPath $dir)) { [void](New-Item -ItemType Directory -Force $dir) }
+      [System.IO.File]::WriteAllBytes($cacheFile + ".tmp", $bytes)
+      Move-Item -LiteralPath ($cacheFile + ".tmp") -Destination $cacheFile -Force
+    }
+    $bi = New-Object System.Windows.Media.Imaging.BitmapImage
+    $bi.BeginInit()
+    $bi.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+    $bi.CreateOptions = [System.Windows.Media.Imaging.BitmapCreateOptions]::IgnoreColorProfile
+    $bi.StreamSource = New-Object System.IO.MemoryStream (, $bytes)
+    if ($w -gt 800) { $bi.DecodePixelWidth = 800 }
+    $bi.EndInit(); $bi.Freeze()
+    return $bi
+  } catch { return $null }
+}
+function Set-NoticeImageSlot($slot, $bmp, $top) {
+  $im = New-Object System.Windows.Controls.Image
+  $im.Source = $bmp; $im.Stretch = "Uniform"; $im.StretchDirection = "DownOnly"; $im.MaxHeight = 260; $im.HorizontalAlignment = "Left"
+  $slot.Margin = if ($top) { New-Object System.Windows.Thickness(0, 0, 0, 12) } else { New-Object System.Windows.Thickness(0, 12, 0, 0) }
+  $slot.Child = $im; $slot.Visibility = "Visible"
+}
+$noticeImgTimer = New-Object System.Windows.Threading.DispatcherTimer
+$noticeImgTimer.Interval = [TimeSpan]::FromMilliseconds(150)
+$noticeImgTimer.Add_Tick({
+  foreach ($sha in @($script:noticeImgJobs.Keys)) {
+    $j = $script:noticeImgJobs[$sha]
+    if (-not $j.handle.IsCompleted) { continue }
+    $bmp = $null
+    try { $out = $j.ps.EndInvoke($j.handle); if ($out -and $out.Count -gt 0) { $bmp = $out[0] } } catch { }
+    try { $j.ps.Dispose() } catch { }
+    $script:noticeImgJobs.Remove($sha)
+    if ($bmp -is [System.Windows.Media.Imaging.BitmapSource]) { $script:noticeImgDone[$sha] = $bmp } else { $script:noticeImgDone[$sha] = $false; Log "  [공지 그림] 받지 못해 글만 보여 줍니다" }
+    if ($script:noticeImgWant -eq $sha -and $script:noticeImgSlot -and $script:noticeImgDone[$sha]) { Set-NoticeImageSlot $script:noticeImgSlot $script:noticeImgDone[$sha] $script:noticeImgTop }
+  }
+  if ($script:noticeImgJobs.Count -eq 0) { $noticeImgTimer.Stop() }
+})
+# 공지 본문에 그림 자리를 만들고, 그림이 준비되면 채운다(이미 받아 둔 그림이면 바로)
+function Request-NoticeImage($n, $slot) {
+  $script:noticeImgWant = ""; $script:noticeImgSlot = $null
+  $g = Get-NoticeImage $n
+  if (-not $g) { return }
+  $script:noticeImgWant = $g.sha; $script:noticeImgSlot = $slot; $script:noticeImgTop = $g.top
+  if ($script:noticeImgDone.ContainsKey($g.sha)) {
+    if ($script:noticeImgDone[$g.sha]) { Set-NoticeImageSlot $slot $script:noticeImgDone[$g.sha] $g.top }
+    return
+  }
+  if ($script:noticeImgJobs.ContainsKey($g.sha)) { return }
+  try {
+    $ps = [powershell]::Create()
+    [void]$ps.AddScript($script:NoticeImgWorker.ToString()).AddArgument($g.url).AddArgument((Join-Path (Get-NoticeImgDir) ($g.sha + "." + $g.ext))).AddArgument($g.sha).AddArgument(1572864)
+    $script:noticeImgJobs[$g.sha] = @{ ps = $ps; handle = $ps.BeginInvoke() }
+    $noticeImgTimer.Start()
+  } catch { $script:noticeImgDone[$g.sha] = $false }
+}
+# 지금 소식에 없는 그림은 받아 둔 것을 지운다(폴더가 불어나지 않게)
+function Clear-OldNoticeImages($all) {
+  try {
+    $keep = @{}
+    foreach ($n in $all) { $g = Get-NoticeImage $n; if ($g) { $keep[$g.sha] = $true } }
+    foreach ($k in @($script:noticeImgDone.Keys)) { if (-not $keep.ContainsKey($k)) { $script:noticeImgDone.Remove($k) } }
+    $dir = Get-NoticeImgDir
+    if (Test-Path -LiteralPath $dir) {
+      foreach ($f in Get-ChildItem -LiteralPath $dir -File) { if (-not $keep.ContainsKey($f.BaseName)) { Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue } }
+    }
+  } catch { }
+}
+
 function New-NoticeRow($n, $onClick) {
   $row = New-Object System.Windows.Controls.Grid; $row.Margin = New-Object System.Windows.Thickness(2, 0, 6, 9); $row.Cursor = "Hand"; $row.Background = [System.Windows.Media.Brushes]::Transparent
   foreach ($w in @(16, -1, -2, 46)) {
@@ -2348,7 +2625,7 @@ function New-NoticeRow($n, $onClick) {
   $dot = New-Object System.Windows.Shapes.Rectangle; $dot.Width = 8; $dot.Height = 8; $dot.RadiusX = 2; $dot.RadiusY = 2; $dot.VerticalAlignment = "Center"
   $dot.Fill = if ($isNew) { Brush "#E8736B" } else { Brush "#C9C2B4" }
   [void]$row.Children.Add($dot)
-  $tt = New-Text ([string]$n.title) 13 "#2F2D28" $false; $tt.TextWrapping = "NoWrap"; $tt.TextTrimming = "CharacterEllipsis"; $tt.VerticalAlignment = "Center"
+  $tt = New-Text (Notice-Text $n "title") 13 (Notice-Color $n) $false; $tt.TextWrapping = "NoWrap"; $tt.TextTrimming = "CharacterEllipsis"; $tt.VerticalAlignment = "Center"
   [System.Windows.Controls.Grid]::SetColumn($tt, 1); [void]$row.Children.Add($tt)
   if ($isNew) {
     $nb = New-Object System.Windows.Controls.Border; $nb.CornerRadius = 4; $nb.Background = Brush "#F2B233"; $nb.Padding = New-Object System.Windows.Thickness(5, 0, 5, 1); $nb.Margin = New-Object System.Windows.Thickness(6, 0, 0, 0); $nb.VerticalAlignment = "Center"
@@ -2364,14 +2641,19 @@ function New-NoticeRow($n, $onClick) {
 # 공지 창: 왼쪽 목록, 오른쪽 본문
 function Show-NoticeBody($n) {
   $body = $script:nwBody; $body.Children.Clear()
-  $h = New-Text ([string]$n.title) 17 "#2F2D28" $true; [void]$body.Children.Add($h)
+  $h = New-Text (Notice-Text $n "title") 17 (Notice-Color $n) $true; [void]$body.Children.Add($h)
   $dd = New-Text ((Notice-Date $n) + $(if (Notice-IsNew $n) { "  ·  NEW" } else { "" })) 11.5 "#8A857B" $false; $dd.Margin = New-Object System.Windows.Thickness(0, 3, 0, 12); [void]$body.Children.Add($dd)
-  $tx = New-Text ([string]$n.body) 13.5 "#34312A" $false; $tx.LineHeight = 21; [void]$body.Children.Add($tx)
+  $slot = New-Object System.Windows.Controls.Border; $slot.Visibility = "Collapsed"
+  $g = Get-NoticeImage $n
+  if ($g -and $g.top) { [void]$body.Children.Add($slot) }
+  $tx = New-Text (Notice-Text $n "body") 13.5 "#34312A" $false; $tx.LineHeight = 21; [void]$body.Children.Add($tx)
+  if ($g -and -not $g.top) { [void]$body.Children.Add($slot) }
+  Request-NoticeImage $n $slot
   $script:nwScroll.ScrollToTop()
 }
-function Show-NoticeWindow($pick) {
+function New-NoticeWindow($pick) {
   $all = Get-Notices $script:lastFeed
-  if ($all.Count -eq 0) { return }
+  if ($all.Count -eq 0) { return $null }
   $w = New-Object System.Windows.Window
   $w.Title = "공지사항"; $w.Width = 760; $w.Height = 520; $w.WindowStartupLocation = "CenterOwner"; $w.Owner = $form
   $w.Background = Brush "#F2ECDF"; $w.FontFamily = $UiFont; $w.ResizeMode = "CanResize"; $w.Icon = $form.Icon
@@ -2391,16 +2673,57 @@ function Show-NoticeWindow($pick) {
   foreach ($n in $all) { [void]$lst.Children.Add((New-NoticeRow $n { param($s, $e) Show-NoticeBody $s.Tag })) }
   Show-NoticeBody $(if ($pick) { $pick } else { $all[0] })
   $w.Content = $g
-  [void]$w.ShowDialog()
+  $w.Add_Closed({ $script:noticeImgWant = ""; $script:noticeImgSlot = $null })
+  return $w
+}
+function Show-NoticeWindow($pick) {
+  $w = New-NoticeWindow $pick
+  if ($w) { [void]$w.ShowDialog() }
+}
+# ── 공지 쓰기 버튼 (elly 의 PC 에서만 보인다) ──
+# 공지 쓰기 도구가 이 PC 의 정해진 자리(사용자 폴더\Documents\MinecraftServerTools\notice-tool\공지쓰기.vbs)에 있을 때만 버튼을 그린다.
+# "내 문서"가 OneDrive 로 옮겨진 PC 에서는 윈도우가 알려 주는 문서 폴더가 OneDrive\문서 라서, 사용자 폴더 밑의 Documents 를 먼저 보고 그다음 윈도우의 문서 폴더를 본다.
+# 친구들 PC 에는 그 파일이 없으니 버튼도 없다. 자리는 여기 적힌 것 하나뿐이고, 소식이나 네트워크에서 온 값은 전혀 쓰지 않는다.
+# 누르면 그 파일을 윈도우 스크립트 실행기(wscript)로 연다 — 검은 창 없음. 그 파일은 서명 대상이 아닌 이 PC 의 파일이다.
+function Get-NoticeDocsDirs {
+  $dirs = @()
+  try { $u = [Environment]::GetFolderPath("UserProfile"); if ($u) { $dirs += (Join-Path $u "Documents") } } catch { }
+  try { $d = [Environment]::GetFolderPath("MyDocuments"); if ($d -and ($dirs -notcontains $d)) { $dirs += $d } } catch { }
+  return $dirs
+}
+function Get-NoticeToolPath {
+  try {
+    foreach ($docs in @(Get-NoticeDocsDirs)) {
+      if (-not $docs) { continue }
+      $p = Join-Path $docs "MinecraftServerTools\notice-tool\공지쓰기.vbs"
+      if (Test-Path -LiteralPath $p -PathType Leaf) { return $p }
+    }
+  } catch { }
+  return $null
+}
+function Start-NoticeTool {
+  $p = Get-NoticeToolPath
+  if (-not $p) { return }
+  try { Start-Process -FilePath (Join-Path $env:WINDIR "System32\wscript.exe") -ArgumentList ('"' + $p + '"') } catch { Log "  [공지 쓰기] 열지 못했습니다" }
 }
 function Show-Notices($feed) {
   $feedNotice.Children.Clear()
   $all = Get-Notices $feed
-  if ($all.Count -eq 0) { Add-FeedNote $feedNotice "아직 공지가 없습니다."; return }
+  Clear-OldNoticeImages $all
+  if ($all.Count -eq 0) { Add-FeedNote $feedNotice "아직 공지가 없습니다." }
   foreach ($n in @($all | Select-Object -First 6)) { [void]$feedNotice.Children.Add((New-NoticeRow $n { param($s, $e) Show-NoticeWindow $s.Tag })) }
-  $more = New-Text "더보기 >" 12 "#3B6F3E" $true; $more.HorizontalAlignment = "Right"; $more.Cursor = "Hand"; $more.Margin = New-Object System.Windows.Thickness(0, 2, 8, 0)
-  $more.Add_MouseLeftButtonUp({ Show-NoticeWindow $null })
-  [void]$feedNotice.Children.Add($more)
+  $foot = New-Object System.Windows.Controls.Grid; $foot.Margin = New-Object System.Windows.Thickness(2, 2, 8, 0)
+  if (Get-NoticeToolPath) {
+    $write = New-Text "공지 쓰기" 12 "#3B6F3E" $true; $write.HorizontalAlignment = "Left"; $write.Cursor = "Hand"
+    $write.Add_MouseLeftButtonUp({ Start-NoticeTool })
+    [void]$foot.Children.Add($write)
+  }
+  if ($all.Count -gt 0) {
+    $more = New-Text "더보기 >" 12 "#3B6F3E" $true; $more.HorizontalAlignment = "Right"; $more.Cursor = "Hand"
+    $more.Add_MouseLeftButtonUp({ Show-NoticeWindow $null })
+    [void]$foot.Children.Add($more)
+  }
+  if ($foot.Children.Count -gt 0) { [void]$feedNotice.Children.Add($foot) }
 }
 
 # 접속자 현황
