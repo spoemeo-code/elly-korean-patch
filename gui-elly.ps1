@@ -2432,6 +2432,7 @@ Select-Tab "notice"
 # 목록 한 줄: 점 · 제목 · NEW(3일 안) · 날짜(MM.DD). 줄을 누르면 본문, [더보기] 는 전체 목록 창.
 # 2판(2026-10): 덧붙는 값은 전부 선택이고, 없으면 예전과 똑같이 그린다.
 #   title_e / body_e : 이모지가 든 글(있으면 이쪽을 보여 줌)   color : 제목 색 이름   image : { file, sha256, w, h, pos }
+# 3판: body_r : 본문을 조각으로 나눈 것 [{ t, b, i, c, f, s }] — 진하게·기울임·글자색·글꼴·크기. 정해진 이름만 받고, 이상하면 꾸밈 없는 글(body_e / body)로 그린다.
 # 소식은 서명 없이 오는 글이라, 여기서는 "글자와 그림으로 그리기"만 한다(실행·링크 열기 없음).
 function Get-Notices($feed) {
   $list = @()
@@ -2453,7 +2454,8 @@ function Notice-Color($n) {
 # 그 글꼴에 없는 그림문자는 네모로 나오니 빼고, 피부색·묶음·숫자 단추·국기의 꾸밈 부분도 뺀다.
 # 공지 쓰기 도구(notice-core.ps1 Format-NoticeEmoji)의 미리 보기와 같은 규칙 — 한쪽을 바꾸면 다른 쪽도 바꾼다.
 $script:noticeEmojiSet = $null
-function Format-NoticeEmoji([string]$s) {
+# 못 그리는 그림문자만 뺀다(빈칸은 그대로) — 꾸민 본문의 조각마다 쓴다
+function Remove-NoticeBadEmoji([string]$s) {
   if ($null -eq $script:noticeEmojiSet) {
     $script:noticeEmojiSet = New-Object 'System.Collections.Generic.HashSet[int]'
     try {
@@ -2472,7 +2474,10 @@ function Format-NoticeEmoji([string]$s) {
     if ($cp -ge 0x1F000 -and -not $script:noticeEmojiSet.Contains($cp)) { continue }
     [void]$sb.Append($ch)
   }
-  $lines = @($sb.ToString().Split("`n") | ForEach-Object { [regex]::Replace([regex]::Replace($_, '[ \t]{2,}', " "), '^[ \t]+|[ \t]+$', "") })
+  return $sb.ToString()
+}
+function Format-NoticeEmoji([string]$s) {
+  $lines = @((Remove-NoticeBadEmoji $s).Split("`n") | ForEach-Object { [regex]::Replace([regex]::Replace($_, '[ \t]{2,}', " "), '^[ \t]+|[ \t]+$', "") })
   return ([string]::Join("`n", [string[]]$lines)).Trim()
 }
 function Notice-Text($n, $name) {
@@ -2482,6 +2487,41 @@ function Notice-Text($n, $name) {
     if ($e) { $t = Format-NoticeEmoji $e; if ($t) { return $t } }
   } catch { }
   return $plain
+}
+
+# ── 꾸민 본문 ──
+# 받는 이름은 여기 적힌 것뿐이다(공지 쓰기 도구·봇과 같은 목록). 그 밖의 값은 무시하고 기본으로 그린다. 조각은 글자로만 그려진다(링크·실행 없음).
+$NoticeTextColors = @{ accent = "#B8473B"; event = "#6B5598"; info = "#2F7D3A"; warn = "#8A5D14"; dim = "#8A857B" }
+# 글꼴은 윈도우에 원래 있는 한글 글꼴. 그 PC 에 없으면 뒤에 적힌 맑은 고딕으로 그려진다.
+$NoticeTextFonts = @{ serif = "Batang, 맑은 고딕"; round = "Gulim, 맑은 고딕"; brush = "Gungsuh, 맑은 고딕" }
+$NoticeTextSizes = @{ sm = 12.0; lg = 16.0; xl = 19.0 }
+function New-NoticeBodyText($n) {
+  $tx = New-Text "" 13.5 "#34312A" $false; $tx.LineHeight = 21
+  $drawn = 0
+  try {
+    $runs = $n.body_r
+    if ($null -ne $runs -and -not ($runs -is [string])) {
+      $total = 0
+      foreach ($r in @($runs)) {
+        if ($drawn -ge 200 -or $total -ge 2000) { break }
+        $t = $r.t
+        if (-not ($t -is [string]) -or -not $t) { continue }
+        if ($total + $t.Length -gt 2000) { $t = $t.Substring(0, 2000 - $total) }
+        $total += $t.Length
+        $shown = Remove-NoticeBadEmoji $t
+        if (-not $shown) { continue }
+        $run = New-Object System.Windows.Documents.Run ($shown)
+        if ($r.b -eq 1) { $run.FontWeight = "Bold" }
+        if ($r.i -eq 1) { $run.FontStyle = "Italic" }
+        $c = [string]$r.c; if ($c -and $NoticeTextColors.ContainsKey($c)) { $run.Foreground = Brush $NoticeTextColors[$c] }
+        $f = [string]$r.f; if ($f -and $NoticeTextFonts.ContainsKey($f)) { $run.FontFamily = New-Object System.Windows.Media.FontFamily($NoticeTextFonts[$f]) }
+        $s = [string]$r.s; if ($s -and $NoticeTextSizes.ContainsKey($s)) { $run.FontSize = $NoticeTextSizes[$s] }
+        [void]$tx.Inlines.Add($run); $drawn++
+      }
+    }
+  } catch { $drawn = 0 }
+  if ($drawn -eq 0) { $tx.Inlines.Clear(); $tx.Text = Notice-Text $n "body" }
+  return $tx
 }
 
 # ── 공지 그림 ──
@@ -2646,7 +2686,7 @@ function Show-NoticeBody($n) {
   $slot = New-Object System.Windows.Controls.Border; $slot.Visibility = "Collapsed"
   $g = Get-NoticeImage $n
   if ($g -and $g.top) { [void]$body.Children.Add($slot) }
-  $tx = New-Text (Notice-Text $n "body") 13.5 "#34312A" $false; $tx.LineHeight = 21; [void]$body.Children.Add($tx)
+  $tx = New-NoticeBodyText $n; [void]$body.Children.Add($tx)
   if ($g -and -not $g.top) { [void]$body.Children.Add($slot) }
   Request-NoticeImage $n $slot
   $script:nwScroll.ScrollToTop()
