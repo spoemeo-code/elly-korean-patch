@@ -1,0 +1,14 @@
+PowerShell parser: PASS
+Current release 33 ZIP rejected by signed release 32 manifest: PASS
+Valid historical release 32 signature and all 14 files: PASS
+Rollback 32 rejected after trusted version 33: PASS
+Unsigned preparation: PASS
+Only intended metadata changed; NoFont and jannu preserved: PASS
+Edited manifest with old signature rejected: PASS
+Invalid external signature rejected before output: PASS
+No overwriting existing output directory: PASS
+Output inside repository rejected: PASS
+Other signed file tampering rejected before resign: PASS
+Production manifest bytes unchanged: PASS
+Runtime: PowerShell 7.6.7 on Linux. Windows 5.1 GUI and private-key signing pending.
+Remote main audit using the signed SHA256 cache-busting URL: rejected Elly-Korean-Patch.zip size mismatch as expected.
